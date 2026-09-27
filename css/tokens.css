@@ -1,0 +1,27 @@
+:root {
+  --floor: #1E2124;
+  --deck: #272B30;
+  --deck2: #31363C;
+  --chalk: #EEEBE4;
+  --steel: #A2A9B2;
+  --dim: #6F7680;
+  --line: rgba(238, 235, 228, .09);
+  /* Farben der Wettkampf-Hantelscheiben */
+  --red: #E0403F;
+  --blue: #2F7BE0;
+  --green: #2FA85A;
+  --yellow: #F2C230;
+  --white: #E9E6DF;
+  --c: var(--red);
+  --c-soft: rgba(224, 64, 63, .14);
+  --on-c: #fff;
+  --round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  color-scheme: dark;
+}
+.day-red    { --c: var(--red);    --c-soft: rgba(224, 64, 63, .14);   --on-c: #fff; }
+.day-blue   { --c: var(--blue);   --c-soft: rgba(47, 123, 224, .15);  --on-c: #fff; }
+.day-green  { --c: var(--green);  --c-soft: rgba(47, 168, 90, .15);   --on-c: #fff; }
+.day-yellow { --c: var(--yellow); --c-soft: rgba(242, 194, 48, .13);  --on-c: #1E2124; }
+.day-white  { --c: var(--white);  --c-soft: rgba(233, 230, 223, .1);  --on-c: #1E2124; }
+.day-steel  { --c: var(--steel);  --c-soft: rgba(162, 169, 178, .12); --on-c: #1E2124; }

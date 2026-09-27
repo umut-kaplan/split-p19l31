@@ -1,0 +1,10 @@
+{
+  "name": "split",
+  "private": true,
+  "type": "module",
+  "description": "Trainings- und Fitness-App als statische PWA, ohne Build-Schritt",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "start": "./start.sh"
+  }
+}

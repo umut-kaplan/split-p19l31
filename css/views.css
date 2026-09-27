@@ -1,0 +1,96 @@
+/* ---------- Heute ---------- */
+.greet .date { color: var(--steel); font-size: 15px; }
+.greet h1 { margin-top: 2px; font-family: var(--round); font-size: 32px; font-weight: 800; letter-spacing: -.01em; }
+.hero { margin-top: 18px; text-align: center; }
+.hero-title { margin-top: 18px; font-family: var(--round); font-size: 44px; font-weight: 800; letter-spacing: -.02em; }
+.hero-sub { margin-top: 4px; color: var(--steel); font-size: 17px; }
+.hero-facts { margin: 14px auto 20px; max-width: 34ch; color: var(--steel); font-size: 15px; }
+.hero-facts b { color: var(--chalk); font-family: var(--round); }
+.others-label { margin-top: 22px; text-align: center; color: var(--dim); font-size: 14px; }
+.others { display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+.other {
+  display: flex; align-items: center; gap: 10px; min-height: 54px;
+  padding: 8px 16px 8px 8px; border-radius: 999px;
+  background: var(--deck); border: 1px solid var(--line); font-weight: 700;
+}
+.other svg { width: 38px; height: 38px; display: block; }
+
+.notice { border-color: rgba(242, 194, 48, .35); }
+.notice p { color: var(--steel); margin: 4px 0 12px; }
+
+.streak { display: flex; gap: 6px; margin-top: 12px; }
+.streak .wk { flex: 1; display: grid; justify-items: center; gap: 4px; color: var(--dim); font-size: 11px; }
+.streak svg { width: 100%; max-width: 38px; height: auto; display: block; }
+.streak .wk.met { color: var(--steel); }
+.streak .wk.now { color: var(--chalk); font-weight: 700; }
+.streak-head { display: flex; align-items: baseline; gap: 10px; }
+.streak-head b { font-family: var(--round); font-size: 40px; font-weight: 800; line-height: 1; }
+.streak-head span { color: var(--steel); }
+
+.goal-row + .goal-row { margin-top: 18px; }
+.goal-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.goal-top b { font-family: var(--round); font-size: 24px; font-weight: 800; }
+.goal-top small { color: var(--steel); font-size: 14px; }
+.water-btns { display: flex; gap: 8px; margin-top: 10px; }
+.water-btns .btn { flex: 1; }
+.water-btns .btn.minus { flex: 0 0 64px; }
+
+.bmi-val { display: flex; align-items: baseline; gap: 10px; }
+.bmi-val b { font-family: var(--round); font-size: 40px; font-weight: 800; line-height: 1.1; }
+.bmi-val span { color: var(--steel); font-weight: 650; }
+.bmi-scale { position: relative; height: 10px; margin: 14px 0 6px; border-radius: 5px; overflow: hidden;
+  background: linear-gradient(90deg, #6F9BD1 0 17.5%, var(--green) 17.5% 50%, var(--yellow) 50% 75%, var(--red) 75% 100%); opacity: .85; }
+.bmi-marker { position: relative; height: 0; }
+.bmi-marker i { position: absolute; top: -22px; width: 4px; height: 18px; margin-left: -2px; border-radius: 2px; background: var(--chalk); box-shadow: 0 0 0 2px var(--floor); }
+.bmi-legend { position: relative; height: 16px; color: var(--dim); font-size: 12px; }
+.bmi-legend span { position: absolute; top: 0; transform: translateX(-50%); }
+.bmi-legend span:first-child { transform: none; }
+.bmi-legend span:last-child { transform: translateX(-100%); }
+
+/* ---------- Training: Einheit wählen ---------- */
+.train-head { display: grid; gap: 14px; }
+.day-list { display: grid; gap: 10px; margin-top: 18px; }
+.day-card {
+  display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center;
+  padding: 14px; border-radius: 20px; background: var(--deck); border: 1px solid var(--line);
+}
+.day-card.next { border-color: var(--c); }
+.day-card svg { width: 64px; height: 64px; display: block; }
+.day-card h2 { font-family: var(--round); font-size: 24px; font-weight: 800; }
+.day-card p { color: var(--steel); font-size: 14px; }
+.day-card .tag { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--c); color: var(--on-c); font-size: 12px; font-weight: 700; vertical-align: middle; font-family: var(--sans); }
+.day-card .btn { grid-column: 1 / -1; }
+
+/* ---------- Körper ---------- */
+.weigh { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 12px; }
+.weights { list-style: none; margin: 0; padding: 0; }
+.weights li { display: flex; justify-content: space-between; align-items: center; min-height: 48px; border-bottom: 1px solid var(--line); }
+.weights li:last-child { border-bottom: 0; }
+.weights small { color: var(--steel); }
+
+/* ---------- Ernährung ---------- */
+.kcal-big { font-family: var(--round); font-size: 48px; font-weight: 800; line-height: 1; }
+.kcal-big small { font-size: 18px; color: var(--steel); margin-left: 4px; }
+.macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.macro { padding: 12px 10px; border-radius: 14px; background: var(--floor); }
+.macro b { display: block; font-family: var(--round); font-size: 24px; font-weight: 800; }
+.macro span { color: var(--steel); font-size: 13px; }
+.calc { margin: 6px 0 0; padding-left: 20px; color: var(--steel); font-size: 14px; }
+.calc li + li { margin-top: 6px; }
+
+/* ---------- Profil ---------- */
+.p-section + .p-section { margin-top: 26px; }
+.p-section > h2 { font-size: 20px; margin-bottom: 12px; }
+
+/* ---------- Onboarding ---------- */
+.ob { min-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+.ob-top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+.ob-dots { display: flex; gap: 6px; }
+.ob-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--deck2); }
+.ob-dots i.on { background: var(--c); }
+.ob-body { flex: 1; padding-top: 18px; }
+.ob-body h1 { font-family: var(--round); font-size: 34px; font-weight: 800; letter-spacing: -.01em; }
+.ob-body > p { color: var(--steel); margin: 8px 0 22px; }
+.ob-body .plate-btn { width: min(64vw, 260px); margin: 12px auto 26px; }
+.ob-foot { display: grid; gap: 8px; padding-top: 20px; position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); }
+.ob-main { padding-bottom: calc(env(safe-area-inset-bottom) + 24px); }
