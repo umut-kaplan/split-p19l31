@@ -1,0 +1,24 @@
+/* Stufe 6: Import aus Apple Health (Profil) */
+.ahi > p.muted { margin: 6px 0 12px; }
+.ahi-steps { margin: 0 0 12px; padding-left: 22px; color: var(--steel); }
+.ahi-steps li + li { margin-top: 6px; }
+.ahi-steps b { color: var(--chalk); }
+.ahi-last { margin-top: 10px; }
+.ahi-last .link { display: block; min-height: 44px; }
+.ahi-bar { margin-top: 4px; }
+.ahi-bar i { transition: width .2s linear; }
+#ahi-text { margin-top: 8px; }
+
+.ahi-sum { width: 100%; border-collapse: collapse; font-size: 15px; }
+.ahi-sum th, .ahi-sum td { padding: 10px 4px; text-align: left; border-bottom: 1px solid var(--line); }
+.ahi-sum thead th { color: var(--dim); font-size: 13px; font-weight: 600; padding-top: 0; }
+.ahi-sum tbody th { font-weight: 650; }
+.ahi-sum td:nth-child(2) { text-align: right; padding-right: 12px; }
+.ahi-sum td:last-child { color: var(--steel); font-size: 14px; }
+.ahi-sum tbody tr:last-child th, .ahi-sum tbody tr:last-child td { border-bottom: 0; }
+
+.ahi-pre { list-style: none; margin: 12px 0 0; padding: 0; }
+.ahi-pre li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; color: var(--steel); font-size: 14px; }
+.ahi-pre li span:first-child { color: var(--chalk); font-weight: 600; }
+.ahi-pre li span:last-child { text-align: right; }
+.ahi .btn[disabled] { opacity: .4; }

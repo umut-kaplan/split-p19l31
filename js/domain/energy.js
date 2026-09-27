@@ -1,5 +1,6 @@
-import { fmt0, fmt1 } from '../util.js';
+import { fmt0, fmt1, ymd } from '../util.js';
 import { leanMass, latestComposition, currentWeight } from './body.js';
+import { cardioKcalPerDay, stepsKcalPerDay, burnAverage, KCAL_PER_STEP_KG } from './activity.js';
 
 /* Aktivität im Alltag, ohne Sport. Das Training rechnet die App aus den eingetragenen Einheiten dazu. */
 export const ACTIVITY = {
@@ -47,8 +48,25 @@ export function trainingKcalPerDay(sessions, kg, now = Date.now(), days = 7) {
   return { count: done.length, hours, kcalPerDay: kg > 0 ? MET_STRENGTH * kg * hours / days : 0 };
 }
 
+const n0 = v => fmt0(v);
+
+/* Sätze zu Cardio und Schritten, jeweils nur, wenn es Daten gibt */
+function activityLines(cardio, steps, activityLabel) {
+  const out = [];
+  if (cardio.count) {
+    out.push(`Plus ${n0(cardio.kcalPerDay)} kcal pro Tag für Cardio: ${cardio.count} ${cardio.count === 1 ? 'Einheit' : 'Einheiten'} mit zusammen ${n0(cardio.minutes)} Minuten und ${n0(cardio.kcal)} kcal in den letzten 7 Tagen, geschätzt nach MET und auf 7 Tage verteilt.`);
+  }
+  if (steps.enough) {
+    const walk = steps.walkSteps >= 1 ? ` Gehen aus deinem Cardio (etwa ${n0(steps.walkSteps)} Schritte am Tag) zieht die App ab, weil es schon als Cardio zählt.` : '';
+    out.push(steps.kcalPerDay > 0
+      ? `Plus ${n0(steps.kcalPerDay)} kcal pro Tag für Schritte: im Schnitt ${n0(steps.avgSteps)} Schritte an ${steps.days} Tagen, davon ${n0(steps.extra)} über den ${n0(steps.baseline)}, die in „${activityLabel}“ schon stecken, mal ${KCAL_PER_STEP_KG.toLocaleString('de-DE', { maximumFractionDigits: 4 })} kcal pro Schritt und kg.${steps.capped ? ' Mehr als 12.000 zusätzliche Schritte am Tag zählen nicht weiter.' : ''}${walk}`
+      : `Kein Zuschlag für Schritte: im Schnitt ${n0(steps.avgSteps)} an ${steps.days} Tagen, das steckt in „${activityLabel}“ (${n0(steps.baseline)} Schritte) schon drin.${walk}`);
+  }
+  return out;
+}
+
 /* Kalorienziel mit Rechenweg in ganzen Sätzen.
-   ctx: { composition (aus latestComposition), sessions, now, kcalAdjust } – alles optional */
+   ctx: { composition (aus latestComposition), sessions, activity (S.activity), now, kcalAdjust } – alles optional */
 export function calorieGoal(p, ctx = {}) {
   const comp = ctx.composition || null;
   const lean = comp && p.weightKg > 0 ? leanMass(p.weightKg, comp.bfPct) : null;
@@ -62,29 +80,48 @@ export function calorieGoal(p, ctx = {}) {
     bmr = bmrMifflin({ kg: p.weightKg, cm: p.heightCm, age: p.age, sex: p.sex });
     bmrLine = `Grundumsatz nach Mifflin-St Jeor aus Gewicht, Größe, Alter und Geschlecht: ${fmt0(bmr)} kcal.`;
   }
-  const act = ACTIVITY[p.activity] || ACTIVITY[DEFAULT_ACTIVITY];
+  const actKey = ACTIVITY[p.activity] ? p.activity : DEFAULT_ACTIVITY;
+  const act = ACTIVITY[actKey];
   const daily = bmr * act.factor;
-  const tr = trainingKcalPerDay(ctx.sessions, p.weightKg, ctx.now ?? Date.now());
-  const tdee = daily + tr.kcalPerDay;
+  const now = ctx.now ?? Date.now();
+  const today = ymd(now);
+  const tr = trainingKcalPerDay(ctx.sessions, p.weightKg, now);
+  const a = ctx.activity || {};
+  const cardio = cardioKcalPerDay(a.cardio, today);
+  const steps = stepsKcalPerDay(a.steps, actKey, p.weightKg, today, a.cardio);
+  const burn = burnAverage(a.burn, today);
+  const tdee = daily + tr.kcalPerDay + cardio.kcalPerDay + steps.kcalPerDay;
   const goal = GOALS[p.goal] || GOALS.recomp;
   const goalKcal = tdee * (1 + goal.adj);
   const adjust = ctx.kcalAdjust || 0;
   const kcal = Math.round((goalKcal + adjust) / 10) * 10;
+  /* Verbrauch: Training, dann Cardio und Schritte; der letzte Satz nennt die Summe */
+  const usage = [
+    tr.count
+      ? `Plus ${fmt0(tr.kcalPerDay)} kcal pro Tag fürs Training: ${tr.count} ${tr.count === 1 ? 'Einheit' : 'Einheiten'} mit zusammen ${fmt1(tr.hours)} Stunden in den letzten 7 Tagen, gerechnet mit MET 5 und auf 7 Tage verteilt.`
+      : 'Kein Zuschlag fürs Training, weil in den letzten 7 Tagen keine Einheit eingetragen ist.',
+    ...activityLines(cardio, steps, act.label),
+  ];
+  usage[usage.length - 1] += ` Zusammen ${fmt0(tdee)} kcal Gesamtumsatz.`;
   const lines = [
     bmrLine,
     `Mal ${act.factor.toLocaleString('de-DE')} für deinen Alltag „${act.label}“${p.activity ? '' : ' (Standardwert, im Profil änderbar)'}: ${fmt0(daily)} kcal.`,
-    tr.count
-      ? `Plus ${fmt0(tr.kcalPerDay)} kcal pro Tag fürs Training: ${tr.count} ${tr.count === 1 ? 'Einheit' : 'Einheiten'} mit zusammen ${fmt1(tr.hours)} Stunden in den letzten 7 Tagen, gerechnet mit MET 5 und auf 7 Tage verteilt. Zusammen ${fmt0(tdee)} kcal Gesamtumsatz.`
-      : `Kein Zuschlag fürs Training, weil in den letzten 7 Tagen keine Einheit eingetragen ist. Gesamtumsatz ${fmt0(tdee)} kcal.`,
+    ...usage,
     goal.adj
       ? `${goal.adj > 0 ? 'Plus' : 'Minus'} ${fmt0(Math.abs(goal.adj * 100))} % für das Ziel „${goal.label}“: ${fmt0(goalKcal)} kcal.`
       : `Für das Ziel „${goal.label}“ kein Zu- oder Abschlag.${p.goal ? '' : ' Ohne Ziel im Profil rechnet die App so.'}`,
   ];
   if (adjust) lines.push(`${adjust > 0 ? 'Plus' : 'Minus'} ${fmt0(Math.abs(adjust))} kcal aus angenommenen Anpassungen nach deinem Gewichtstrend.`);
   lines.push(`Auf 10 gerundet: ${fmt0(kcal)} kcal.`);
+  /* Gemessener Verbrauch fließt nicht ein, er dient nur zum Vergleich */
+  if (burn.enough) {
+    const diff = burn.avg - tdee;
+    const rel = Math.abs(diff) / tdee * 100;
+    lines.push(`Zum Vergleich: Deine Uhr misst im Schnitt ${fmt0(burn.avg)} kcal Tagesverbrauch an ${burn.days} Tagen, die Rechnung ergibt ${fmt0(tdee)} kcal${rel >= 5 ? ` (${fmt0(rel)} % ${diff > 0 ? 'weniger' : 'mehr'})` : ''}. Die App bleibt bei ihrer Rechnung, weil Uhren den Verbrauch oft deutlich überschätzen und der wöchentliche Abgleich mit deinem Gewicht das Ziel ohnehin nachführt.`);
+  }
   return {
     ok: true, bmr, formula: lean ? 'katch' : 'mifflin', lean,
-    daily, training: tr, tdee, goalKcal, adjust, kcal, factor: act.factor, adj: goal.adj, lines,
+    daily, training: tr, cardio, steps, burn, tdee, goalKcal, adjust, kcal, factor: act.factor, adj: goal.adj, lines,
   };
 }
 
@@ -109,9 +146,9 @@ export const carbsRest = (kcal, protein, fat) => Math.max(0, Math.round((kcal - 
 
 /* Alle Tagesziele. Von Hand gesetzte Werte (overrides) gehen vor.
    Liefert { ok, kcal, protein, fat, carbs, manual: { kcal, protein, fat, carbs }, calc, macro } oder { ok: false, missing, calc } */
-export function nutritionTargets({ profile, weightKg, composition = null, sessions = [], kcalAdjust = 0, overrides = null, now = Date.now() }) {
+export function nutritionTargets({ profile, weightKg, composition = null, sessions = [], activity = null, kcalAdjust = 0, overrides = null, now = Date.now() }) {
   const p = { ...profile, weightKg };
-  const calc = calorieGoal(p, { composition, sessions, now, kcalAdjust });
+  const calc = calorieGoal(p, { composition, sessions, activity, now, kcalAdjust });
   const ov = overrides || {};
   const has = k => ov[k] > 0 || (k === 'carbs' && ov[k] === 0);
   if (!calc.ok && !has('kcal')) return { ok: false, missing: calc.missing, calc };
@@ -136,6 +173,7 @@ export function targetsFromState(S, now = Date.now()) {
     weightKg,
     composition: latestComposition(profile, S.body),
     sessions: S.sessions,
+    activity: S.activity || null,
     kcalAdjust: (S.nutrition && S.nutrition.kcalAdjust) || 0,
     overrides: S.nutrition && S.nutrition.overrides,
     now,

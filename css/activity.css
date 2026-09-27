@@ -1,0 +1,19 @@
+/* Stufe 6: Aktivität im Bereich Körper (Schritte, Schlaf, Ruhepuls, Cardio, Verbrauch).
+   Farben und Bausteine aus tokens.css, base.css, components.css; Listen aus body.css (.b-list, .b-del). */
+.act-intro { margin-top: 14px; }
+.act-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.act-head h2 { font-size: 19px; }
+.act-now { font-family: var(--round); font-size: 26px; font-weight: 800; line-height: 1; text-align: right; white-space: nowrap; }
+.act-now small { display: block; margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--steel); }
+.act-bars { display: block; width: 100%; height: auto; margin: 12px 0 6px; }
+.act-empty { margin-top: 6px; }
+.act-card .stack { margin-top: 12px; }
+.act-card .b-list li { gap: 4px; }
+.act-row {
+  flex: 1; min-width: 0; min-height: 48px; padding: 6px 0;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  background: none; border: 0; text-align: left; color: var(--chalk);
+}
+.act-row > span { min-width: 0; display: grid; gap: 1px; }
+.act-row small { color: var(--steel); font-size: 13px; overflow-wrap: anywhere; }
+.act-row b { white-space: nowrap; }

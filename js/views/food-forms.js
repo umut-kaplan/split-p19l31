@@ -301,7 +301,7 @@ function saveRecipe() {
   if (err) { toast(err); return; }
   const n = nut();
   if (v.editId) Object.assign(n.recipes.find(x => x.id === v.editId), d);
-  else n.recipes.unshift({ id: uid(), ...d });
+  else n.recipes.unshift({ id: uid(), createdAt: Date.now(), ...d });
   save();
   closeView();
   toast('Rezept gespeichert');

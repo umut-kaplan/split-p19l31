@@ -2,13 +2,15 @@ import { S, V, save, activePlan, CAN_STORE } from '../state.js';
 import { esc, dLong, dShort } from '../util.js';
 import { render } from '../render.js';
 import { nextDay } from '../domain/progression.js';
-import { weekStreak, weekHistory } from '../domain/streaks.js';
 import { plateSVG } from '../ui/plate.js';
 import { bmiCard } from '../ui/cards.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { dayFacts } from './training.js';
 import { todayGoalsCard } from './nutrition.js';
 import { todayBodyCard } from './body.js';
+import * as goals from './goals.js';
+import * as report from './report.js';
+import * as recovery from './recovery.js';
 
 export function greeting(h) {
   if (h >= 5 && h < 11) return 'Guten Morgen';
@@ -22,7 +24,13 @@ export function todayDay() {
   return { id, d: plan.days[id], plan };
 }
 
+/* Untermodule, deren actions und inputs app.js einsammelt */
+export const modules = [goals, report, recovery];
+
 export function view() {
+  /* Unterseiten wie „Erfolge“ oder der ganze Wochenbericht ersetzen die Startseite */
+  const sub = goals.subview() || report.subview();
+  if (sub) return sub;
   const { id, d, plan } = todayDay();
   const name = S.profile.name;
   const rolled = V.roll; V.roll = false;
@@ -37,9 +45,13 @@ export function view() {
       <p>Kalorien, BMI und Körperwerte in dieser App sind Schätzungen aus Formeln. Sie ersetzen keine ärztliche oder ernährungsfachliche Beratung.</p>
       <button class="btn small" data-act="disclaimer">Verstanden</button>
     </section>`}
+    ${report.reportCard()}
     ${S.active ? activeHero() : hero(id, d, plan, rolled)}
+    ${S.active ? '' : recovery.trainTodayCard()}
+    ${S.active ? '' : recovery.checkinCard()}
     ${suggestionsBlock()}
-    ${streakBlock(d.color)}
+    ${goals.streakCard(d.color)}
+    ${goals.weeklyGoalsCard()}
     ${todayGoalsCard()}
     ${todayBodyCard()}
     <section class="block">${bmiCard()}</section>
@@ -76,25 +88,6 @@ function activeHero() {
     <p class="hero-sub">Begonnen um ${new Date(a.startedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
     <div style="margin-top:18px"><button class="btn primary" data-act="resume">Weiter trainieren</button></div>
   </div>`;
-}
-
-function streakBlock(color) {
-  const target = S.profile.daysPerWeek || 3;
-  const st = weekStreak(S.sessions, target);
-  const hist = weekHistory(S.sessions, target);
-  const head = st.weeks > 0
-    ? `<b class="num">${st.weeks}</b><span>${st.weeks === 1 ? 'Woche' : 'Wochen'} am Stück</span>`
-    : '<span>Noch keine Serie. Eine Woche zählt, wenn du deine geplanten Einheiten schaffst.</span>';
-  return `<section class="block card">
-    <h2>Deine Serie</h2>
-    <div class="streak-head">${head}</div>
-    <div class="streak" aria-label="Die letzten ${hist.length} Wochen">${hist.map(w => `
-      <div class="wk ${w.met ? 'met' : ''} ${w.current ? 'now' : ''}" title="Woche ab ${esc(dShort(w.start))}: ${w.count} Einheiten">
-        ${plateSVG(color, '', '', { small: true, ghost: !w.met })}
-        <span class="num">${w.current ? `${w.count}/${target}` : esc(dShort(w.start))}</span>
-      </div>`).join('')}</div>
-    <p class="small-print" style="margin-top:10px">Diese Woche ${st.thisWeek} von ${target} Einheiten. Jede Scheibe ist eine Woche, Montag bis Sonntag.</p>
-  </section>`;
 }
 
 /* Höchstens zwei offene Vorschläge aus allen Bereichen */

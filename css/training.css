@@ -50,7 +50,7 @@
 .lib-limit .chips { margin-top: 4px; }
 .lib-credit { margin-top: 16px; }
 .lib-credit a { color: var(--steel); }
-.lib-info { min-height: 36px; padding: 2px 0; font-size: 14px; }
+.lib-info { min-height: 44px; padding: 2px 0; font-size: 14px; }
 .lib-form textarea {
   padding: 12px; min-height: 84px; width: 100%; resize: vertical; line-height: 1.4;
   background: var(--floor); border: 1px solid var(--line); border-radius: 12px; font-size: 16px; color: var(--chalk);

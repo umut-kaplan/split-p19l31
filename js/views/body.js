@@ -10,12 +10,13 @@ import { toast } from '../ui/toast.js';
 import { closeSheet, confirmSheet } from '../ui/sheet.js';
 import * as measures from './body-measures.js';
 import * as photos from './body-photos.js';
+import * as activity from './activity.js';
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [measures, photos];
+export const modules = [measures, photos, activity];
 
 const SOURCE = { manual: 'eingetragen', profile: 'aus dem Profil', onboarding: 'bei der Einrichtung' };
-const SUBS = [['weight', 'Gewicht'], ['measures', 'Maße'], ['photos', 'Fotos']];
+const SUBS = [['weight', 'Gewicht'], ['measures', 'Maße'], ['photos', 'Fotos'], ['activity', 'Aktivität']];
 const RANGES = [['4w', '4 Wochen'], ['3m', '3 Monate'], ['all', 'Alles']];
 
 const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -39,7 +40,7 @@ export function recordWeight(kg, source = 'manual', date = ymd()) {
 
 export function view() {
   const sub = V.bodySub || 'weight';
-  const body = sub === 'measures' ? measures.vMeasures() : sub === 'photos' ? photos.vPhotos() : vWeight();
+  const body = sub === 'measures' ? measures.vMeasures() : sub === 'photos' ? photos.vPhotos() : sub === 'activity' ? activity.vActivity() : vWeight();
   return `<div class="day-white">
     <h1 class="page-title">Körper</h1>
     <p class="page-sub">Alles bleibt auf diesem Gerät.</p>

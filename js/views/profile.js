@@ -7,6 +7,10 @@ import { release } from '../timer.js';
 import { toast } from '../ui/toast.js';
 import { confirmSheet } from '../ui/sheet.js';
 import { fName, fAge, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
+import * as healthImport from './health-import.js';
+
+/* Untermodule, deren actions und inputs app.js einsammelt */
+export const modules = [healthImport];
 
 export function view() {
   const p = S.profile;
@@ -42,6 +46,8 @@ export function view() {
       </div>
       ${V.persisted === false ? '<p class="small-print" style="margin-top:10px">Der Browser hat dauerhaften Speicher nicht zugesagt. Über den Home-Bildschirm geöffnet klappt das meist.</p>' : ''}
     </section>
+
+    ${healthImport.importSection()}
 
     <section class="p-section card"><h2>Hinweis</h2>
       <p class="muted" style="margin-top:4px">Kalorien, BMI und Körperwerte sind Schätzungen aus Formeln. Sie ersetzen keine ärztliche oder ernährungsfachliche Beratung.</p>

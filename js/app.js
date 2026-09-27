@@ -34,6 +34,9 @@ const INPUT = Object.assign({}, ...all.map(m => m.inputs || {}));
 
 ACT.tab = el => {
   V.tab = el.dataset.tab;
+  /* Ein Tipp auf die Navigation schließt Unterseiten wie „Erfolge“ oder den ganzen Wochenbericht */
+  V.motView = null;
+  V.repView = null;
   if (el.dataset.sub && V.tab === 'training') V.trainSub = el.dataset.sub;
   if (el.dataset.day && V.tab === 'training') V.planDay = el.dataset.day;
   if (V.tab === 'today') V.roll = true;

@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v3.0';
+const CACHE = 'split-v4.0';
 
 const CORE = [
   './',
@@ -141,7 +141,46 @@ const NUTRITION = [
   'css/nutrition.css',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION];
+/* Stufe 5: Serie, Wochenziele, Ziele, Abzeichen */
+const MOTIVATION = [
+  'css/motivation.css',
+  'js/views/goals.js',
+  'js/domain/motivation.js',
+  'js/domain/badges.js',
+  'js/ui/badge.js',
+];
+
+/* Stufe 5: Wochenbericht, Erholung, Tagesvorschlag */
+const REPORT = [
+  'css/report.css',
+  'js/views/report.js',
+  'js/views/recovery.js',
+  'js/domain/recovery.js',
+  'js/domain/report.js',
+  'js/domain/today-plan.js',
+  'js/ui/report-image.js',
+];
+
+/* Stufe 6: Aktivität von Hand */
+const ACTIVITY = [
+  'css/activity.css',
+  'js/views/activity.js',
+  'js/domain/activity.js',
+];
+
+/* Stufe 6: Import aus Apple Health */
+const IMPORT = [
+  'css/import.css',
+  'js/views/health-import.js',
+  'js/importers/index.js',
+  'js/importers/apple-health.js',
+  'js/importers/apple-health.worker.js',
+  'js/importers/health-merge.js',
+  'js/vendor/fflate.js',
+  'js/vendor/fflate.LICENSE.txt',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT];
 
 self.addEventListener('install', ev => {
   ev.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

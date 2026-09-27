@@ -44,6 +44,21 @@ export function defaultState() {
     water: {},
     /* Entscheidungen zu Empfehlungen: { [id]: { status: 'accepted' | 'declined', date } } */
     suggestions: {},
+    /* Tracking (Stufe 6). Jeder Wert mit Datum und Quelle ('manual', 'apple-health', …).
+       steps:     { date, steps, source }
+       restingHr: { date, bpm, source }
+       sleep:     { date, hours, source }   date = der Tag, an dem die Nacht endet
+       cardio:    { id, date, type, minutes, km, kcal, source }
+       burn:      { date, kcal, source }    gemessener Tagesverbrauch, z. B. von einer Uhr */
+    activity: { steps: [], restingHr: [], sleep: [], cardio: [], burn: [] },
+    /* Check-in vor dem Training: { 'YYYY-MM-DD': { sleepH, feeling } }, Gefühl 1 (schlecht) bis 5 (sehr gut) */
+    checkins: {},
+    /* Motivation (Stufe 5)
+       goals:      [{ id, kind: 'weight' | 'lift' | 'weeks' | 'custom', title, target, ref, createdAt, doneAt }]
+       weekly:     { proteinDays, waterDays }  Trainingstage pro Woche kommen aus profile.daysPerWeek
+       badges:     { [id]: Zeitpunkt, an dem das Abzeichen verdient wurde }
+       reportSeen: 'JJJJ-WW' der zuletzt angesehenen Berichtswoche */
+    motivation: { goals: [], weekly: { proteinDays: 5, waterDays: 5 }, badges: {}, reportSeen: null },
   };
 }
 
@@ -74,6 +89,9 @@ export function normalize(s) {
     body: { ...d.body, ...(s.body || {}) },
     nutrition: { ...d.nutrition, ...(s.nutrition || {}) },
     exercisesCustom: Array.isArray(s.exercisesCustom) ? s.exercisesCustom : [],
+    activity: { ...d.activity, ...(s.activity || {}) },
+    checkins: { ...(s.checkins || {}) },
+    motivation: { ...d.motivation, ...(s.motivation || {}), weekly: { ...d.motivation.weekly, ...((s.motivation && s.motivation.weekly) || {}) } },
     water: { ...(s.water || {}) },
     suggestions: { ...(s.suggestions || {}) },
     activePlanId: s.plans.some(x => x.id === s.activePlanId) ? s.activePlanId : s.plans[0].id,

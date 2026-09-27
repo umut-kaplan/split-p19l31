@@ -1,0 +1,96 @@
+/* Stufe 5: Wochenbericht, Erholungsampel, Tagesvorschlag, Check-in.
+   Farben und Bausteine aus tokens.css, base.css, components.css. Die Ampel nutzt die Scheibenfarben rot, gelb, grün. */
+
+/* ---------- Ampel und Tagesvorschlag ---------- */
+.rec-card { --light: var(--green); }
+.rec-card.rec-yellow { --light: var(--yellow); }
+.rec-card.rec-red { --light: var(--red); }
+.rec-card { border-color: color-mix(in srgb, var(--light) 35%, transparent); }
+.rec-head { display: flex; align-items: center; gap: 14px; }
+.rec-head h2 { font-size: 19px; }
+.rec-light { flex: none; width: 48px; height: 48px; }
+.rec-light svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .35)); }
+.rec-level { margin-top: 2px; color: var(--light); font-weight: 700; font-size: 14px; }
+.rec-summary { margin-top: 12px; color: var(--chalk); }
+.rec-pick {
+  margin-top: 14px; padding: 14px; border-radius: 14px;
+  background: var(--floor); box-shadow: inset 3px 0 0 var(--c);
+}
+.rec-pick h3 { font-family: var(--round); font-size: 22px; font-weight: 800; }
+.rec-pick p { margin-top: 6px; color: var(--steel); font-size: 15px; }
+.rec-pick .rec-hint { color: var(--yellow); }
+.rec-pick .sug-btns { margin-top: 12px; }
+.rec-pick .rec-same { margin-top: 8px; }
+.rec-alt {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 10px; padding: 10px 2px 0;
+}
+.rec-alt div { display: grid; gap: 2px; min-width: 0; }
+.rec-alt b { font-size: 15px; }
+.rec-alt span { color: var(--steel); font-size: 14px; }
+.rec-alt .btn { flex: none; }
+.rec-more { margin-top: 6px; }
+.rec-reasons { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.rec-reasons li { display: grid; grid-template-columns: 12px 1fr; gap: 10px; align-items: baseline; color: var(--steel); font-size: 14px; }
+.rec-reasons li span:last-child { color: var(--chalk); }
+.rec-reasons li.rec-note span:last-child { color: var(--steel); }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); transform: translateY(1px); }
+.rec-dot.yellow { background: var(--yellow); }
+.rec-dot.red { background: var(--red); }
+.rec-dot.none { background: var(--deck2); }
+.rec-muscles { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.rec-muscles li { display: flex; justify-content: space-between; gap: 12px; color: var(--steel); }
+.rec-muscles li span:first-child { color: var(--chalk); }
+.rec-muscles li.tired span:last-child { color: var(--yellow); }
+
+/* ---------- Check-in ---------- */
+.rec-ci .muted { margin: 4px 0 14px; font-size: 14px; }
+.rec-ci-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rec-ci .stepper b { font-size: 22px; min-width: 4.2ch; }
+.rec-feel .chip { padding: 0 14px; }
+.rec-ci .sug-btns { margin-top: 16px; }
+.rec-ci-done { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding: 4px 4px 0; }
+.rec-ci-done p { font-size: 15px; }
+
+/* ---------- Karte Wochenbericht ---------- */
+.rep-card { border-color: rgba(242, 194, 48, .4); }
+.rep-card-head { display: flex; align-items: center; gap: 14px; }
+.rep-card-head h2 { font-size: 19px; }
+.rep-card-head .muted { font-size: 14px; margin-top: 2px; }
+.rep-card-plate { flex: none; width: 48px; height: 48px; }
+.rep-card-plate svg { display: block; width: 100%; height: 100%; }
+.rep-card-line { margin-top: 12px; }
+
+/* ---------- Ganzer Bericht ---------- */
+.rep-top { min-height: 44px; display: flex; align-items: center; }
+.rep-week {
+  display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 10px;
+  margin-top: 14px; padding: 8px; border-radius: 16px; background: var(--deck); border: 1px solid var(--line);
+}
+.rep-week div { display: grid; justify-items: center; text-align: center; }
+.rep-week b { font-family: var(--round); font-size: 19px; font-weight: 800; }
+.rep-week span { color: var(--steel); font-size: 13px; }
+.rep-week .icon svg { width: 22px; height: 22px; }
+.rep-lead { margin-top: 18px; font-size: 17px; color: var(--chalk); }
+.rep-stats { margin: 12px 0; }
+.rep-stats b { font-size: 24px; }
+.rep-good { color: var(--green); font-weight: 650; }
+.rep-sessions { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.rep-sessions li { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; font-size: 15px; }
+.rep-sessions small { color: var(--steel); }
+.rep-records { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.rep-records li { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.rep-records li:last-child { border-bottom: 0; }
+.rep-rec-name { font-size: 16px; }
+.rep-rec-items { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.rep-records small { color: var(--steel); }
+.rep-rec-items b { color: var(--yellow); }
+.rep-big { font-family: var(--round); font-size: 40px; font-weight: 800; line-height: 1.1; margin: 4px 0 4px; }
+.rep-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 8px; }
+.rep-row b { font-size: 22px; font-family: var(--round); }
+.rep-row small { color: var(--steel); }
+.rep-share .btn { margin-top: 2px; }
+
+@media (max-width: 360px) {
+  .rec-alt { flex-wrap: wrap; }
+}
