@@ -163,3 +163,9 @@
   .set-h, .set { grid-template-columns: 22px 1fr 1fr 44px 46px; gap: 6px; }
   .t-btns button { min-width: 44px; padding: 0 4px; }
 }
+
+/* ---------- Vorschläge ---------- */
+.suggestion { border-color: rgba(242, 194, 48, .35); }
+.suggestion h2 { font-size: 18px; }
+.suggestion p { margin-top: 4px; }
+.sug-btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }

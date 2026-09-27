@@ -1,4 +1,5 @@
-import { clone } from './util.js';
+import { clone, uid } from './util.js';
+import { exerciseIdFor, findExercise } from './domain/library.js';
 
 const E = (id, names, sets, repMin, repMax, rest, inc, unit = 'reps') =>
   ({ id, names: [].concat(names), sets, repMin, repMax, rest, inc, unit });
@@ -53,3 +54,34 @@ export const DEFAULT_PLAN = {
 };
 
 export const defaultPlan = () => clone(DEFAULT_PLAN);
+
+/* Neuer Tag mit eindeutiger id */
+export const newDay = (name, color = 'red', muscles = '') => ({ id: 'd' + uid(), name, muscles, color, exercises: [] });
+
+export function emptyPlan(name = 'Neuer Plan') {
+  const d = newDay('Tag 1', 'red');
+  return { id: 'p' + uid(), name, order: [d.id], days: { [d.id]: d } };
+}
+
+/* Plan aus einer Vorlage. Übungs-ids richten sich nach vorhandenen Plänen und der Bibliothek,
+   damit Verlauf und Progression derselben Übung planübergreifend zusammenpassen. */
+export function planFromTemplate(tpl, existingPlans = [], custom = []) {
+  const known = [DEFAULT_PLAN, ...existingPlans];
+  if (tpl.fromDefault) {
+    const p = clone(DEFAULT_PLAN);
+    const days = {};
+    const order = p.order.map(old => { const d = { ...p.days[old], id: 'd' + uid() }; days[d.id] = d; return d.id; });
+    return { id: 'p' + uid(), name: tpl.name, order, days };
+  }
+  const days = {};
+  const order = tpl.days.map(td => {
+    const d = newDay(td.name, td.color, td.muscles);
+    d.exercises = td.exercises.map(([name, sets, repMin, repMax, rest, inc, unit]) => {
+      const lib = findExercise(name, custom);
+      return E(exerciseIdFor(name, known, custom), lib ? lib.name : name, sets, repMin, repMax, rest, inc, unit || (lib && lib.unit) || 'reps');
+    });
+    days[d.id] = d;
+    return d.id;
+  });
+  return { id: 'p' + uid(), name: tpl.name, order, days };
+}

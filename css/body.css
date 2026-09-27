@@ -1,0 +1,91 @@
+/* Stufe 3: Körper. Farben und Bausteine aus tokens.css, base.css, components.css. */
+
+.dim { color: var(--dim); }
+
+/* ---------- Gewicht ---------- */
+.day-white .weigh { grid-template-columns: 1fr 1fr; align-items: end; }
+.w-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.w-now { font-family: var(--round); font-size: 40px; font-weight: 800; line-height: 1; }
+.w-now small { font-size: 16px; color: var(--steel); margin-left: 4px; font-weight: 700; }
+.w-trend { color: var(--steel); font-size: 14px; text-align: right; }
+.w-trend b { color: var(--chalk); font-size: 17px; }
+.w-chart svg { display: block; width: 100%; height: auto; margin-top: 4px; }
+.w-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
+.sw { display: inline-block; vertical-align: middle; margin-right: 4px; }
+.sw-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--c); }
+.sw-line { width: 18px; height: 3px; border-radius: 2px; background: var(--c); }
+.sw-first { width: 14px; height: 10px; border-radius: 3px; border: 2px solid var(--yellow); }
+.sw-now { width: 14px; height: 10px; border-radius: 3px; background: var(--white); }
+
+.w-goal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 10px; }
+.w-goal div { display: grid; gap: 2px; padding: 10px; border-radius: 12px; background: var(--floor); }
+.w-goal span { color: var(--steel); font-size: 13px; }
+.w-goal b { font-size: 22px; font-weight: 800; }
+.w-fc { margin-top: 12px; }
+.w-fc b { color: var(--chalk); }
+
+/* ---------- Listen ---------- */
+.b-list { list-style: none; margin: 0; padding: 0; }
+.b-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 48px; border-bottom: 1px solid var(--line); }
+.b-list li:last-child { border-bottom: 0; }
+.b-list li > span { display: flex; align-items: center; gap: 8px; }
+.b-list small { color: var(--steel); }
+.b-del { background: transparent; font-size: 22px; line-height: 1; color: var(--dim); }
+
+/* ---------- Körperfett ---------- */
+.bf-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 6px 0 6px; }
+.bf-val { font-family: var(--round); font-size: 44px; font-weight: 800; line-height: 1; }
+.bf-val small { font-size: 16px; color: var(--steel); margin-left: 6px; font-weight: 700; }
+.bf-tag { padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--steel); border: 1px solid var(--line); white-space: nowrap; }
+.bf-tag.measured { background: var(--c); color: var(--on-c); border-color: var(--c); }
+.bf-split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 8px; }
+.bf-split div { padding: 12px; border-radius: 14px; background: var(--floor); }
+.bf-split b { display: block; font-size: 22px; font-weight: 800; }
+.bf-split span { color: var(--steel); font-size: 13px; }
+
+/* ---------- Umfänge ---------- */
+.m-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; }
+.m-table th, .m-table td { text-align: left; padding: 9px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.m-table thead th { color: var(--dim); font-size: 13px; font-weight: 600; }
+.m-table tbody th { font-weight: 650; }
+.m-table td { font-weight: 700; white-space: nowrap; }
+.m-table td small { display: block; color: var(--dim); font-size: 12px; font-weight: 500; font-family: var(--sans); }
+.m-table tr:last-child th, .m-table tr:last-child td { border-bottom: 0; }
+.m-hint { color: var(--dim); font-size: 12.5px; font-weight: 500; }
+
+/* ---------- Silhouette ---------- */
+.sil { display: flex; justify-content: center; margin: 16px 0 6px; }
+.sil svg { width: min(58vw, 230px); height: auto; filter: drop-shadow(0 16px 22px rgba(0, 0, 0, .45)); }
+.sil-small svg { width: min(36vw, 140px); opacity: .5; }
+.sil-legend { text-align: center; line-height: 1.6; }
+.sil-changes { margin-top: 10px; }
+
+/* ---------- Fotos ---------- */
+.ph-poses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ph-pose { display: grid; gap: 8px; align-content: start; }
+.ph-pose .label { margin: 0; }
+.ph-thumb {
+  display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; border: 0; border-radius: 14px; overflow: hidden;
+  background: var(--floor);
+}
+.ph-thumb img, .ph-empty { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ph-empty {
+  display: grid; place-items: center; min-height: 120px; border-radius: 14px; background: var(--floor);
+  border: 1px dashed rgba(238, 235, 228, .16); color: var(--dim); font-size: 13px;
+}
+.ph-pick { display: grid; gap: 6px; }
+.ph-pick .btn { width: 100%; padding: 0 6px; font-size: 14px; position: relative; overflow: hidden; }
+.ph-week + .ph-week { margin-top: 16px; }
+.ph-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ph-thumb.small { border-radius: 10px; }
+.ph-side { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.ph-side img, .ph-side .ph-empty { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; }
+.ph-side-l { display: flex; justify-content: space-between; color: var(--steel); font-size: 13px; margin-top: 6px; }
+.ph-slider { position: relative; margin-top: 12px; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; background: var(--floor); }
+.ph-slider img, .ph-slider .ph-empty { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+.ph-over { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+.ph-handle { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; margin-left: -1.5px; background: var(--white); box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); pointer-events: none; }
+.ph-range { width: 100%; height: 44px; margin-top: 4px; accent-color: var(--white); }
+.ph-big img, .ph-big .ph-empty { width: 100%; height: auto; border-radius: 14px; }
+
+.b-remind { border-color: rgba(233, 230, 223, .3); }

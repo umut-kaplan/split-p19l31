@@ -1,7 +1,9 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
-   im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen. */
-const CACHE = 'split-v2.1';
-const ASSETS = [
+   im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
+   Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
+const CACHE = 'split-v3.0';
+
+const CORE = [
   './',
   'index.html',
   'manifest.webmanifest',
@@ -17,24 +19,35 @@ const ASSETS = [
   'js/timer.js',
   'js/store/migrate.js',
   'js/store/backup.js',
+  'js/store/db.js',
   'js/domain/progression.js',
   'js/domain/body.js',
   'js/domain/energy.js',
   'js/domain/streaks.js',
   'js/domain/profile-options.js',
+  'js/domain/muscles.js',
+  'js/domain/nutrition.js',
+  'js/domain/library.js',
+  'js/coach/index.js',
+  'js/coach/training.js',
+  'js/coach/nutrition.js',
   'js/ui/toast.js',
   'js/ui/sheet.js',
   'js/ui/plate.js',
   'js/ui/icons.js',
   'js/ui/chart.js',
   'js/ui/cards.js',
+  'js/ui/image.js',
+  'js/ui/suggestion.js',
   'js/views/today.js',
   'js/views/training.js',
   'js/views/workout.js',
   'js/views/history.js',
   'js/views/planedit.js',
+  'js/views/library.js',
   'js/views/body.js',
   'js/views/nutrition.js',
+  'js/views/nutrition-log.js',
   'js/views/profile.js',
   'js/views/profile-fields.js',
   'js/views/onboarding.js',
@@ -43,6 +56,92 @@ const ASSETS = [
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
 ];
+
+/* Stufe 2: Übungsdaten und Bilder */
+const TRAINING_DATA = [
+  'js/data/exercises.js',
+  'data/img/exercises/abduktoren.jpg',
+  'data/img/exercises/adduktoren.jpg',
+  'data/img/exercises/ausfallschritte.jpg',
+  'data/img/exercises/bankdruecken.jpg',
+  'data/img/exercises/barren-dips.jpg',
+  'data/img/exercises/beinbeuger-sitzend.jpg',
+  'data/img/exercises/beinbeuger.jpg',
+  'data/img/exercises/beinpresse.jpg',
+  'data/img/exercises/beinstrecker.jpg',
+  'data/img/exercises/brustgestuetztes-rudern.jpg',
+  'data/img/exercises/brustpresse.jpg',
+  'data/img/exercises/bulgarian-split-squat.jpg',
+  'data/img/exercises/butterfly.jpg',
+  'data/img/exercises/enger-latzug.jpg',
+  'data/img/exercises/goblet-squat.jpg',
+  'data/img/exercises/hackenschmidt.jpg',
+  'data/img/exercises/hammercurls.jpg',
+  'data/img/exercises/hip-thrust.jpg',
+  'data/img/exercises/kabel-flys-unten.jpg',
+  'data/img/exercises/kabel-flys.jpg',
+  'data/img/exercises/kh-bankdruecken.jpg',
+  'data/img/exercises/kh-curls.jpg',
+  'data/img/exercises/kh-rudern.jpg',
+  'data/img/exercises/kh-schraegbankdruecken.jpg',
+  'data/img/exercises/kh-schulterdruecken.jpg',
+  'data/img/exercises/klimmzuege.jpg',
+  'data/img/exercises/kniebeugen.jpg',
+  'data/img/exercises/kreuzheben.jpg',
+  'data/img/exercises/langhantel-curls.jpg',
+  'data/img/exercises/langhantelrudern.jpg',
+  'data/img/exercises/latzug.jpg',
+  'data/img/exercises/liegestuetze.jpg',
+  'data/img/exercises/plank.jpg',
+  'data/img/exercises/reverse-flys.jpg',
+  'data/img/exercises/rudern-sitzend.jpg',
+  'data/img/exercises/rumaenisches-kreuzheben.jpg',
+  'data/img/exercises/schraegbankdruecken.jpg',
+  'data/img/exercises/schulterdruecken.jpg',
+  'data/img/exercises/schulterpresse-maschine.jpg',
+  'data/img/exercises/seitheben.jpg',
+  'data/img/exercises/sz-curls.jpg',
+  'data/img/exercises/trizepsdruecken-kabel.jpg',
+  'data/img/exercises/wadendruecken-beinpresse.jpg',
+  'data/img/exercises/wadenheben.jpg',
+];
+
+/* Stufe 2: Trainingsfunktionen */
+const TRAINING = [
+  'css/training.css',
+  'js/data/plan-templates.js',
+  'js/domain/prs.js',
+  'js/domain/volume.js',
+];
+
+/* Stufe 3: Körper */
+const BODY = [
+  'css/body.css',
+  'js/views/body-measures.js',
+  'js/views/body-photos.js',
+  'js/ui/silhouette.js',
+  'js/ui/chart-weight.js',
+];
+
+/* Stufe 4: Lebensmittel, Suche, Barcode */
+const NUTRITION_LOG = [
+  'js/domain/foods.js',
+  'js/data/foods-basic.js',
+  'js/store/off.js',
+  'js/views/food-state.js',
+  'js/views/food-search.js',
+  'js/views/food-scan.js',
+  'js/views/food-forms.js',
+  'js/vendor/zxing.min.js',
+  'js/vendor/zxing.LICENSE.txt',
+];
+
+/* Stufe 4: Ziele und Übersicht */
+const NUTRITION = [
+  'css/nutrition.css',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION];
 
 self.addEventListener('install', ev => {
   ev.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -59,7 +158,7 @@ self.addEventListener('activate', ev => {
 self.addEventListener('fetch', ev => {
   const req = ev.request;
   const url = new URL(req.url);
-  /* Fremde Adressen (später Open Food Facts) gehen am Cache vorbei */
+  /* Fremde Adressen (Open Food Facts) gehen am Cache vorbei */
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   ev.respondWith(
     caches.open(CACHE).then(async cache => {

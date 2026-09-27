@@ -1,12 +1,14 @@
 import { S, V, save, activePlan, CAN_STORE } from '../state.js';
-import { esc, dLong, dShort, fmt0 } from '../util.js';
+import { esc, dLong, dShort } from '../util.js';
 import { render } from '../render.js';
 import { nextDay } from '../domain/progression.js';
 import { weekStreak, weekHistory } from '../domain/streaks.js';
-import { calorieGoal, GOALS } from '../domain/energy.js';
 import { plateSVG } from '../ui/plate.js';
-import { bmiCard, waterBlock, profileNow } from '../ui/cards.js';
+import { bmiCard } from '../ui/cards.js';
+import { suggestionCards } from '../ui/suggestion.js';
 import { dayFacts } from './training.js';
+import { todayGoalsCard } from './nutrition.js';
+import { todayBodyCard } from './body.js';
 
 export function greeting(h) {
   if (h >= 5 && h < 11) return 'Guten Morgen';
@@ -36,8 +38,10 @@ export function view() {
       <button class="btn small" data-act="disclaimer">Verstanden</button>
     </section>`}
     ${S.active ? activeHero() : hero(id, d, plan, rolled)}
+    ${suggestionsBlock()}
     ${streakBlock(d.color)}
-    ${goalsBlock()}
+    ${todayGoalsCard()}
+    ${todayBodyCard()}
     <section class="block">${bmiCard()}</section>
   </div>`;
 }
@@ -46,15 +50,18 @@ function hero(id, d, plan, rolled) {
   const { sets, min } = dayFacts(d);
   const lastOfDay = [...S.sessions].reverse().find(s => s.dayId === id);
   const others = plan.order.filter(o => o !== id);
+  /* Ein Tag ohne Übungen führt in den Plan-Editor statt in eine leere Einheit */
+  const empty = !d.exercises.length;
+  const go = empty ? `data-act="tab" data-tab="training" data-sub="plan" data-day="${id}"` : `data-act="start" data-day="${id}"`;
   return `<div class="hero">
-    <button class="plate-btn ${rolled ? 'roll' : ''}" data-act="start" data-day="${id}" aria-label="${esc(d.name)} starten">
+    <button class="plate-btn ${rolled ? 'roll' : ''}" ${go} aria-label="${esc(d.name)} ${empty ? 'bearbeiten' : 'starten'}">
       ${plateSVG(d.color, d.name, d.muscles)}
     </button>
     <h2 class="hero-title">${esc(d.name)}</h2>
     <p class="hero-sub">${esc(d.muscles)}</p>
-    <p class="hero-facts"><b>${d.exercises.length}</b> Übungen mit <b>${sets}</b> Arbeitssätzen, etwa <b>${min}</b> Minuten.
-      ${lastOfDay ? `Zuletzt am ${esc(dShort(lastOfDay.startedAt))}` : ''}</p>
-    <button class="btn primary" data-act="start" data-day="${id}">${esc(d.name)} starten</button>
+    <p class="hero-facts">${empty ? 'Für diesen Tag stehen noch keine Übungen im Plan.' : `<b>${d.exercises.length}</b> Übungen mit <b>${sets}</b> Arbeitssätzen, etwa <b>${min}</b> Minuten.
+      ${lastOfDay ? `Zuletzt am ${esc(dShort(lastOfDay.startedAt))}` : ''}`}</p>
+    <button class="btn primary" ${go}>${empty ? 'Übungen eintragen' : `${esc(d.name)} starten`}</button>
     <p class="others-label">Heute lieber etwas anderes?</p>
     <div class="others">${others.map(o => { const od = plan.days[o]; return `
       <button class="other" data-act="pick" data-day="${o}">${plateSVG(od.color, '', '', { small: true })}${esc(od.name)}</button>`; }).join('')}</div>
@@ -90,15 +97,10 @@ function streakBlock(color) {
   </section>`;
 }
 
-function goalsBlock() {
-  const cg = calorieGoal(profileNow());
-  const kcal = cg.ok
-    ? `<div class="goal-row"><div class="goal-top"><span>Kalorienziel</span><span><b class="num">${fmt0(cg.kcal)}</b> <small>kcal</small></span></div>
-        <p class="small-print">Für „${esc((GOALS[S.profile.goal] || GOALS.recomp).label)}“. Die Rechnung steht unter Ernährung.</p></div>`
-    : `<div class="goal-row"><div class="goal-top"><span>Kalorienziel</span></div>
-        <p class="muted" style="margin-bottom:10px">Dafür fehlt noch: ${esc(cg.missing.join(', '))}.</p>
-        <button class="btn small" data-act="tab" data-tab="profile">Profil ergänzen</button></div>`;
-  return `<section class="block card"><h2>Tagesziele</h2>${kcal}${waterBlock()}</section>`;
+/* Höchstens zwei offene Vorschläge aus allen Bereichen */
+function suggestionsBlock() {
+  const cards = suggestionCards(null, 2);
+  return cards ? `<section class="block"><h2>Vorschläge</h2><div class="stack" style="margin-top:0">${cards}</div></section>` : '';
 }
 
 export const actions = {

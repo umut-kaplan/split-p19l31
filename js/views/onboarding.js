@@ -21,7 +21,7 @@ const STEPS = [
   { title: () => 'Was ist dein Ziel?', text: 'Davon hängt dein Kalorienziel ab.', body: fGoal },
   {
     title: () => 'Wie aktiv bist du?',
-    text: 'Zähle Arbeit und Training zusammen.',
+    text: 'Wähle, wie viel du dich im Alltag bewegst.',
     body: p => `${fActivity(p)}<div style="margin-top:22px">${fDays(p)}</div>`,
   },
   { title: () => 'Welche Geräte hast du?', text: 'Tippe alles an, was du im Studio nutzen kannst.', body: fEquipment },

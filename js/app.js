@@ -3,6 +3,7 @@ import { setRender } from './render.js';
 import { ICON } from './ui/icons.js';
 import * as sheet from './ui/sheet.js';
 import * as cards from './ui/cards.js';
+import * as suggestion from './ui/suggestion.js';
 import * as timer from './timer.js';
 import { initImport } from './store/backup.js';
 import * as today from './views/today.js';
@@ -24,12 +25,17 @@ const TABS = [
   ['profile', 'Profil', ICON.profile, profile],
 ];
 
-const modules = [sheet, cards, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding];
-const ACT = Object.assign({}, ...modules.map(m => m.actions || {}));
-const INPUT = Object.assign({}, ...modules.map(m => m.inputs || {}));
+const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding];
+/* Ein Modul kann Untermodule in `export const modules = [...]` nennen. Deren actions und inputs zählen mit. */
+const flatten = list => list.flatMap(m => [m, ...flatten(m.modules || [])]);
+const all = [...new Set(flatten(modules))];
+const ACT = Object.assign({}, ...all.map(m => m.actions || {}));
+const INPUT = Object.assign({}, ...all.map(m => m.inputs || {}));
 
 ACT.tab = el => {
   V.tab = el.dataset.tab;
+  if (el.dataset.sub && V.tab === 'training') V.trainSub = el.dataset.sub;
+  if (el.dataset.day && V.tab === 'training') V.planDay = el.dataset.day;
   if (V.tab === 'today') V.roll = true;
   render();
   window.scrollTo(0, 0);

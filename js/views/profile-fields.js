@@ -33,7 +33,8 @@ export const fGoal = p => `<div class="choices">${Object.entries(GOALS).map(([k,
   `<button class="choice ${p.goal === k ? 'on' : ''}" aria-pressed="${p.goal === k}" data-act="pset" data-k="goal" data-v="${k}"><b>${esc(g.label)}</b><span>${esc(g.hint)}</span></button>`).join('')}</div>`;
 
 export const fActivity = p => `<div class="choices">${Object.entries(ACTIVITY).map(([k, a]) =>
-  `<button class="choice ${p.activity === k ? 'on' : ''}" aria-pressed="${p.activity === k}" data-act="pset" data-k="activity" data-v="${k}"><b>${esc(a.label)}</b><span>${esc(a.hint)}</span></button>`).join('')}</div>`;
+  `<button class="choice ${p.activity === k ? 'on' : ''}" aria-pressed="${p.activity === k}" data-act="pset" data-k="activity" data-v="${k}"><b>${esc(a.label)}</b><span>${esc(a.hint)}</span></button>`).join('')}</div>
+  <p class="small-print" style="margin-top:8px">Nur dein Alltag ohne Sport. Das Training rechnet die App aus deinen eingetragenen Einheiten dazu.</p>`;
 
 export const fDays = p => `<div><p class="label">Trainingstage pro Woche</p>
   <div class="stepper">

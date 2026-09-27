@@ -2,7 +2,7 @@ import { S, V, replaceState, LEGACY_KEY } from '../state.js';
 import { esc, dShort } from '../util.js';
 import { render } from '../render.js';
 import { defaultState } from '../store/migrate.js';
-import { exportData, importData } from '../store/backup.js';
+import { exportData, importData, clearImages } from '../store/backup.js';
 import { release } from '../timer.js';
 import { toast } from '../ui/toast.js';
 import { confirmSheet } from '../ui/sheet.js';
@@ -33,8 +33,9 @@ export function view() {
 
     <section class="p-section card"><h2>Backup</h2>
       <p class="muted" style="margin:6px 0 14px">${n} Trainings gespeichert.
-        ${S.settings.lastBackup ? `Letztes Backup am ${esc(dShort(S.settings.lastBackup))}.` : 'Noch kein Backup.'}
-        Alles liegt nur auf diesem Handy. Speichere das Backup in iCloud Drive, dann überlebt es auch einen Handywechsel.</p>
+        ${S.settings.lastBackup ? `Letztes Backup am ${esc(dShort(S.settings.lastBackup))}` : 'Noch kein Backup.'}
+        Alles liegt nur auf diesem Handy. Speichere das Backup in iCloud Drive, dann überlebt es auch einen Handywechsel.
+        ${S.body.photos.length ? `Fortschrittsfotos sind nur im Backup mit Fotos enthalten (${S.body.photos.length} Fotos).` : ''}</p>
       <div class="stack" style="margin-top:0">
         <button class="btn primary" data-act="export">Backup speichern</button>
         <button class="btn" data-act="import">Backup laden</button>
@@ -60,8 +61,9 @@ export const actions = {
   export: exportData,
   import: importData,
   rerunob: () => { S.settings.onboardingDone = false; V.ob = 1; render(); window.scrollTo(0, 0); },
-  wipe: () => confirmSheet('Alle Daten löschen?', 'Profil, Plan, Verlauf und ein laufendes Training werden gelöscht. Das lässt sich nur mit einem Backup rückgängig machen.', 'Alle Daten löschen', () => {
+  wipe: () => confirmSheet('Alle Daten löschen?', 'Profil, Plan, Verlauf, Körperdaten, Fotos und ein laufendes Training werden gelöscht. Das lässt sich nur mit einem Backup rückgängig machen.', 'Alle Daten löschen', async () => {
     release();
+    await clearImages();
     try { localStorage.removeItem(LEGACY_KEY); } catch (e) { /* egal */ }
     replaceState(defaultState());
     V.sheet = null; V.tab = 'today'; V.ob = 0; V.roll = true; V.planDay = null; V.histKey = null;

@@ -1,0 +1,127 @@
+/* Ernährungsregeln (Stufe 4): Kalorienziel einmal pro Woche mit dem Gewichtstrend vergleichen.
+   Format siehe coach/index.js. Nichts passiert automatisch, jede Änderung ist ein Vorschlag. */
+import { fmt, fmt0, fmt1, ymd } from '../util.js';
+import { weightTrend, dayNumber } from '../domain/body.js';
+import { GOALS } from '../domain/energy.js';
+
+/* Zielrate in Prozent des Körpergewichts pro Woche */
+const PER_MONTH = 30.44 / 7;
+export const TARGET_RATE = {
+  lose: { min: -1.0, max: -0.5, text: 'sind 0,5–1 % Abnahme pro Woche sinnvoll' },
+  gain: { min: 0.25 / PER_MONTH, max: 0.5 / PER_MONTH, text: 'sind 0,25–0,5 % Zunahme pro Monat sinnvoll' },
+  recomp: { min: -0.25, max: 0.25, text: 'soll das Gewicht ungefähr gleich bleiben' },
+};
+/* Unter dieser Veränderung pro Woche gilt das Gewicht als stehend.
+   Beim Aufbau liegt schon die Zielrate unter 0,1 %, dort gilt die halbe Untergrenze. */
+export const STALL = { lose: 0.1, gain: TARGET_RATE.gain.min / 2 };
+
+/* ISO-Kalenderwoche als 'JJJJ-WW', damit jeder Vorschlag nur einmal pro Woche kommt */
+export function isoWeek(t) {
+  const d = new Date(t);
+  const day = (d.getDay() + 6) % 7;
+  const thursday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day + 3);
+  const firstThursday = new Date(thursday.getFullYear(), 0, 4);
+  const week = 1 + Math.round(((thursday - firstThursday) / 864e5 - 3 + ((firstThursday.getDay() + 6) % 7)) / 7);
+  return `${thursday.getFullYear()}-${String(week).padStart(2, '0')}`;
+}
+
+/* Veränderung von Taille oder Bauch in den letzten 3–5 Wochen, in cm (negativ = kleiner) */
+export function waistChange(measurements, today) {
+  const t = dayNumber(today);
+  const recent = (measurements || []).filter(m => { const n = dayNumber(m.date); return n <= t && n > t - 35; })
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  for (const key of ['belly', 'waist']) {
+    const pts = recent.filter(m => m[key] > 0);
+    if (pts.length < 2) continue;
+    const first = pts[0], last = pts[pts.length - 1];
+    const span = dayNumber(last.date) - dayNumber(first.date);
+    if (span >= 18) return { key, label: key === 'belly' ? 'Bauch' : 'Taille', delta: last[key] - first[key], spanDays: span };
+  }
+  return null;
+}
+
+/* 100, 150 oder 200 kcal je nach Abstand zur Zielrate (7700 kcal pro kg) */
+export function stepFor(gapPctPerWeek, kg) {
+  const kcalPerDay = Math.abs(gapPctPerWeek) / 100 * kg * 7700 / 7;
+  return Math.max(100, Math.min(200, Math.round(kcalPerDay / 50) * 50));
+}
+
+const pct = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(Math.round(v * 100) / 100))} %`;
+const kgw = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(Math.round(v * 100) / 100))} kg`;
+
+/* Wie weicht das Tempo ab, in Alltagssprache */
+function paceText(goalKey, rate, target) {
+  const dir = rate < 0 ? 'ab' : 'zu';
+  if (goalKey === 'lose') return rate > 0 ? 'du nimmst aber zu' : rate > target.max ? 'du nimmst langsamer ab' : 'du nimmst schneller ab';
+  if (goalKey === 'gain') return rate < 0 ? 'du nimmst aber ab' : rate > target.max ? 'du nimmst schneller zu' : 'du nimmst langsamer zu';
+  return `du nimmst ${dir}`;
+}
+
+function changeKcal(delta) {
+  return S => {
+    const n = S.nutrition;
+    if (n.overrides && n.overrides.kcal > 0) n.overrides = { ...n.overrides, kcal: n.overrides.kcal + delta };
+    else n.kcalAdjust = (n.kcalAdjust || 0) + delta;
+  };
+}
+
+export function suggestions(S, now = Date.now()) {
+  const goalKey = GOALS[S.profile.goal] ? S.profile.goal : 'recomp';
+  const goal = GOALS[goalKey];
+  const today = ymd(now);
+  const week = isoWeek(now);
+  const tr = weightTrend(S.body.weights, today);
+  if (!tr.ok) return [];
+  const kg = tr.current;
+  const rate = tr.perWeek / kg * 100;
+  const target = TARGET_RATE[goalKey];
+  const trendText = `Dein Gewicht ändert sich im Trend der letzten ${tr.spanDays} Tage um ${kgw(tr.perWeek)} pro Woche (${pct(rate)})`;
+
+  /* Welche Richtung wäre nötig? */
+  let delta = 0;
+  if (rate > target.max) delta = -stepFor(rate - target.max, kg);
+  else if (rate < target.min) delta = stepFor(target.min - rate, kg);
+
+  /* Stagnation: drei Wochen fast keine Veränderung, obwohl das Ziel eine verlangt */
+  let stalled = null;
+  if (goalKey === 'lose' || goalKey === 'gain') {
+    const tr3 = weightTrend(S.body.weights, today, 21);
+    if (tr3.ok && tr3.spanDays >= 18 && Math.abs(tr3.perWeek / tr3.current * 100) < STALL[goalKey]) stalled = tr3;
+  }
+
+  /* Rekomposition: Taille oder Bauch sinken bei etwa gleichem Gewicht, dann keine Kürzung */
+  const waist = waistChange(S.body.measurements, today);
+  const steady = Math.abs(rate) < 0.25;
+  if (delta < 0 || (stalled && goalKey === 'lose')) {
+    if (waist && waist.delta <= -1 && steady) {
+      return [{
+        id: `nut-recomp:${week}`, area: 'nutrition',
+        title: 'Sieht nach Rekomposition aus',
+        reason: `Dein Gewicht bleibt bei ${pct(rate)} pro Woche fast gleich, aber dein ${waist.label} ist in ${waist.spanDays} Tagen um ${fmt1(Math.abs(waist.delta))} cm geschrumpft, darum schlägt die App keine Kürzung vor.`,
+        acceptLabel: 'Verstanden',
+      }];
+    }
+  }
+
+  if (stalled) {
+    const r3 = stalled.perWeek / stalled.current * 100;
+    const step = goalKey === 'lose' ? -stepFor(target.max - r3, kg) : stepFor(target.min - r3, kg);
+    return [{
+      id: `nut-stall:${week}`, area: 'nutrition',
+      title: 'Dein Gewicht steht seit drei Wochen',
+      reason: `In den letzten ${stalled.spanDays} Tagen hat sich dein Gewicht nur um ${pct(r3)} pro Woche verändert, obwohl für „${goal.label}“ ${target.text.replace(/^sind /, '')} wären.`,
+      acceptLabel: `Ziel um ${fmt0(Math.abs(step))} kcal ${step < 0 ? 'senken' : 'erhöhen'}`,
+      apply: changeKcal(step),
+    }];
+  }
+
+  if (!delta) return [];
+  const up = delta > 0;
+  return [{
+    id: `nut-kcal:${week}`, area: 'nutrition',
+    title: `Kalorienziel um ${fmt0(Math.abs(delta))} kcal ${up ? 'erhöhen' : 'senken'}`,
+    reason: `${trendText}, für „${goal.label}“ ${target.text}, ${paceText(goalKey, rate, target)}.`,
+    acceptLabel: `Um ${fmt0(Math.abs(delta))} kcal ${up ? 'erhöhen' : 'senken'}`,
+    apply: changeKcal(delta),
+  }];
+}

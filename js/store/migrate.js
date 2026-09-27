@@ -24,14 +24,25 @@ export function defaultState() {
   return {
     schema: SCHEMA,
     profile: defaultProfile(),
-    settings: { onboardingDone: false, disclaimerSeen: false, lastBackup: null },
+    settings: { onboardingDone: false, disclaimerSeen: false, lastBackup: null, lastPhotoPrompt: null },
     plans: [defaultPlan()],
     activePlanId: 'split',
     sessions: [],
     active: null,
-    /* Messwerte immer mit Datum, Quelle und Methode, damit spätere Auswertungen sie einordnen können */
-    body: { weights: [] },
+    /* Eigene Übungen: { id, name, muscles: { primary, secondary }, equipment, steps, mistakes, image, media, custom: true } */
+    exercisesCustom: [],
+    /* Messwerte immer mit Datum, Quelle und Methode, damit spätere Auswertungen sie einordnen können.
+       weights:      { date, kg, source, method }
+       measurements: { date, neck, shoulders, chest, waist, belly, hip, upperArmL, upperArmR, forearm, thigh, calf, source }  (cm, jede Teilmenge)
+       composition:  { date, bfPct, method: 'scale' | 'caliper' | 'dexa' | 'other', source, measured: true }
+       photos:       { id, date, pose: 'front' | 'side' | 'back' }  (Bilddaten in IndexedDB, Store 'photos') */
+    body: { weights: [], measurements: [], composition: [], photos: [] },
+    /* log: { 'YYYY-MM-DD': [{ id, meal, name, grams, per100: { kcal, protein, fat, carbs }, source, ref }] }
+       overrides: null oder { kcal, protein, fat, carbs } von Hand gesetzt
+       kcalAdjust: Summe der angenommenen Anpassungen aus dem Wochenvergleich */
+    nutrition: { log: {}, customFoods: [], savedMeals: [], recipes: [], recent: [], overrides: null, kcalAdjust: 0 },
     water: {},
+    /* Entscheidungen zu Empfehlungen: { [id]: { status: 'accepted' | 'declined', date } } */
     suggestions: {},
   };
 }
@@ -61,6 +72,8 @@ export function normalize(s) {
     profile: { ...d.profile, ...p, limitations: { ...d.profile.limitations, ...(p.limitations || {}) } },
     settings: { ...d.settings, ...(s.settings || {}) },
     body: { ...d.body, ...(s.body || {}) },
+    nutrition: { ...d.nutrition, ...(s.nutrition || {}) },
+    exercisesCustom: Array.isArray(s.exercisesCustom) ? s.exercisesCustom : [],
     water: { ...(s.water || {}) },
     suggestions: { ...(s.suggestions || {}) },
     activePlanId: s.plans.some(x => x.id === s.activePlanId) ? s.activePlanId : s.plans[0].id,
