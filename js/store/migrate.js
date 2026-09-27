@@ -24,7 +24,13 @@ export function defaultState() {
   return {
     schema: SCHEMA,
     profile: defaultProfile(),
-    settings: { onboardingDone: false, disclaimerSeen: false, lastBackup: null, lastPhotoPrompt: null },
+    /* plates: Stangengewichte und vorhandene Scheiben für Scheibenrechner und Aufwärmen */
+    settings: {
+      onboardingDone: false, disclaimerSeen: false, lastBackup: null, lastPhotoPrompt: null,
+      plates: { barKg: 20, szKg: 10, available: [25, 20, 15, 10, 5, 2.5, 1.25] },
+    },
+    /* Dauerhafte Notizen pro Übung: { 'exId|Name': 'Sitz Stufe 4' }. Trainings tragen optional rating: { rpe, note }. */
+    exerciseNotes: {},
     plans: [defaultPlan()],
     activePlanId: 'split',
     sessions: [],
@@ -91,6 +97,7 @@ export function normalize(s) {
     exercisesCustom: Array.isArray(s.exercisesCustom) ? s.exercisesCustom : [],
     activity: { ...d.activity, ...(s.activity || {}) },
     checkins: { ...(s.checkins || {}) },
+    exerciseNotes: { ...(s.exerciseNotes || {}) },
     motivation: { ...d.motivation, ...(s.motivation || {}), weekly: { ...d.motivation.weekly, ...((s.motivation && s.motivation.weekly) || {}) } },
     water: { ...(s.water || {}) },
     suggestions: { ...(s.suggestions || {}) },

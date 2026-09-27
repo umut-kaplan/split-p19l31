@@ -12,6 +12,7 @@ import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import { toast } from '../ui/toast.js';
 import { resizeImage } from '../ui/image.js';
 import { dbGet, dbPut, dbDel } from '../store/db.js';
+import { libNoteBlock } from './exercise-notes.js';
 
 const custom = () => S.exercisesCustom || (S.exercisesCustom = []);
 const tags = () => (S.profile.limitations && S.profile.limitations.tags) || [];
@@ -136,6 +137,7 @@ export function showExercise(id) {
       <div><dt>Geräte</dt><dd>${esc((e.equipment || []).join(', ') || 'Keine')}</dd></div>
       <div><dt>Art</dt><dd>${e.type === 'compound' ? 'Grundübung' : 'Isolationsübung'}${e.unit === 'sec' ? ', auf Zeit' : ''}</dd></div>
     </dl>
+    ${libNoteBlock(e)}
     ${e.steps && e.steps.length ? `<h3>So geht’s</h3><ol class="lib-steps">${e.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
     ${e.mistakes && e.mistakes.length ? `<h3>Typische Fehler</h3><ul class="lib-mistakes">${e.mistakes.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
     ${!hits.length && alts.length ? `<h3>Ähnliche Übungen</h3>${altChips(alts)}` : ''}

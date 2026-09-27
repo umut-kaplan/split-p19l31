@@ -1,0 +1,44 @@
+/* Notizen pro Übung und Bewertung nach der Einheit */
+
+/* ---------- Notiz auf der Übungskarte ---------- */
+.lib-info + .ex-note-add { margin-left: 18px; }
+.ex-note-add { font-size: 14px; }
+.ex-note {
+  display: flex; align-items: baseline; gap: 10px; width: 100%; min-height: 44px; margin-top: 6px;
+  padding: 9px 12px; border: 0; border-radius: 12px; background: var(--floor);
+  color: var(--chalk); font-size: 15px; text-align: left;
+}
+.ex-note-k { flex: none; color: var(--dim); font-size: 12px; font-weight: 700; }
+.ex-note-t { min-width: 0; overflow-wrap: anywhere; }
+.note-field textarea { min-height: 96px; }
+
+/* ---------- Notiz in der Bibliothek ---------- */
+.lib-note { margin-top: 14px; padding: 12px 14px 4px; border-radius: 14px; background: var(--floor); }
+.lib-note h3 { margin: 0 0 4px; }
+.lib-note-t { overflow-wrap: anywhere; }
+
+/* ---------- Bewertung ---------- */
+.rate-card { text-align: left; margin-bottom: 18px; }
+.rate-card h2 { font-size: 20px; margin-bottom: 2px; }
+.rate-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+.rate-n {
+  min-height: 50px; border-radius: 12px; border: 1px solid var(--line); background: var(--floor);
+  font-size: 20px; font-weight: 800; color: var(--chalk);
+  transition: transform .12s ease;
+}
+.rate-n:active { transform: scale(.96); }
+.rate-n.on { background: var(--c); border-color: var(--c); color: var(--on-c); }
+.rate-label { margin-top: 10px; font-weight: 700; }
+.rate-note { margin-top: 12px; }
+.rate-note textarea { min-height: 72px; }
+
+/* ---------- Bewertung im Verlauf ---------- */
+.rate-hist { margin-bottom: 10px; padding: 10px 12px 2px; border-radius: 12px; background: var(--floor); }
+.rate-hist p + p { margin-top: 4px; }
+.rate-hist-note { color: var(--steel); overflow-wrap: anywhere; }
+.rate-badge {
+  display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px;
+  background: var(--deck2); color: var(--steel); font-size: 12px; font-weight: 700; vertical-align: middle;
+}
+.rate-badge.hard { background: rgba(242, 194, 48, .16); color: var(--yellow); }
+.cal-detail-h h2 .rate-badge { font-size: 12px; }

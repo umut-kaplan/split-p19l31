@@ -9,6 +9,7 @@ import { personalRecords, exerciseSeries, RECORD_LABEL, formatRecord } from '../
 import { muscleWeeks, volumeRating } from '../domain/volume.js';
 import { findExercise } from '../domain/library.js';
 import { MUSCLES, WEEKLY_SET_TARGET } from '../domain/muscles.js';
+import { ratingSummary, ratingBadge } from './session-rating.js';
 
 const VIEWS = [['sessions', 'Einheiten'], ['exercise', 'Übung'], ['records', 'Rekorde'], ['muscles', 'Muskeln']];
 const CHEV = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -28,7 +29,8 @@ export function vHistory() {
 
 /* ---------- Einheiten: Kalender und Liste ---------- */
 function sessionBody(s) {
-  return `<dl>${s.ex.filter(x => x.sets.length).map(x => `
+  return `${ratingSummary(s)}
+    <dl>${s.ex.filter(x => x.sets.length).map(x => `
     <div><dt>${esc(x.name)}</dt><dd class="num">${x.sets.map(st => fmtSet(st, x.unit)).join(', ')}</dd></div>`).join('')}</dl>
     <button class="link" data-act="delsession" data-id="${s.id}">Training löschen</button>`;
 }
@@ -45,7 +47,7 @@ function vList() {
   if (!sessions.length) return '<p class="empty" style="margin-top:16px">Nach dem ersten Training stehen hier deine Einheiten.</p>';
   return `<ul class="sess" style="margin-top:14px">${sessions.map(s => `
     <li class="day-${s.color}"><details>
-      <summary><span class="dot"></span><span><b>${esc(s.name)}</b><br><small>${esc(dMid(s.startedAt))}</small></span>
+      <summary><span class="dot"></span><span><b>${esc(s.name)}</b> ${ratingBadge(s)}<br><small>${esc(dMid(s.startedAt))}</small></span>
         <small class="num">${minutes(s)} Min.</small></summary>
       <div class="body">${sessionBody(s)}</div>
     </details></li>`).join('')}</ul>`;
@@ -85,7 +87,7 @@ function vCalendar() {
     </section>
     ${sel ? (selSessions.length ? selSessions.map(s => `
       <section class="card cal-detail day-${esc(s.color)}">
-        <div class="cal-detail-h"><span class="dot"></span><div><h2>${esc(s.name)}</h2>
+        <div class="cal-detail-h"><span class="dot"></span><div><h2>${esc(s.name)} ${ratingBadge(s)}</h2>
           <p class="small-print">${esc(dLong(s.startedAt))}, ${clock(s.startedAt)} Uhr, ${minutes(s)} Min.</p></div></div>
         ${sessionBody(s)}
       </section>`).join('')

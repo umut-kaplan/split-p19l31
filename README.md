@@ -7,7 +7,7 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 **Heute:** Begrüßung, nächste Einheit als Hantelscheibe, Wochenbericht jeden Montag (als Bild teilbar), Erholungsampel mit Begründung und „Was soll ich heute trainieren?“ mit Alternative, Check-in vor dem Training (Schlaf, Gefühl), bis zu zwei offene Vorschläge, Serie in Trainingswochen mit einem Joker pro Monat, Wochenziele (Training, Protein, Wasser), Tagesziele, Körperkarte mit Foto-Erinnerung oder Gewichtstrend, BMI. Unterseite „Erfolge“ mit Zielen, Meilensteinen und 17 Abzeichen.
 
 **Training**
-- Einheit: Satz-Log (kg, Wdh., RIR), Doppelprogression, Pausentimer pro Übung mit Ton, Rekord-Feier beim Abhaken, Anleitung zu jeder Übung.
+- Einheit: Satz-Log (kg, Wdh., RIR), Doppelprogression, Pausentimer pro Übung mit Ton, Rekord-Feier beim Abhaken, Anleitung zu jeder Übung, Scheibenrechner für Langhantel und SZ-Stange, Aufwärmrampe bei der ersten Grundübung jeder Muskelgruppe, dauerhafte Notiz pro Übung, Bewertung „Wie hart war es?“ nach der Einheit.
 - Verlauf: Liste und Monatskalender, Diagramm pro Übung (Gewicht, 1RM, Volumen), Rekorde (bestes Gewicht, 1RM nach Epley, bestes Volumen), Sätze pro Muskelgruppe und Woche gegen den Zielbereich 10 bis 20.
 - Plan: mehrere Pläne, Vorlagen (Ganzkörper 2×, Oberkörper/Unterkörper 4×, Push/Pull/Legs), Tage mit Farben, Übungen aus der Bibliothek.
 - Übungen: 50 Übungen mit Bild, Schritten, typischen Fehlern, Muskeln und Geräten; eigene Übungen mit Foto.
@@ -17,7 +17,9 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 
 **Ernährung:** Kalorienziel nach Katch-McArdle (mit Körperfett) oder Mifflin-St Jeor, Alltag plus tatsächliches Krafttraining, Cardio und Schritte über der Grundlinie, Makroziele, beides von Hand überschreibbar; Mahlzeiten mit Suche, Barcode-Scanner, eigenen Lebensmitteln, gespeicherten Mahlzeiten und Rezepten; Tages- und Wochenübersicht; Wasser; wöchentlicher Abgleich mit dem Gewichtstrend.
 
-**Profil:** Eckdaten, Ziel, Alltag, Trainingstage, Geräte, Einschränkungen, Backup, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen).
+**Einrichtung:** fragt Eckdaten, Ziel, Plan (3er-Split, Ganzkörper 2×, Oberkörper/Unterkörper 4×, eigener Plan), Alltag, Trainingstage, Geräte und Einschränkungen ab; jeder Schritt lässt sich überspringen.
+
+**Profil:** Eckdaten, Ziel, Alltag, Trainingstage, Geräte, Einschränkungen, Stangen und Scheiben, Backup, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen).
 
 Jede Empfehlung nennt in einem Satz, warum die App sie gibt, und ist nur ein Vorschlag. Kalorien-, BMI- und Körperfettwerte sind Schätzungen aus Formeln.
 
@@ -55,6 +57,9 @@ Vor jeder Veröffentlichung in `sw.js` die Konstante `CACHE` hochzählen, sonst 
 
 ## Daten, Backup und Wiederherstellung
 
+Jede Person nutzt die App auf ihrem eigenen Handy. Die Daten liegen nur dort und vermischen sich nie, es gibt keinen Server und kein Konto. GitHub liefert nur die App-Dateien aus.
+
+- **Fotos:** Mit der Kamera aufgenommene Fortschrittsfotos landen nicht in der Mediathek, sondern nur in der App (verkleinert auf etwa 1080 px, IndexedDB). „In Fotos sichern“ legt die Posen einer Woche als ein Bild nebeneinander und speichert es über das Teilen-Menü in der Mediathek.
 - **Speicher:** kleine Daten im `localStorage` unter `fit.v2` (Schema 2), Bilder und der Lebensmittel-Cache in IndexedDB (`split`, Stores `photos`, `exerciseImages`, `foodCache`). Beim Start bittet die App mit `navigator.storage.persist()` darum, nichts zu löschen.
 - **Umzug:** Ein Stand der ersten Version (`split.v1`) wird beim ersten Start übernommen. Der alte Schlüssel bleibt, bis das erste Backup im neuen Format gespeichert ist.
 - **Backup:** *Profil → Backup speichern*, wahlweise mit oder ohne Fotos. Auf dem iPhone öffnet sich das Teilen-Menü, dort *In Dateien sichern* wählen, am besten in iCloud Drive.

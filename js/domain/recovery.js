@@ -10,9 +10,12 @@
      Die letzte Nacht zählt zusätzlich allein: unter 6 h gelb, unter 4 h rot.
    - Gefühl aus dem Check-in von heute: 2 gelb, 1 rot.
    - Ruhepuls heute gegen den Median der 14 Tage davor (mindestens 5 Werte): 5 Schläge darüber gelb, 10 darüber rot.
+   - Bewertung nach der Einheit: 9 oder 10 von 10 bei einem Training der letzten 48 Stunden macht gelb.
+     Allein dadurch wird die Ampel nie rot.
    Die Ampel zeigt das schlechteste Signal. Ohne auswertbare Signale bleibt sie grün und sagt das ehrlich. */
 import { fmt0, fmt1 } from '../util.js';
 import { dayNumber, dateFromDayNumber } from './body.js';
+import { recentRating, RPE_LABEL, RPE_HARD, RPE_HOURS } from './rating.js';
 
 export const THRESHOLDS = {
   load: { yellow: 1.3, red: 1.5, minWeeks: 2, minAvgSets: 6 },
@@ -20,6 +23,13 @@ export const THRESHOLDS = {
   sleep: { yellow: 6, red: 5, nights: 3, lastYellow: 6, lastRed: 4 },
   feeling: { yellow: 2, red: 1 },
   restingHr: { yellow: 5, red: 10, baselineDays: 14, minValues: 5 },
+  rating: { yellow: RPE_HARD, hours: RPE_HOURS },
+};
+
+/* Ende des Kalendertags in Ortszeit, als Bezugszeit, wenn kein Zeitpunkt übergeben wird */
+const endOfDay = date => {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
 };
 
 export const LEVELS = ['green', 'yellow', 'red'];
@@ -112,10 +122,12 @@ const ratioText = r => (Math.round(r * 10) / 10).toLocaleString('de-DE', { minim
 
 const joinClauses = list => (list.length <= 1 ? list.join('') : `${list.slice(0, -1).join(', ')} und ${list[list.length - 1]}`);
 
-/* Die Ampel. input: { sessions, cardio, sleep, restingHr, checkins }, today: 'YYYY-MM-DD'.
+/* Die Ampel. input: { sessions, cardio, sleep, restingHr, checkins, now }, today: 'YYYY-MM-DD'.
+   now (ms) ist der Bezugspunkt für die 48 Stunden der Bewertung, sonst das Ende von today.
    Liefert { level, reasons: [{ signal, level, text, clause }], summary, signals, notes } */
 export function recoveryStatus(input, today) {
   const { sessions = [], cardio = [], sleep = [], restingHr = [], checkins = {} } = input || {};
+  const now = input && input.now != null ? input.now : endOfDay(today);
   const reasons = [];
   const notes = [];
 
@@ -181,6 +193,22 @@ export function recoveryStatus(input, today) {
     });
   }
 
+  const rr = recentRating(sessions, now, THRESHOLDS.rating.hours);
+  if (rr) {
+    const hard = rr.rpe >= THRESHOLDS.rating.yellow;
+    const which = rr.latest ? 'die letzte Einheit' : `eine Einheit der letzten ${THRESHOLDS.rating.hours} Stunden`;
+    const Which = which.charAt(0).toUpperCase() + which.slice(1);
+    reasons.push({
+      signal: 'rating', level: hard ? 'yellow' : 'green',
+      text: hard
+        ? `${Which} war ${RPE_LABEL[rr.rpe]} (${rr.rpe} von 10).`
+        : `Bewertung: ${which} ${rr.rpe} von 10 (${RPE_LABEL[rr.rpe]}).`,
+      clause: hard
+        ? `${which} ${RPE_LABEL[rr.rpe]} war (${rr.rpe} von 10)`
+        : `du ${which} mit ${rr.rpe} von 10 bewertet hast`,
+    });
+  }
+
   const level = reasons.reduce((lv, r) => (RANK[r.level] > RANK[lv] ? r.level : lv), 'green');
   let summary;
   if (!reasons.length) {
@@ -195,7 +223,7 @@ export function recoveryStatus(input, today) {
 }
 
 /* Dasselbe aus dem gespeicherten Zustand */
-export function recoveryFromState(S, today) {
+export function recoveryFromState(S, today, now = Date.now()) {
   const a = S.activity || {};
   return recoveryStatus({
     sessions: S.sessions,
@@ -203,5 +231,6 @@ export function recoveryFromState(S, today) {
     sleep: a.sleep || [],
     restingHr: a.restingHr || [],
     checkins: S.checkins || {},
+    now,
   }, today);
 }

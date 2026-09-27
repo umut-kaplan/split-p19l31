@@ -87,5 +87,12 @@
 .ph-handle { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; margin-left: -1.5px; background: var(--white); box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); pointer-events: none; }
 .ph-range { width: 100%; height: 44px; margin-top: 4px; accent-color: var(--white); }
 .ph-big img, .ph-big .ph-empty { width: 100%; height: auto; border-radius: 14px; }
+/* Fototafel zum Sichern in Fotos */
+.ph-board-row { display: grid; gap: 6px; margin-top: 14px; }
+.ph-board-row .btn { justify-self: start; }
+.ph-week-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ph-week-head .label { margin: 0; }
+.ph-week-head .link { font-size: 14px; }
+.ph-board img { display: block; width: 100%; height: auto; border-radius: 12px; margin-top: 4px; }
 
 .b-remind { border-color: rgba(233, 230, 223, .3); }

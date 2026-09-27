@@ -8,6 +8,7 @@ import { toast } from '../ui/toast.js';
 import { confirmSheet } from '../ui/sheet.js';
 import { fName, fAge, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
 import * as healthImport from './health-import.js';
+import { plateSettingsSection } from './plates.js';
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
 export const modules = [healthImport];
@@ -26,6 +27,7 @@ export function view() {
     <section class="p-section"><h2>Alltag und Training</h2>${fActivity(p)}<div style="margin-top:16px">${fDays(p)}</div></section>
     <section class="p-section"><h2>Geräte</h2>${fEquipment(p)}</section>
     <section class="p-section"><h2>Einschränkungen</h2>${fLimits(p)}</section>
+    ${plateSettingsSection()}
 
     <section class="p-section card"><h2>Auf den Home-Bildschirm</h2>
       <ul class="rules" style="margin-top:8px">

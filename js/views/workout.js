@@ -10,6 +10,13 @@ import { startRest, unlockAudio, wake, release } from '../timer.js';
 import { infoButton } from './library.js';
 import { personalRecords, setRecords, sessionRecords, RECORD_LABEL, formatRecord } from '../domain/prs.js';
 import { findExercise, limitationHits } from '../domain/library.js';
+import * as notes from './exercise-notes.js';
+import * as warmup from './warmup.js';
+import * as rating from './session-rating.js';
+import * as plates from './plates.js';
+
+/* Untermodule, deren actions und inputs app.js einsammelt */
+export const modules = [notes, warmup, rating, plates];
 
 const keyOf = x => x.exId + '|' + x.name;
 /* Angenommener Deload-Vorschlag für diese Übung, siehe coach/training.js */
@@ -91,12 +98,15 @@ function exCard(x, i) {
   const doneN = x.log.filter(s => s.done).length;
   const complete = doneN >= x.log.length;
   const hits = limitationHits(findExercise(x.name, S.exercisesCustom), (S.profile.limitations && S.profile.limitations.tags) || []);
+  /* Langhantel oder SZ-Stange: Scheiben-Symbol neben dem Gewichtsfeld */
+  const bar = plates.barInfo(x);
   const hint = x.deload != null
     ? `<div class="hint deload"><strong>Deload: ${esc(fmt(x.deload))} kg</strong><span>Vorschlag angenommen: diese Einheit etwa 10&nbsp;% leichter und ${x.repMax} Wdh. pro Satz, danach geht es wieder aufwärts.</span></div>`
     : `<div class="hint ${sug.kind}"><strong>${esc(sug.text)}</strong><span>${esc(sug.sub)}</span></div>`;
   return `<section class="ex ${complete ? 'complete' : ''}" id="ex${i}">
     <div class="ex-title"><h2>${esc(x.name)}</h2><span class="ex-count num">${doneN}/${x.log.length}</span></div>
     ${infoButton(x.name)}
+    ${notes.exerciseNote(x, i)}
     ${x.names.length > 1 ? `<div class="seg" role="group" aria-label="Variante">${x.names.map((n, v) =>
       `<button data-act="variant" data-i="${i}" data-v="${v}" class="${v === x.v ? 'on' : ''}" aria-pressed="${v === x.v}">${esc(n)}</button>`).join('')}</div>` : ''}
     <div class="ex-meta">
@@ -107,12 +117,14 @@ function exCard(x, i) {
     ${L ? `<p class="last">Letztes Mal am ${esc(dShort(L.date))}: <span class="num">${L.sets.map(s => fmtSet(s, x.unit)).join(', ')}</span></p>` : ''}
     ${hits.length ? `<p class="ex-warn">Belastet ${esc(hits.join(' und '))}, das du als Einschränkung eingetragen hast. Bei Beschwerden leichter gehen oder unter „Anleitung“ eine Alternative wählen.</p>` : ''}
     ${hint}
-    <div class="sets">
-      <div class="set-h"><span>Satz</span><span>kg</span><span>${unitL(x.unit)}</span><span>RIR</span><span></span></div>
+    ${warmup.warmupLine(x, i)}
+    <div class="sets ${bar ? 'with-plates' : ''}">
+      <div class="set-h"><span>Satz</span><span>kg</span>${bar ? '<span></span>' : ''}<span>${unitL(x.unit)}</span><span>RIR</span><span></span></div>
       ${x.log.map((s, j) => `
       <div class="set ${s.done ? 'done' : ''} ${s.done && s.rec ? 'pr' : ''} ${V.prFlash === `${i}:${j}` ? 'pr-new' : ''}">
         <span class="set-n num">${j + 1}</span>
         <input class="num" inputmode="decimal" enterkeyhint="next" data-in="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" placeholder="${esc(s.pw || '0')}" aria-label="Satz ${j + 1} Gewicht in kg">
+        ${bar ? plates.plateButton(i, j) : ''}
         <input class="num" inputmode="numeric" enterkeyhint="done" data-in="r" data-i="${i}" data-j="${j}" value="${esc(s.r)}" placeholder="${esc(s.pr)}" aria-label="Satz ${j + 1} ${unitL(x.unit)}">
         <button class="rir num" data-act="rir" data-i="${i}" data-j="${j}" aria-label="RIR ${s.rir}, tippen zum Ändern">${s.rir}</button>
         <button class="check" data-act="check" data-i="${i}" data-j="${j}" aria-pressed="${s.done}" aria-label="Satz ${j + 1} abhaken">${ICON.check}</button>
@@ -180,6 +192,7 @@ function finishWorkout() {
   S.active = null;
   save(); release();
   V.summary = {
+    sessionId: session.id,
     name: a.name, color: a.color,
     minutes: Math.max(1, Math.round((session.endedAt - session.startedAt) / 60000)),
     sets: ex.reduce((n, x) => n + x.sets.length, 0),
@@ -210,6 +223,7 @@ export function vSummary() {
       ${s.prs.map(p => `<li>${esc(p.name)}: ${p.items.map(it =>
         `${esc(RECORD_LABEL[it.kind])} <b class="num">${esc(formatRecord(it.kind, it.value))}</b>`).join(', ')}</li>`).join('')}</ul>
       <p class="small-print" style="margin-top:8px">1RM geschätzt nach Epley aus Sätzen mit bis zu 12 Wiederholungen.</p></div>` : ''}
+    ${rating.ratingBlock(s.sessionId)}
     <button class="btn primary" data-act="closesummary">Fertig</button>
   </div>`;
 }

@@ -2,11 +2,12 @@
 import { S, V, save } from '../state.js';
 import { esc, uid, ymd, dShort } from '../util.js';
 import { render } from '../render.js';
-import { dbAll, dbPut, dbDel } from '../store/db.js';
+import { dbAll, dbGet, dbPut, dbDel } from '../store/db.js';
 import { resizeImage } from '../ui/image.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import { photoWeeks, mondayOf } from '../domain/body.js';
+import { drawBoard, boardTitle, boardPoses } from '../ui/photo-board.js';
 
 export const POSES = { front: 'Vorne', side: 'Seitlich', back: 'Hinten' };
 
@@ -68,12 +69,17 @@ export function vPhotos() {
           ${thisWeek && thisWeek.poses[k] ? `<button class="ph-thumb" data-act="bodyphotoshow" data-id="${thisWeek.poses[k].id}" aria-label="${l} ansehen">${img(thisWeek.poses[k])}</button>` : `<div class="ph-thumb">${img(null)}</div>`}
           ${pickers(k)}
         </div>`).join('')}</div>
+      ${thisWeek ? `<div class="ph-board-row">
+        <button class="btn small" data-act="bodyboard" data-week="${thisWeek.week}">In Fotos sichern</button>
+        <p class="small-print">Legt die Posen dieser Woche nebeneinander auf ein Bild für deine Mediathek.</p>
+      </div>` : ''}
     </section>
     ${compareBlock(weeks)}
     ${weeks.length ? `<section class="block">
       <h2>Alle Fotos</h2>
       ${weeks.map(w => `<div class="ph-week">
-        <p class="label">${esc(weekLabel(w.week))}</p>
+        <div class="ph-week-head"><p class="label">${esc(weekLabel(w.week))}</p>
+          <button class="link" data-act="bodyboard" data-week="${w.week}" aria-label="${esc(weekLabel(w.week))} als ein Bild in Fotos sichern">In Fotos sichern</button></div>
         <div class="ph-row">${w.all.map(p => `<button class="ph-thumb small" data-act="bodyphotoshow" data-id="${p.id}" aria-label="${esc(POSES[p.pose])} vom ${esc(dShort(p.date + 'T12:00'))} ansehen">${img(p)}</button>`).join('')}</div>
       </div>`).join('')}
     </section>` : ''}`;
@@ -153,7 +159,79 @@ function showPhoto(id) {
   });
 }
 
+/* ---------- Fototafel ---------- */
+/* Das Bild wird vorher fertig gerechnet. So läuft das Teilen-Menü direkt aus dem Tipp auf „Bild sichern“,
+   wie Safari es verlangt. */
+let board = null;
+
+function loadImage(id) {
+  const ready = urls.has(id)
+    ? Promise.resolve(urls.get(id))
+    : dbGet('photos', id).then(rec => {
+      if (!rec || !rec.blob) throw new Error('Ein Foto dieser Woche fehlt auf dem Gerät.');
+      const u = URL.createObjectURL(rec.blob);
+      urls.set(id, u);
+      return u;
+    });
+  return ready.then(src => new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error('Ein Foto ließ sich nicht öffnen.'));
+    im.src = src;
+  }));
+}
+
+async function openBoard(week) {
+  const w = photoWeeks(S.body.photos).find(x => x.week === week);
+  const keys = w ? boardPoses(w.poses) : [];
+  if (!keys.length) return;
+  try {
+    const items = [];
+    for (const k of keys) items.push({ img: await loadImage(w.poses[k].id), label: POSES[k] });
+    const canvas = document.createElement('canvas');
+    drawBoard(canvas, items, boardTitle(keys.map(k => w.poses[k].date)));
+    const blob = await new Promise((resolve, reject) =>
+      canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Das Bild ließ sich nicht erzeugen.'))), 'image/jpeg', 0.9));
+    if (board) URL.revokeObjectURL(board.url);
+    /* Dateiname mit dem Tag des neuesten Fotos, passend zum Datum auf der Tafel */
+    const last = keys.map(k => w.poses[k].date).sort().pop();
+    const name = `split-fotos-${last}.jpg`;
+    board = { week, name, url: URL.createObjectURL(blob), file: new File([blob], name, { type: 'image/jpeg' }) };
+    openSheet({
+      title: 'Fototafel',
+      text: `${keys.length === 1 ? 'Eine Pose' : `${keys.length} Posen`} auf einem Bild. Im Teilen-Menü „Bild sichern“ wählen, dann liegt es in deiner Mediathek. Die Fotos in der App bleiben unverändert.`,
+      body: `<div class="ph-board"><img src="${board.url}" alt="Fototafel, ${esc(weekLabel(week))}"></div>`,
+      actions: [
+        { label: 'Bild sichern', kind: 'primary', fn: shareBoard },
+        { label: 'Schließen', kind: 'ghost', fn: closeSheet },
+      ],
+    });
+  } catch (e) {
+    toast(e && e.message ? e.message : 'Die Fototafel ließ sich nicht erstellen.');
+  }
+}
+
+function downloadBoard() {
+  const a = document.createElement('a');
+  a.href = board.url; a.download = board.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  closeSheet(); toast('Bild gespeichert');
+}
+
+function shareBoard() {
+  if (!board) return;
+  const files = [board.file];
+  if (navigator.canShare && navigator.canShare({ files })) {
+    navigator.share({ files })
+      .then(() => closeSheet())
+      .catch(e => { if (!e || e.name !== 'AbortError') downloadBoard(); });
+    return;
+  }
+  downloadBoard();
+}
+
 export const actions = {
+  bodyboard: el => openBoard(el.dataset.week),
   bodyphotoshow: el => showPhoto(el.dataset.id),
   bodypose: el => { V.bodyPose = el.dataset.pose; V.bodyCmpA = null; V.bodyCmpB = null; render(); },
   bodycmpmode: el => { V.bodyCmpMode = el.dataset.mode; render(); },

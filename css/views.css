@@ -94,3 +94,10 @@
 .ob-body .plate-btn { width: min(64vw, 260px); margin: 12px auto 26px; }
 .ob-foot { display: grid; gap: 8px; padding-top: 20px; position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); }
 .ob-main { padding-bottom: calc(env(safe-area-inset-bottom) + 24px); }
+/* Lange Schritte scrollen unter der Knopfleiste durch; sie bekommt deshalb einen eigenen Hintergrund */
+.ob-foot {
+  bottom: 0; margin: 0 -16px; padding: 26px 16px calc(env(safe-area-inset-bottom) + 12px);
+  background: linear-gradient(to bottom, rgba(30, 33, 36, 0), var(--floor) 24px);
+}
+.ob-plans .choice .ob-days { color: var(--dim); font-size: 13px; margin-top: 2px; }
+.ob-plans .choice.on .ob-days { color: var(--steel); }

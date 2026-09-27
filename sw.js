@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v4.0';
+const CACHE = 'split-v4.1';
 
 const CORE = [
   './',
@@ -180,7 +180,31 @@ const IMPORT = [
   'js/vendor/fflate.LICENSE.txt',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT];
+/* Ergänzungen: Scheibenrechner, Aufwärmen */
+const GYM = [
+  'css/gym.css',
+  'js/views/plates.js',
+  'js/views/warmup.js',
+  'js/domain/plates.js',
+  'js/domain/warmup.js',
+];
+
+/* Ergänzungen: Notizen pro Übung, Bewertung nach der Einheit */
+const NOTES = [
+  'css/notes.css',
+  'js/views/exercise-notes.js',
+  'js/views/session-rating.js',
+  'js/domain/notes.js',
+  'js/domain/rating.js',
+];
+
+/* Ergänzungen: Planwahl in der Einrichtung, Fototafel */
+const ONB = [
+  'js/domain/plan-choice.js',
+  'js/ui/photo-board.js',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB];
 
 self.addEventListener('install', ev => {
   ev.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
