@@ -1,6 +1,6 @@
 /* Mengen eingeben, eigene Lebensmittel, Rezepte und gespeicherte Mahlzeiten */
 import { S, V, save } from '../state.js';
-import { esc, fmt, fmt0, fmt1, uid, dShort } from '../util.js';
+import { esc, fmt, fmt0, fmt1, fmtIn, uid, dShort } from '../util.js';
 import { render } from '../render.js';
 import { MEALS, entryNutrients, recipeNutrients } from '../domain/nutrition.js';
 import { portionsFor, entryFromFood, parseAmount, customFoodFromDraft, recipeError, pickNutrients, labelHasAmount } from '../domain/foods.js';
@@ -37,7 +37,7 @@ export function amountSheet(food, ctx) {
     ${food.brand ? `<p class="muted">${esc(food.brand)}</p>` : ''}
     <p class="small-print">Pro 100 g: ${esc(nutrientLine(p))}.${notes.length ? ' ' + esc(notes.join(' ')) : ''}</p>
     <label class="field" style="margin-top:14px">Menge
-      <span class="unit-wrap"><input id="food-grams" data-in="foodgrams" inputmode="decimal" enterkeyhint="done" value="${esc(fmt(grams))}" autocomplete="off"><span>g</span></span></label>
+      <span class="unit-wrap"><input id="food-grams" data-in="foodgrams" inputmode="decimal" enterkeyhint="done" value="${esc(fmtIn(grams))}" autocomplete="off"><span>g</span></span></label>
     ${main ? `<div class="food-count">
       <button class="icon" data-act="foodcount" data-d="-0.5" aria-label="Eine halbe Portion weniger">−</button>
       <b class="num" id="food-count">${esc(fmt1(grams / main.grams))}</b>
@@ -213,8 +213,8 @@ function editFoodView(id) {
   return {
     kind: 'food', editId: id, ctx: null,
     draft: {
-      name: c.name, brand: c.brand || '', kcal: fmt(c.per100.kcal), protein: fmt(c.per100.protein), fat: fmt(c.per100.fat), carbs: fmt(c.per100.carbs),
-      portionLabel: c.portion ? c.portion.label : '', portionGrams: c.portion ? fmt(c.portion.grams) : '', code: c.code || '',
+      name: c.name, brand: c.brand || '', kcal: fmtIn(c.per100.kcal), protein: fmtIn(c.per100.protein), fat: fmtIn(c.per100.fat), carbs: fmtIn(c.per100.carbs),
+      portionLabel: c.portion ? c.portion.label : '', portionGrams: c.portion ? fmtIn(c.portion.grams) : '', code: c.code || '',
     },
   };
 }
@@ -260,7 +260,7 @@ export function recipeEditor(v) {
       ${d.items.length ? `<ul class="food-hits">${d.items.map((it, i) => `
         <li class="rec-item">
           <span class="fh-name">${esc(it.name)}<small id="food-ri-${i}" class="num">${esc(fmt0(entryNutrients(it).kcal))} kcal</small></span>
-          <span class="unit-wrap rec-g"><input data-in="foodrgrams" data-i="${i}" inputmode="decimal" value="${esc(fmt(it.grams))}" aria-label="Menge ${esc(it.name)} in Gramm"><span>g</span></span>
+          <span class="unit-wrap rec-g"><input data-in="foodrgrams" data-i="${i}" inputmode="decimal" value="${esc(fmtIn(it.grams))}" aria-label="Menge ${esc(it.name)} in Gramm"><span>g</span></span>
           <button class="icon" data-act="foodrdel" data-i="${i}" aria-label="${esc(it.name)} entfernen">×</button>
         </li>`).join('')}</ul>` : '<p class="food-note">Noch keine Zutaten. Füge sie über die Suche oder den Barcode hinzu.</p>'}
       <div class="stack"><button class="btn" data-act="foodradd">Zutat hinzufügen</button></div>
@@ -309,14 +309,14 @@ function saveRecipe() {
 
 /* ---------- Ereignisse ---------- */
 export const actions = {
-  foodportion: el => { const g = Number(el.dataset.g); const i = gramsInput(); if (i) i.value = fmt(g); updateAmountUI(g); },
+  foodportion: el => { const g = Number(el.dataset.g); const i = gramsInput(); if (i) i.value = fmtIn(g); updateAmountUI(g); },
   foodcount: el => {
     const a = V.foodAmount;
     if (!a || !a.food.portion) return;
     const cur = parseAmount(gramsInput().value) || 0;
     const count = Math.max(0.5, Math.round((cur / a.food.portion.grams + Number(el.dataset.d)) * 2) / 2);
     const g = Math.round(count * a.food.portion.grams * 10) / 10;
-    gramsInput().value = fmt(g);
+    gramsInput().value = fmtIn(g);
     updateAmountUI(g);
   },
   foodmeal: el => {

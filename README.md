@@ -53,7 +53,13 @@ git push "$REPO" "$SNAP":refs/heads/gh-pages
 
 Adresse: https://umut-kaplan.github.io/split-p19l31/. Auf dem iPhone in Safari öffnen, *Teilen → Zum Home-Bildschirm*, danach nur über das Symbol öffnen.
 
-Vor jeder Veröffentlichung in `sw.js` die Konstante `CACHE` hochzählen, sonst sieht das Handy die neue Version erst verzögert. Jede neue Datei gehört in eine der Listen in `sw.js`; ein Test prüft das.
+Vor jeder Veröffentlichung:
+
+- In `js/data/changelog.js` oben einen Eintrag mit Version, Datum und den Änderungen in Alltagssprache anlegen. Nach dem Update zeigt die App ihn einmal beim Start („Neu in Split“), später im Profil unter „Was ist neu“.
+- In `sw.js` die Konstante `CACHE` auf dieselbe Version setzen (`split-v4.2` zu Version 4.2), sonst sieht das Handy die neue Version erst verzögert. Ein Test prüft, dass beide zusammenpassen.
+- Jede neue Datei gehört in eine der Listen in `sw.js`; auch das prüft ein Test.
+
+Das Update kommt auf dem Handy in zwei Schritten an: Beim ersten Start nach der Veröffentlichung lädt der Service Worker die neue Version im Hintergrund, beim nächsten Start ist sie da.
 
 ## Daten, Backup und Wiederherstellung
 

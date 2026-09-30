@@ -3,6 +3,7 @@
    { key, name, brand, per100: { kcal, protein, fat, carbs }, portion: { label, grams } | null,
      source: 'basic' | 'custom' | 'off' | 'recipe', ref, code } */
 import { NUTRIENTS } from './nutrition.js';
+import { toNum } from '../util.js';
 
 /* Kleinbuchstaben, ohne Akzente, ß als ss, ä/ae gleich behandelt. Gilt für Suchbegriff und Namen gleichermaßen. */
 export function normalize(s) {
@@ -136,7 +137,7 @@ export function isValidBarcode(code) {
 
 /* Gramm aus einer Eingabe wie „150“, „150 g“ oder „1,5“ */
 export function parseAmount(v) {
-  const n = parseFloat(String(v || '').replace(',', '.'));
+  const n = toNum(v);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 

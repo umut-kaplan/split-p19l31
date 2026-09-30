@@ -82,8 +82,15 @@
 .p-section + .p-section { margin-top: 26px; }
 .p-section > h2 { font-size: 20px; margin-bottom: 12px; }
 
+/* ---------- Was ist neu ---------- */
+.whatsnew section + section { margin-top: 18px; }
+.whatsnew h3 { font-size: 17px; margin: 6px 0 10px; }
+.whatsnew h3 small { color: var(--dim); font-size: 14px; font-weight: 600; margin-left: 4px; }
+
 /* ---------- Onboarding ---------- */
-.ob { min-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+/* Genau bildschirmhoch: Ist die erste Seite höher als der Bildschirm, verschiebt iOS bei Home-Bildschirm-Apps Bild und Tippflächen gegeneinander */
+.ob { min-height: calc(100vh - env(safe-area-inset-top) - 18px); display: flex; flex-direction: column; }
+@supports (min-height: 100svh) { .ob { min-height: calc(100svh - env(safe-area-inset-top) - 18px); } }
 .ob-top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
 .ob-dots { display: flex; gap: 6px; }
 .ob-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--deck2); }
@@ -93,7 +100,8 @@
 .ob-body > p { color: var(--steel); margin: 8px 0 22px; }
 .ob-body .plate-btn { width: min(64vw, 260px); margin: 12px auto 26px; }
 .ob-foot { display: grid; gap: 8px; padding-top: 20px; position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); }
-.ob-main { padding-bottom: calc(env(safe-area-inset-bottom) + 24px); }
+/* Den Abstand zur Home-Leiste hält die Knopfleiste selbst */
+.ob-main { padding-bottom: 0; }
 /* Lange Schritte scrollen unter der Knopfleiste durch; sie bekommt deshalb einen eigenen Hintergrund */
 .ob-foot {
   bottom: 0; margin: 0 -16px; padding: 26px 16px calc(env(safe-area-inset-bottom) + 12px);

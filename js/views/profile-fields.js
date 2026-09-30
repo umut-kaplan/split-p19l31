@@ -1,6 +1,6 @@
 /* Felder, die Profil und Einrichtung gemeinsam nutzen. Jede Eingabe speichert sofort. */
 import { S, save } from '../state.js';
-import { esc, fmt, toNum } from '../util.js';
+import { esc, fmtIn, toNum } from '../util.js';
 import { render } from '../render.js';
 import { ACTIVITY, GOALS } from '../domain/energy.js';
 import { SEX, EQUIPMENT, LIMIT_TAGS } from '../domain/profile-options.js';
@@ -15,7 +15,7 @@ const RANGE = {
 };
 
 const numField = (label, k, val, unit, mode) => `<label class="field">${label}
-  <span class="unit-wrap"><input data-in="pf" data-k="${k}" inputmode="${mode}" value="${val == null ? '' : esc(fmt(val))}"><span>${unit}</span></span></label>`;
+  <span class="unit-wrap"><input data-in="pf" data-k="${k}" inputmode="${mode}" value="${val == null ? '' : esc(fmtIn(val))}"><span>${unit}</span></span></label>`;
 
 const chip = (act, k, v, label, on) =>
   `<button class="chip ${on ? 'on' : ''}" aria-pressed="${on}" data-act="${act}" data-k="${k}" data-v="${esc(v)}">${esc(label)}</button>`;

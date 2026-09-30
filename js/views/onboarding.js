@@ -6,6 +6,7 @@ import { PLAN_CHOICES, choosePlan, currentChoice } from '../domain/plan-choice.j
 import { plateSVG } from '../ui/plate.js';
 import { profileNow } from '../ui/cards.js';
 import { fName, fAge, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
+import { markSeen } from './whatsnew.js';
 
 const STEPS = [
   {
@@ -119,6 +120,7 @@ export const actions = {
   obplan: el => { V.obPlan = el.dataset.id; render(); },
   obdone: () => {
     S.settings.onboardingDone = true;
+    markSeen();
     V.ob = 0; V.tab = 'today'; V.roll = true;
     V.obPlan = null; V.obCreated = null;
     save(); render(); window.scrollTo(0, 0);

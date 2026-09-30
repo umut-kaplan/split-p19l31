@@ -1,5 +1,5 @@
 import { S, V, save } from '../state.js';
-import { esc, fmt0, fmt1, toNum, ymd, dLong } from '../util.js';
+import { esc, fmt0, fmt1, fmtIn, toNum, ymd, dLong } from '../util.js';
 import { render } from '../render.js';
 import { targetsFromState, GOALS } from '../domain/energy.js';
 import { dayTotals } from '../domain/nutrition.js';
@@ -225,7 +225,7 @@ function goalsForm() {
   const auto = targetsFromState({ ...S, nutrition: { ...S.nutrition, overrides: null } });
   const ph = k => (auto.ok && auto[k] != null ? fmt0(auto[k]) : '–');
   const field = (k, label, unit) => `<label>${label}
-    <span class="unit-wrap nut-unit"><input id="nut-ov-${k}" inputmode="numeric" value="${ov[k] != null ? esc(fmt0(ov[k])) : ''}" placeholder="${ph(k)}"><span>${unit}</span></span></label>`;
+    <span class="unit-wrap nut-unit"><input id="nut-ov-${k}" inputmode="numeric" value="${ov[k] != null ? esc(fmtIn(Math.round(ov[k]))) : ''}" placeholder="${ph(k)}"><span>${unit}</span></span></label>`;
   return `<div class="form">
     ${field('kcal', 'Kalorien', 'kcal')}
     <div class="row3">${field('protein', 'Protein', 'g')}${field('fat', 'Fett', 'g')}${field('carbs', 'Kohlenhydrate', 'g')}</div>

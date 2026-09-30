@@ -16,6 +16,7 @@ import * as nutrition from './views/nutrition.js';
 import * as profile from './views/profile.js';
 import * as fields from './views/profile-fields.js';
 import * as onboarding from './views/onboarding.js';
+import * as whatsnew from './views/whatsnew.js';
 
 const TABS = [
   ['today', 'Heute', ICON.today, today],
@@ -25,7 +26,7 @@ const TABS = [
   ['profile', 'Profil', ICON.profile, profile],
 ];
 
-const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding];
+const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew];
 /* Ein Modul kann Untermodule in `export const modules = [...]` nennen. Deren actions und inputs zählen mit. */
 const flatten = list => list.flatMap(m => [m, ...flatten(m.modules || [])]);
 const all = [...new Set(flatten(modules))];
@@ -89,18 +90,28 @@ document.addEventListener('change', onField);
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && V.sheet) sheet.closeSheet(); });
 document.addEventListener('pointerdown', timer.unlockAudio, { once: true });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') { timer.wake(); timer.tick(); }
+  if (document.visibilityState === 'visible') { timer.wake(); timer.tick(); checkUpdate(); }
 });
+/* iOS zeichnet die erste Seite einer Home-Bildschirm-App manchmal gegen ihre Tippflächen verschoben.
+   Ein Scroll-Abgleich nach dem Zeichnen richtet beides wieder aus; die Position bleibt dabei stehen. */
+const settle = () => requestAnimationFrame(() => window.scrollTo(0, window.scrollY));
+window.addEventListener('resize', settle);
+window.addEventListener('pageshow', settle);
 setInterval(timer.tick, 250);
 
 /* ---------- Start ---------- */
 load();
 initImport();
 render();
+requestAnimationFrame(() => window.scrollTo(0, 0));
+whatsnew.showIfNew();
 if (S.active) timer.wake();
 requestPersist();
 
 /* Offline-Betrieb. Nur über http(s), nicht beim Öffnen als Datei. */
+let swReg = null;
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('sw.js').catch(() => { /* läuft auch ohne */ });
+  navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(() => { /* läuft auch ohne */ });
 }
+/* Eine im Hintergrund gehaltene Home-Bildschirm-App sucht beim Zurückkehren nach einer neuen Version */
+function checkUpdate() { if (swReg) swReg.update().catch(() => { /* offline */ }); }

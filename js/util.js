@@ -5,7 +5,17 @@ export const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
 export const fmt = n => (Math.round(n * 100) / 100).toLocaleString('de-DE');
 export const fmt0 = n => Math.round(n).toLocaleString('de-DE');
 export const fmt1 = n => (Math.round(n * 10) / 10).toLocaleString('de-DE');
-export const toNum = v => (v === '' || v == null) ? NaN : parseFloat(String(v).trim().replace(',', '.'));
+/* Für Eingabefelder: Komma als Dezimalzeichen, aber ohne Tausenderpunkt, sonst liest die App „1.000“ als 1 */
+export const fmtIn = n => (Math.round(n * 100) / 100).toLocaleString('de-DE', { useGrouping: false });
+
+/* Zahl aus einer Eingabe. „2.500“ und „2.500,5“ haben Tausenderpunkte, „2,5“ und „2.5“ sind Dezimalzahlen.
+   Text nach der Zahl („150 g“) wird ignoriert. */
+export const toNum = v => {
+  if (v === '' || v == null) return NaN;
+  let s = String(v).trim().replace(/[\s  ]/g, '');
+  if (/^[+-]?\d{1,3}(\.\d{3})+(,\d*)?(\D.*)?$/.test(s)) s = s.replace(/\./g, '');
+  return parseFloat(s.replace(',', '.'));
+};
 
 export const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 export const unitL = u => u === 'sec' ? 'Sek.' : 'Wdh.';

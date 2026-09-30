@@ -1,5 +1,5 @@
 import { S, V, save, activePlan } from '../state.js';
-import { esc, fmt, toNum, mmss, unitL, exName } from '../util.js';
+import { esc, fmtIn, toNum, mmss, unitL, exName } from '../util.js';
 import { render } from '../render.js';
 import { defaultPlan, emptyPlan, planFromTemplate, newDay } from '../plans.js';
 import { PLAN_TEMPLATES, PLAN_COLORS, COLOR_NAMES } from '../data/plan-templates.js';
@@ -110,7 +110,7 @@ function editForm(e) {
         <option value="sec" ${e.unit === 'sec' ? 'selected' : ''}>Sekunden</option></select></label>
       <label>Pause in Sek.<input id="f-rest" inputmode="numeric" value="${e.rest}"></label>
     </div>
-    <label>Steigerung in kg<input id="f-inc" inputmode="decimal" value="${fmt(e.inc)}"></label>
+    <label>Steigerung in kg<input id="f-inc" inputmode="decimal" value="${fmtIn(e.inc)}"></label>
     <p class="help">Um so viel schlägt die App mehr Gewicht vor, wenn alle Sätze das obere Ende erreichen.</p>
   </div>`;
 }

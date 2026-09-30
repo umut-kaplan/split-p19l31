@@ -1,5 +1,5 @@
 import { S, V, save } from '../state.js';
-import { esc, fmt1, toNum, ymd, dMid, dShort } from '../util.js';
+import { esc, fmt1, fmtIn, toNum, ymd, dMid, dShort } from '../util.js';
 import { render } from '../render.js';
 import {
   weightTrend, forecastGoal, goalProgress, firstWeight, currentWeight, photoReminderDue,
@@ -115,7 +115,7 @@ function goalCard(all, tr) {
   return `<section class="block card">
     <h2>Zielgewicht</h2>
     <label class="field" style="margin-top:8px">Ziel
-      <span class="unit-wrap"><input data-in="bodytarget" inputmode="decimal" value="${target ? esc(fmt1(target)) : ''}" placeholder="z. B. 80"><span>kg</span></span></label>
+      <span class="unit-wrap"><input data-in="bodytarget" inputmode="decimal" value="${target ? esc(fmtIn(Math.round(target * 10) / 10)) : ''}" placeholder="z. B. 80"><span>kg</span></span></label>
     ${target && start ? `
       <div class="w-goal">
         <div><span>Start</span><b class="num">${fmt1(start.kg)}</b></div>

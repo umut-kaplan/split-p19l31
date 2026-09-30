@@ -9,6 +9,7 @@ import { confirmSheet } from '../ui/sheet.js';
 import { fName, fAge, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
 import * as healthImport from './health-import.js';
 import { plateSettingsSection } from './plates.js';
+import { section as whatsnewSection } from './whatsnew.js';
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
 export const modules = [healthImport];
@@ -50,6 +51,8 @@ export function view() {
     </section>
 
     ${healthImport.importSection()}
+
+    ${whatsnewSection()}
 
     <section class="p-section card"><h2>Hinweis</h2>
       <p class="muted" style="margin-top:4px">Kalorien, BMI und Körperwerte sind Schätzungen aus Formeln. Sie ersetzen keine ärztliche oder ernährungsfachliche Beratung.</p>

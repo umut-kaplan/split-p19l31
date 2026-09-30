@@ -1,6 +1,6 @@
 /* Motivation (Stufe 5): Serie mit Joker, Wochenziele, Ziele und Meilensteine, Abzeichen. */
 import { S, V, save, activePlan } from '../state.js';
-import { esc, fmt, fmt1, dShort, uid, toNum, ymd } from '../util.js';
+import { esc, fmt, fmt1, fmtIn, dShort, uid, toNum, ymd } from '../util.js';
 import { render } from '../render.js';
 import { weekStreakWithJokers, weekHistoryWithJokers } from '../domain/streaks.js';
 import { weeklyGoals, evaluateGoal, weightGoalStatus, syncGoals, GOAL_KINDS } from '../domain/motivation.js';
@@ -221,7 +221,7 @@ function formSheet(kind) {
   if (kind === 'weight') {
     openSheet({
       title: 'Zielgewicht',
-      body: `<div class="form"><label>Zielgewicht in kg<input id="goal-kg" inputmode="decimal" value="${S.profile.targetWeightKg ? esc(fmt1(S.profile.targetWeightKg)) : ''}" placeholder="z. B. 80"></label>
+      body: `<div class="form"><label>Zielgewicht in kg<input id="goal-kg" inputmode="decimal" value="${S.profile.targetWeightKg ? esc(fmtIn(Math.round(S.profile.targetWeightKg * 10) / 10)) : ''}" placeholder="z. B. 80"></label>
         <p class="help">Das Zielgewicht gilt auch im Bereich Körper, dort stehen Verlauf und Prognose.</p></div>`,
       actions: [
         { label: 'Ziel speichern', kind: 'primary', fn: () => {
