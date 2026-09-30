@@ -7,9 +7,12 @@ import { SEX, EQUIPMENT, LIMIT_TAGS } from '../domain/profile-options.js';
 import { currentWeight } from '../domain/body.js';
 import { toast } from '../ui/toast.js';
 import { recordWeight } from './body.js';
+import * as birth from './birthdate.js';
+
+/* Untermodule, deren actions und inputs app.js einsammelt: Geburtsdatum mit Karte auf „Heute“ */
+export const modules = [birth];
 
 const RANGE = {
-  age: [10, 100, 'Alter in Jahren eintragen, z. B. 28'],
   heightCm: [120, 230, 'Größe in cm eintragen, z. B. 180'],
   weightKg: [30, 300, 'Gewicht in kg eintragen, z. B. 82,4'],
 };
@@ -22,7 +25,7 @@ const chip = (act, k, v, label, on) =>
 
 export const fName = p => `<label class="field">Vorname
   <input data-in="pf" data-k="name" value="${esc(p.name)}" autocomplete="given-name" maxlength="30" placeholder="Vorname"></label>`;
-export const fAge = p => numField('Alter', 'age', p.age, 'Jahre', 'numeric');
+export const fBirth = birth.fBirth;
 export const fHeight = p => numField('Größe', 'heightCm', p.heightCm, 'cm', 'numeric');
 export const fWeight = () => numField('Gewicht', 'weightKg', currentWeight(S.profile, S.body.weights), 'kg', 'decimal');
 export const fSex = p => `<div><p class="label">Geschlecht</p>
@@ -78,7 +81,7 @@ export const inputs = {
     if (el.value.trim() === '') { if (k !== 'weightKg') S.profile[k] = null; save(); return; }
     if (!(n >= lo && n <= hi)) { toast(msg); return; }
     if (k === 'weightKg') recordWeight(n, S.settings.onboardingDone ? 'profile' : 'onboarding');
-    else S.profile[k] = k === 'age' ? Math.round(n) : n;
+    else S.profile[k] = n;
     save();
   },
 };

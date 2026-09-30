@@ -20,7 +20,11 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 
 **Einrichtung:** fragt Eckdaten, Ziel, Plan (3er-Split, Ganzkörper 2×, Oberkörper/Unterkörper 4×, eigener Plan), Alltag, Trainingstage, Geräte und Einschränkungen ab; jeder Schritt lässt sich überspringen.
 
-**Profil:** Eckdaten, Ziel, Alltag, Trainingstage, Geräte, Einschränkungen, Stangen und Scheiben, Backup mit Erinnerung auf „Heute“ nach 7, 14 oder 30 Tagen (oder aus), Export der Trainings als CSV im Strong-Format, das Hevy importiert, „Was ist neu“, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen).
+**Profil:** Vorname, Geburtsdatum (`profile.birthDate`; ohne Datum rechnet die App mit einem früher eingetragenen Alter weiter), Geschlecht, Größe, Gewicht, Ziel, Alltag, Trainingstage, Einschränkungen.
+
+**Einstellungen** (Zahnrad im Profil): Studio mit Stangen und Scheiben (eigene Gewichte ab 0,25 kg, Farbe pro Scheibe, eigene Stangen, gemerkte Stange pro Übung) und Geräten; Daten mit Backup samt Erinnerung auf „Heute“ nach 7, 14 oder 30 Tagen (oder aus), Export der Trainings als CSV im Strong-Format, das Hevy importiert, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen; Geburtsdatum, Geschlecht und Größe nach Bestätigung fürs Profil), Schichtplan und Zurücksetzen; App mit „Was ist neu“, Hinweisen und Quellen samt Lizenzen.
+
+**Schichtplan:** Vorlage 28 Tage oder eigenes Muster, Import aus einer .ics-Datei (nur Datum und Schichtart), Monatskalender mit Einzeländerungen. Split plant die Trainings der nächsten zwei Wochen um die Schichten, mit Uhrzeit und Begründung, und übernimmt sie auf Wunsch als Kalender-Datei in den iPhone-Kalender. Auf „Heute“ steht eine Zeile mit Schicht und Training, ein Tipp öffnet den Schichtkalender. Kommt die App aus dem Hintergrund zurück, zeichnet sie neu, wenn seit dem letzten Zeichnen ein neuer Tag oder eine neue Viertelstunde begonnen hat.
 
 Jede Empfehlung nennt in einem Satz, warum die App sie gibt, und ist nur ein Vorschlag. Kalorien-, BMI- und Körperfettwerte sind Schätzungen aus Formeln.
 
@@ -35,7 +39,7 @@ PORT=9000 ./start.sh      # anderer Port
 
 ## Tests
 
-Die Rechenlogik ist ohne Build testbar: Kalorien, Makros, BMI, Navy-Formel, Trend und Prognose, Serie mit Joker, Progression, Rekorde, Volumen, Vorschlagsregeln, Erholungsampel, Tagesvorschlag, Wochenbericht, Abzeichen, MET und Schritte, Health-Import, Nährwerte, Lebensmitteldaten, Migration, Backup, Backup-Erinnerung, CSV-Export, Satztypen, Supersatz-Pausen, QR-Vergleich, Changelog, Zahleneingabe, Offline-Dateiliste.
+Die Rechenlogik ist ohne Build testbar: Kalorien, Makros, BMI, Navy-Formel, Trend und Prognose, Serie mit Joker, Progression, Rekorde, Volumen, Vorschlagsregeln, Erholungsampel, Tagesvorschlag, Wochenbericht, Abzeichen, MET und Schritte, Health-Import, Nährwerte, Lebensmitteldaten, Migration, Backup, Backup-Erinnerung, CSV-Export, Satztypen, Supersatz-Pausen, QR-Vergleich, Changelog, Zahleneingabe, Schichtplan (Muster, Import, Planung, Kalender-Datei), Geburtsdatum, eigene Scheiben und Stangen, Bildnachweise, Offline-Dateiliste.
 
 ```sh
 node --test "test/*.test.js"
@@ -56,7 +60,7 @@ Adresse: https://umut-kaplan.github.io/split-p19l31/. Auf dem iPhone in Safari �
 
 Vor jeder Veröffentlichung:
 
-- In `js/data/changelog.js` oben einen Eintrag mit Version, Datum und den Änderungen in Alltagssprache anlegen. Nach dem Update zeigt die App ihn einmal beim Start („Neu in Split“), später im Profil unter „Was ist neu“.
+- In `js/data/changelog.js` oben einen Eintrag mit Version, Datum und den Änderungen in Alltagssprache anlegen. Nach dem Update zeigt die App ihn einmal beim Start („Neu in Split“), später unter Einstellungen bei „Was ist neu“.
 - In `sw.js` die Konstante `CACHE` auf dieselbe Version setzen (`split-v4.2` zu Version 4.2), sonst sieht das Handy die neue Version erst verzögert. Ein Test prüft, dass beide zusammenpassen.
 - Jede neue Datei gehört in eine der Listen in `sw.js`; auch das prüft ein Test.
 
@@ -69,8 +73,8 @@ Jede Person nutzt die App auf ihrem eigenen Handy. Die Daten liegen nur dort und
 - **Fotos:** Mit der Kamera aufgenommene Fortschrittsfotos landen nicht in der Mediathek, sondern nur in der App (verkleinert auf etwa 1080 px, IndexedDB). „In Fotos sichern“ legt die Posen einer Woche als ein Bild nebeneinander und speichert es über das Teilen-Menü in der Mediathek.
 - **Speicher:** kleine Daten im `localStorage` unter `fit.v2` (Schema 2), Bilder und der Lebensmittel-Cache in IndexedDB (`split`, Stores `photos`, `exerciseImages`, `foodCache`). Beim Start bittet die App mit `navigator.storage.persist()` darum, nichts zu löschen.
 - **Umzug:** Ein Stand der ersten Version (`split.v1`) wird beim ersten Start übernommen. Der alte Schlüssel bleibt, bis ein Backup über das Teilen-Menü gespeichert ist. Ein Download ohne Teilen-Menü zählt dafür nicht.
-- **Backup:** *Profil → Backup speichern*, wahlweise mit oder ohne Fotos. Auf dem iPhone öffnet sich das Teilen-Menü, dort *In Dateien sichern* wählen, am besten in iCloud Drive.
-- **Wiederherstellen:** *Profil → Backup laden.* Backups der ersten Version (`app: 'split', version: 1`) enthalten nur Plan und Trainings; beim Laden bleiben Profil und Körperdaten stehen. Backups im neuen Format (`app: 'fit', version: 2`) ersetzen alles, Fotos kommen mit, wenn sie im Backup sind.
+- **Backup:** *Profil → Zahnrad (Einstellungen) → Backup speichern*, wahlweise mit oder ohne Fotos. Auf dem iPhone öffnet sich das Teilen-Menü, dort *In Dateien sichern* wählen, am besten in iCloud Drive.
+- **Wiederherstellen:** *Profil → Zahnrad (Einstellungen) → Backup laden.* Backups der ersten Version (`app: 'split', version: 1`) enthalten nur Plan und Trainings; beim Laden bleiben Profil und Körperdaten stehen. Backups im neuen Format (`app: 'fit', version: 2`) ersetzen alles, Fotos kommen mit, wenn sie im Backup sind.
 
 ## Quellen und Lizenzen
 

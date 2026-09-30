@@ -1,5 +1,7 @@
 /* Apple-Health-Export (export.zip oder export.xml), den man in der Health-App selbst erstellt und hier auswählt.
    Übernommen werden nur Gewicht, Schritte, Ruhepuls und Schlaf, ein Wert pro Tag.
+   Dazu kommen fürs Profil Geburtsdatum und Geschlecht aus <Me …/> und die jüngste Größe; übernommen werden sie
+   erst, wenn der Nutzer sie bestätigt (siehe profileProposals in health-merge.js).
    Die Datei wird in Stücken gelesen und nie ganz in den Speicher geholt; große Exporte haben mehrere hundert MB. */
 
 export const id = 'apple-health';
@@ -11,6 +13,7 @@ export const TYPES = {
   steps: 'HKQuantityTypeIdentifierStepCount',
   restingHr: 'HKQuantityTypeIdentifierRestingHeartRate',
   sleep: 'HKCategoryTypeIdentifierSleepAnalysis',
+  height: 'HKQuantityTypeIdentifierHeight',
 };
 const WANTED = new Set(Object.values(TYPES));
 
@@ -85,10 +88,74 @@ export function createRecordScanner(onRecord) {
   };
 }
 
+/* <Me …/> steht einmal vor dem ersten Record und trägt Geburtsdatum und Geschlecht.
+   Wie beim Record-Scanner über Stückgrenzen hinweg; nach dem Fund oder dem ersten Record sucht er nicht weiter. */
+export function createMeScanner(onMe) {
+  let buf = '';
+  let done = false;
+  return {
+    push(text) {
+      if (done) return;
+      buf = buf ? buf + text : text;
+      let pos = 0;
+      for (;;) {
+        const start = buf.indexOf('<Me', pos);
+        const rec = buf.indexOf('<Record', pos);
+        if (rec >= 0 && (start < 0 || rec < start)) { done = true; buf = ''; return; }
+        if (start < 0) { buf = buf.slice(Math.max(pos, buf.length - 6)); return; }
+        if (start + 3 >= buf.length) { buf = buf.slice(start); return; }
+        const c = buf.charCodeAt(start + 3);
+        /* <MetadataEntry und Ähnliches sind andere Elemente */
+        if (!(c === 32 || c === 9 || c === 10 || c === 13 || c === 47 || c === 62)) { pos = start + 3; continue; }
+        let end = buf.indexOf('>', start);
+        while (end >= 0 && oddQuotes(buf, start, end)) end = buf.indexOf('>', end + 1);
+        if (end < 0) { buf = buf.slice(start); return; }
+        const tag = buf.slice(start, end + 1);
+        done = true; buf = '';
+        onMe(parseAttrs(tag));
+        return;
+      }
+    },
+    get done() { return done; },
+  };
+}
+
+/* ---------- Profil ---------- */
+const SEXES = { HKBiologicalSexMale: 'm', HKBiologicalSexFemale: 'f' };
+/* Nur echte Kalendertage; „Nicht festgelegt“ steht im Export als leerer Wert */
+function birthDateOf(v) {
+  const s = String(v || '').slice(0, 10);
+  if (!DAY.test(s)) return null;
+  const [y, m, d] = s.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d ? s : null;
+}
+export function meProfile(attrs) {
+  const a = attrs || {};
+  return {
+    birthDate: birthDateOf(a.HKCharacteristicTypeIdentifierDateOfBirth),
+    sex: SEXES[a.HKCharacteristicTypeIdentifierBiologicalSex] || null,
+  };
+}
+
+/* Größe in cm aus einem Record; cm, mm, m, in und ft. Unplausible Werte (unter 120 oder über 230 cm) fallen weg. */
+const TO_CM = { cm: 1, mm: 0.1, m: 100, in: 2.54, ft: 30.48 };
+export function heightCm(value, unit) {
+  const f = TO_CM[String(unit || 'cm').toLowerCase()];
+  const cm = parseFloat(value) * f;
+  return f && cm >= 120 && cm <= 230 ? cm : null;
+}
+
 /* ---------- Tageswerte ---------- */
 /* '2024-09-20 07:12:00 +0200' als Wandzeit in ms: so, wie die Uhrzeit auf dem Gerät angezeigt wurde */
 export function wallMs(s) {
   return Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), +s.slice(11, 13) || 0, +s.slice(14, 16) || 0, +s.slice(17, 19) || 0);
+}
+/* Derselbe Zeitpunkt in UTC-ms, mit dem Versatz aus der Angabe; zum Vergleichen über Zeitzonen hinweg */
+export function instantMs(s) {
+  const m = /([+-])(\d{2}):?(\d{2})\s*$/.exec(s.slice(19));
+  const off = m ? (m[1] === '-' ? -1 : 1) * (+m[2] * 60 + +m[3]) * 6e4 : 0;
+  return wallMs(s) - off;
 }
 const isoDay = ms => new Date(ms).toISOString().slice(0, 10);
 const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -113,7 +180,9 @@ export function createAggregator() {
   const steps = new Map();    // Tag -> Map(Quelle -> Summe)
   const hr = new Map();       // Tag -> { sum, n }
   const sleep = new Map();    // Quelle -> [[von, bis], …]
-  const counts = { weight: 0, steps: 0, restingHr: 0, sleep: 0 };
+  let height = null;          // { at, cm }, der jüngste Wert
+  let me = { birthDate: null, sex: null };
+  const counts = { weight: 0, steps: 0, restingHr: 0, sleep: 0, height: 0 };
 
   function add(r) {
     const start = r.startDate || '';
@@ -162,6 +231,14 @@ export function createAggregator() {
         counts.sleep++;
         return;
       }
+      case TYPES.height: {
+        const cm = heightCm(r.value, r.unit);
+        if (cm == null) return;
+        const at = instantMs(start);
+        if (!height || at >= height.at) height = { at, cm };
+        counts.height++;
+        return;
+      }
       default:
     }
   }
@@ -186,6 +263,8 @@ export function createAggregator() {
     const range = list => (list.length ? { from: list[0].date, to: list[list.length - 1].date, days: list.length } : { from: null, to: null, days: 0 });
     return {
       weights, steps: stepList, restingHr: hrList, sleep: sleepList,
+      /* Fürs Profil; null, wo der Export nichts Brauchbares enthält */
+      profile: { ...me, heightCm: height ? Math.round(height.cm) : null },
       stats: {
         records: { ...counts },
         weights: range(weights), steps: range(stepList), restingHr: range(hrList), sleep: range(sleepList),
@@ -194,7 +273,10 @@ export function createAggregator() {
     };
   }
 
-  return { add, result };
+  /* Attribute aus <Me …/> */
+  const setMe = attrs => { me = meProfile(attrs); };
+
+  return { add, me: setMe, result };
 }
 
 /* ---------- Datei lesen ---------- */
@@ -218,6 +300,8 @@ export function abortError() {
 export async function readExport(file, { onProgress, signal, chunkSize = CHUNK, yieldToLoop } = {}) {
   const agg = createAggregator();
   const scanner = createRecordScanner(r => agg.add(r));
+  const meScanner = createMeScanner(a => agg.me(a));
+  const feed = text => { meScanner.push(text); scanner.push(text); };
   const total = file.size;
   const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
   const isZip = head[0] === 0x50 && head[1] === 0x4b && head[2] === 3 && head[3] === 4;
@@ -234,7 +318,7 @@ export async function readExport(file, { onProgress, signal, chunkSize = CHUNK, 
       entryName = entry.name;
       entry.ondata = (err, data, final) => {
         if (err) { failure = err; return; }
-        scanner.push(dec.decode(data, { stream: !final }));
+        feed(dec.decode(data, { stream: !final }));
         if (final) xmlDone = true;
       };
       entry.start();
@@ -251,7 +335,7 @@ export async function readExport(file, { onProgress, signal, chunkSize = CHUNK, 
       try { uz.push(bytes, last); } catch (e) { failure = e; }
       if (failure) throw new Error('Die ZIP-Datei ließ sich nicht entpacken. Ist sie vollständig?');
     } else {
-      scanner.push(dec.decode(bytes, { stream: !last }));
+      feed(dec.decode(bytes, { stream: !last }));
     }
     if (onProgress) onProgress(end, total, scanner.records);
     /* Nach der Haupt-XML folgen nur noch Routen und EKGs, die braucht die App nicht */

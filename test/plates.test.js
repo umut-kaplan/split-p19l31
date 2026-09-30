@@ -72,7 +72,12 @@ test('Stange je Übung aus der Bibliothek', () => {
 });
 
 test('Einstellungen werden bereinigt', () => {
-  assert.deepEqual(plateSettings(null), { barKg: 20, szKg: 10, available: [25, 20, 15, 10, 5, 2.5, 1.25] });
-  assert.deepEqual(plateSettings({ barKg: 15, available: [5, '2.5', 25, 25] }).available, [25, 5, 2.5]);
+  const kgs = s => s.available.map(p => p.kg);
+  const d = plateSettings(null);
+  assert.deepEqual(d.bars, [{ id: 'barbell', name: 'Langhantel', kg: 20 }, { id: 'sz', name: 'SZ-Stange', kg: 10 }]);
+  assert.deepEqual(kgs(d), [25, 20, 15, 10, 5, 2.5, 1.25]);
+  assert.deepEqual(d.barFor, {});
+  assert.deepEqual(kgs(plateSettings({ barKg: 15, available: [5, '2.5', 25, 25] })), [25, 5, 2.5]);
+  assert.equal(plateSettings({ barKg: 15 }).bars[0].kg, 15);
   assert.deepEqual(plateSettings({ available: [] }).available, STD);
 });

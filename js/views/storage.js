@@ -1,5 +1,5 @@
 /* Speicherprobleme sichtbar machen: Banner bei vollem Speicher, eigene Seite bei beschädigtem Stand */
-import { V, save } from '../state.js';
+import { S, V, save } from '../state.js';
 import { render } from '../render.js';
 import { confirmSheet } from '../ui/sheet.js';
 import { toast } from '../ui/toast.js';
@@ -7,10 +7,13 @@ import { shareFile, SHARE_FAILED } from '../ui/share-file.js';
 
 /* Über jeder Seite, solange das letzte Speichern gescheitert ist. Das Backup nimmt den Stand aus dem Arbeitsspeicher,
    also auch alles, was gerade nicht mehr gespeichert werden konnte. */
+/* Den Weg über Apple Health gibt es nur nach einem Import; Fotos liegen in IndexedDB und belegen hier keinen Platz (#60) */
+const freeUpText = () => (S.settings && S.settings.healthImport
+  ? 'Platz schaffst du danach unter Einstellungen bei Apple Health: „Importierte Werte entfernen“.'
+  : '');
 export const storageBanner = () => V.storageFull ? `<section class="banner storage-full" role="alert">
   <b>Der Speicher ist voll.</b> Neue Einträge werden gerade nicht gespeichert und sind nach dem Schließen der App weg.
-  Speichere jetzt ein Backup, darin ist alles enthalten. Platz schaffen danach: alte Fortschrittsfotos löschen oder
-  importierte Werte aus Apple Health entfernen.
+  Speichere jetzt ein Backup, darin ist alles enthalten. ${freeUpText()} Fortschrittsfotos liegen in einem eigenen Speicher, sie zu löschen hilft hier nicht.
   <button class="btn small" data-act="export" style="margin-top:10px">Backup speichern</button>
 </section>` : '';
 

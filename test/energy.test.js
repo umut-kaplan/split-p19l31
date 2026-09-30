@@ -56,8 +56,35 @@ test('Ohne Angaben: Alltag leicht aktiv und Beides', () => {
 });
 
 test('Fehlende Werte werden benannt statt geraten', () => {
-  assert.deepEqual(missingForCalories({ weightKg: 80, heightCm: null, age: null, sex: null }), ['Größe', 'Alter', 'Geschlecht']);
+  assert.deepEqual(missingForCalories({ weightKg: 80, heightCm: null, age: null, sex: null }), ['Größe', 'Geburtsdatum', 'Geschlecht']);
   assert.equal(calorieGoal({ weightKg: null, heightCm: 180, age: 30, sex: 'm' }).ok, false);
+});
+
+test('Mifflin mit Alter aus dem Geburtsdatum, am Tag der Rechnung', () => {
+  const p = { weightKg: 80, heightCm: 180, sex: 'm', activity: 'moderate', goal: 'recomp' };
+  // NOW ist der 28.09.2026: wer am 28.09.1996 geboren ist, wird heute 30
+  const birthday = calorieGoal({ ...p, birthDate: '1996-09-28' }, { now: NOW });
+  assert.equal(birthday.bmr, 1780);
+  assert.match(birthday.lines[0], /Alter \(30 Jahre\) und Geschlecht: 1\.780 kcal/);
+  // Einen Tag vor dem 30. Geburtstag: 29 Jahre, 5 kcal mehr
+  assert.equal(calorieGoal({ ...p, birthDate: '1996-09-29' }, { now: NOW }).bmr, 1785);
+  // Ein Jahr später rechnet dieselbe Angabe von selbst mit 31
+  assert.equal(calorieGoal({ ...p, birthDate: '1996-09-28' }, { now: NOW + 365 * D }).bmr, 1775);
+  // Das Geburtsdatum gewinnt gegen ein altes Alter
+  assert.equal(calorieGoal({ ...p, birthDate: '1996-09-28', age: 40 }, { now: NOW }).bmr, 1780);
+});
+
+test('Ohne Geburtsdatum rechnet die App mit dem früher eingetragenen Alter weiter', () => {
+  const p = { weightKg: 80, heightCm: 180, sex: 'm', activity: 'moderate', goal: 'recomp' };
+  const r = calorieGoal({ ...p, age: 30, birthDate: null }, { now: NOW });
+  assert.equal(r.bmr, 1780);
+  assert.match(r.lines[0], /Alter \(30 Jahre, ohne Geburtsdatum im Profil\)/);
+  // Auch ein Jahr später bleibt es bei 30, geschätzt wird nichts
+  assert.equal(calorieGoal({ ...p, age: 30 }, { now: NOW + 365 * D }).bmr, 1780);
+  assert.deepEqual(missingForCalories({ ...p, age: 30 }, NOW), []);
+  assert.deepEqual(missingForCalories({ ...p, birthDate: '1996-09-28' }, NOW), []);
+  assert.deepEqual(missingForCalories({ ...p, birthDate: 'kaputt' }, NOW), ['Geburtsdatum']);
+  assert.deepEqual(calorieGoal({ ...p }, { now: NOW }).missing, ['Geburtsdatum']);
 });
 
 test('Trainingszuschlag aus den letzten 7 Tagen, pro Einheit höchstens 2 Stunden', () => {

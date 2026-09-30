@@ -1,4 +1,6 @@
 /* Importierte Tageswerte in den Zustand übernehmen. Reine Funktionen, darum per node --test prüfbar. */
+import { birthDateProblem, birthDateDe, cleanBirthDate, yearsText } from '../domain/birthdate.js';
+import { SEX } from '../domain/profile-options.js';
 
 export const HEALTH_SOURCE = 'apple-health';
 const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -73,4 +75,46 @@ export function removeHealthImport(S, { source = HEALTH_SOURCE } = {}) {
   if (w.length && S.profile) S.profile.weightKg = w[w.length - 1].kg;
   delete S.settings.healthImport;
   return removed;
+}
+
+/* ---------- Profil ---------- */
+const PROFILE_KEYS = ['birthDate', 'sex', 'heightCm'];
+const sexText = k => (SEX[k] ? SEX[k].toLowerCase() : null);
+const cmText = v => `${(Math.round(v * 10) / 10).toLocaleString('de-DE')} cm`;
+
+/* Geburtsdatum, Geschlecht und Größe aus dem Export (result.profile), aber nur, was im Profil fehlt oder davon abweicht.
+   Unbekannte oder unplausible Werte fallen weg. Ändert nichts.
+   Liefert [{ key, value, label, text, before }]; before ist der bisherige Wert als Text oder null, wenn er fehlt. */
+export function profileProposals(profile, fromHealth, now = Date.now()) {
+  const p = profile || {};
+  const h = fromHealth || {};
+  const out = [];
+  const bd = cleanBirthDate(h.birthDate);
+  const cur = cleanBirthDate(p.birthDate);
+  if (bd && !birthDateProblem(bd, now) && bd !== cur) {
+    out.push({
+      key: 'birthDate', value: bd, label: 'Geburtsdatum', text: birthDateDe(bd),
+      before: cur ? birthDateDe(cur) : p.age > 0 ? `${yearsText(p.age)} alt, ohne Geburtsdatum` : null,
+    });
+  }
+  if (sexText(h.sex) && h.sex !== p.sex) {
+    out.push({ key: 'sex', value: h.sex, label: 'Geschlecht', text: sexText(h.sex), before: sexText(p.sex) });
+  }
+  const cm = Math.round(h.heightCm);
+  if (cm >= 120 && cm <= 230 && !(p.heightCm > 0 && Math.round(p.heightCm) === cm)) {
+    out.push({ key: 'heightCm', value: cm, label: 'Größe', text: cmText(cm), before: p.heightCm > 0 ? cmText(p.heightCm) : null });
+  }
+  return out;
+}
+
+/* Übernimmt die bestätigten Vorschläge ins Profil. Liefert die übernommenen Schlüssel. */
+export function applyProfileProposals(S, proposals) {
+  S.profile = S.profile || {};
+  const done = [];
+  for (const x of proposals || []) {
+    if (!PROFILE_KEYS.includes(x.key)) continue;
+    S.profile[x.key] = x.value;
+    done.push(x.key);
+  }
+  return done;
 }

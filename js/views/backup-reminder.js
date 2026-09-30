@@ -1,5 +1,5 @@
-/* Backup-Erinnerung: Karte auf „Heute“ und Einstellung im Profil. Logik in domain/backup-reminder.js.
-   „Backup speichern“ nutzt data-act="export" aus dem Profil, derselbe Ablauf mit Teilen-Menü. */
+/* Backup-Erinnerung: Karte auf „Heute“ und Auswahl in den Einstellungen bei Backup. Logik in domain/backup-reminder.js.
+   „Backup speichern“ nutzt data-act="export" aus den Einstellungen, derselbe Ablauf mit Teilen-Menü. */
 import { S, save } from '../state.js';
 import { esc } from '../util.js';
 import { render } from '../render.js';
@@ -22,7 +22,7 @@ export function backupCard() {
   </section>`;
 }
 
-/* Auswahl im Profil unter Backup */
+/* Auswahl unter Einstellungen bei Backup */
 export function remindSetting() {
   const cur = remindEvery(S.settings.backupRemindDays);
   return `<p class="label" id="bk-remind-l" style="margin-top:16px">Auf „Heute“ erinnern nach wie vielen Tagen ohne Backup?</p>

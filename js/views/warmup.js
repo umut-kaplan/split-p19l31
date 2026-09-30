@@ -4,7 +4,8 @@ import { S, V, save } from '../state.js';
 import { esc, fmt, fmtIn, toNum } from '../util.js';
 import { render } from '../render.js';
 import { findExercise } from '../domain/library.js';
-import { plateSettings, barFor, nearestLoadable, loadBar, perSideText } from '../domain/plates.js';
+import { plateSettings, nearestLoadable, loadBar, perSideText } from '../domain/plates.js';
+import { barInfo } from './plates.js';
 import { warmupRamp, warmupTargets, rampText, roundToStep, rampSets } from '../domain/warmup.js';
 import { isWarmup } from '../domain/settypes.js';
 
@@ -25,7 +26,8 @@ function rampFor(x, i) {
   const targets = warmupTargets(a.ex.map(e => ({ lib: libOf(e), workKg: workKg(e) })));
   if (!targets.includes(i)) return null;
   const work = workKg(x);
-  const bar = barFor(libOf(x), S.settings && S.settings.plates);
+  /* Dieselbe Stange wie im Scheibenrechner: für die Übung gewählt oder passend zum Gerät */
+  const bar = barInfo(x);
   const st = plateSettings(S.settings && S.settings.plates);
   const round = bar ? kg => nearestLoadable(kg, bar.kg, st.available) : roundToStep(x.inc > 0 ? x.inc : 2.5);
   const ramp = warmupRamp(work, { barKg: bar ? bar.kg : null, round });

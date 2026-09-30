@@ -22,3 +22,13 @@
 .ahi-pre li span:first-child { color: var(--chalk); font-weight: 600; }
 .ahi-pre li span:last-child { text-align: right; }
 .ahi .btn[disabled] { opacity: .4; }
+
+/* Angaben fürs Profil: Hinweis in der Vorschau und Sheet mit Häkchen */
+.ahi-prof { margin-top: 10px; }
+.hp-list { margin-top: 6px; }
+.hp-row { display: flex; gap: 14px; align-items: flex-start; min-height: 44px; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.hp-row:last-child { border-bottom: 0; }
+.hp-row input { flex: none; width: 24px; height: 24px; margin: 1px 0 0; accent-color: var(--c); }
+.hp-row span { display: grid; gap: 2px; min-width: 0; }
+.hp-row b { font-size: 17px; font-weight: 650; color: var(--chalk); }
+.hp-row small { color: var(--steel); font-size: 14px; }

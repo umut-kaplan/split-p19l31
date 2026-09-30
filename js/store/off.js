@@ -12,6 +12,8 @@ const FRESH = 7 * 864e5;          // so lange gilt ein Suchergebnis ohne neue An
 const NOT_FOUND_FRESH = 864e5;    // unbekannte Barcodes nach einem Tag erneut fragen
 
 export const OFF_CREDIT = 'Daten: Open Food Facts, ODbL';
+/* Hinweis nach ODbL 1.0 Abschnitt 4.3, mit Links auf die Datenbank und die Lizenz */
+export const OFF_CREDIT_HTML = 'Daten von <a href="https://openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> unter der <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL</a>';
 
 /* ---------- Drosselung: höchstens 8 Suchen pro Minute, mindestens 2 s Abstand ---------- */
 let lastCall = 0;

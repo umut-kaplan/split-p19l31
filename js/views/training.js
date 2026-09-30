@@ -10,6 +10,7 @@ import * as library from './library.js';
 import * as compare from './compare.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { pendingSuggestions } from '../coach/index.js';
+import { shiftTrainLine } from './shift-today.js';
 
 const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen']];
 
@@ -48,6 +49,7 @@ function vStart() {
   return `${sug ? `<div class="stack train-sug">${sug}${more}</div>` : ''}
     <p class="plan-active">Plan: <b>${esc(plan.name)}</b>
       <button class="link" data-act="trainsub" data-sub="plan">${S.plans.length > 1 ? 'Wechseln oder bearbeiten' : 'Bearbeiten'}</button></p>
+    ${shiftTrainLine()}
     <div class="day-list">${plan.order.map(id => {
     const d = plan.days[id];
     const { sets, min } = dayFacts(d);

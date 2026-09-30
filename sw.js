@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v4.3';
+const CACHE = 'split-v4.4';
 
 const CORE = [
   './',
@@ -209,6 +209,7 @@ const CHANGELOG = [
   'js/data/changelog.js',
   'js/domain/whatsnew.js',
   'js/views/whatsnew.js',
+  'js/views/settings.js',
   'js/views/storage.js',
 ];
 
@@ -237,7 +238,29 @@ const COMPARE = [
   'js/ui/zxing.js',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE];
+/* Schichtplan: Kalender, Import, Planung, Kalender-Datei */
+const SHIFTS = [
+  'css/shifts.css',
+  'js/domain/shifts.js',
+  'js/domain/shift-plan.js',
+  'js/domain/ics-parse.js',
+  'js/domain/ics-write.js',
+  'js/views/shifts.js',
+  'js/views/shift-today.js',
+];
+
+/* Eigene Stangen und Scheiben */
+const PLATES2 = [
+  'js/views/plate-settings.js',
+];
+
+/* Geburtsdatum statt Alter */
+const BIRTH = [
+  'js/domain/birthdate.js',
+  'js/views/birthdate.js',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...PLATES2, ...BIRTH];
 
 self.addEventListener('install', ev => {
   /* Am Browser-Cache vorbei laden, sonst landen kurz vor einem Update geladene alte Dateien im neuen Cache */

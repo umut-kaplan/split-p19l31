@@ -6,7 +6,8 @@
      id: 'apple-health',
      label: 'Apple Health',
      accept: '.zip,.xml',
-     parse(file, onProgress) -> Promise<{ weights, steps, restingHr, sleep, stats }>
+     parse(file, onProgress) -> Promise<{ weights, steps, restingHr, sleep, profile, stats }>
+     profile: { birthDate, sex, heightCm }, jeweils null, wenn unbekannt; ins Profil nur nach Bestätigung
    }
 
    Live-Anbindungen an Apple Health, Garmin, Fitbit oder Google Fit brauchen eine native App

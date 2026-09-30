@@ -91,6 +91,18 @@ details.more > summary::-webkit-details-marker { display: none; }
 .field input:focus, .field select:focus, .field textarea:focus, .form input:focus, .form select:focus { outline: none; border-color: var(--c); }
 .field .unit-wrap { position: relative; }
 .field .unit-wrap span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--dim); pointer-events: none; }
+/* Geburtsdatum mit Alter daneben; Safari auf dem iPhone mittet den Datumswert sonst */
+.bd-row { display: flex; gap: 12px; align-items: center; }
+/* iOS zeichnet den Wert eines Datumsfelds in einer eigenen Box mit Rand. Feste Höhe und Zeilenhöhe setzen ihn
+   senkrecht in die Mitte, linksbündig wie Name, Größe und Gewicht. */
+.bd-field input[type="date"] { display: block; flex: 1; min-width: 0; height: 48px; line-height: 46px; text-align: left; }
+.bd-field input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; line-height: 46px; }
+.bd-field input[type="date"]::-webkit-datetime-edit { padding: 0; line-height: 46px; }
+.bd-age { color: var(--chalk); font-size: 16px; font-weight: 650; white-space: nowrap; }
+.bd-age:empty { display: none; }
+.bd-msg { font-weight: 400; }
+.bd-msg:empty { display: none; }
+.bd-msg.warn { color: var(--yellow); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .label { color: var(--steel); font-size: 14px; font-weight: 600; margin-bottom: 8px; }

@@ -12,6 +12,8 @@ import * as goals from './goals.js';
 import * as report from './report.js';
 import * as recovery from './recovery.js';
 import * as backupReminder from './backup-reminder.js';
+import { shiftTodayCard, plannedNextId } from './shift-today.js';
+import { birthCard } from './birthdate.js';
 
 export function greeting(h) {
   if (h >= 5 && h < 11) return 'Guten Morgen';
@@ -21,7 +23,7 @@ export function greeting(h) {
 
 export function todayDay() {
   const plan = activePlan();
-  const id = V.pick && plan.days[V.pick] ? V.pick : nextDay(plan.order, S.sessions, plan.id);
+  const id = V.pick && plan.days[V.pick] ? V.pick : plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id);
   return { id, d: plan.days[id], plan };
 }
 
@@ -46,11 +48,13 @@ export function view() {
       <p>Kalorien, BMI und Körperwerte in dieser App sind Schätzungen aus Formeln. Sie ersetzen keine ärztliche oder ernährungsfachliche Beratung.</p>
       <button class="btn small" data-act="disclaimer">Verstanden</button>
     </section>`}
+    ${shiftTodayCard()}
     ${report.reportCard()}
     ${S.active ? activeHero() : hero(id, d, plan, rolled)}
     ${S.active ? '' : recovery.trainTodayCard()}
     ${S.active ? '' : recovery.checkinCard()}
     ${S.active ? '' : backupReminder.backupCard()}
+    ${S.active ? '' : birthCard()}
     ${suggestionsBlock()}
     ${goals.streakCard(d.color)}
     ${goals.weeklyGoalsCard()}

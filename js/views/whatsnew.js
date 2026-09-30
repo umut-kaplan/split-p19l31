@@ -1,4 +1,4 @@
-/* „Neu in Split“: nach einem Update einmal beim Start, sonst über das Profil */
+/* „Neu in Split“: nach einem Update einmal beim Start, sonst über die Einstellungen */
 import { S, save } from '../state.js';
 import { esc } from '../util.js';
 import { openSheet, closeSheet } from '../ui/sheet.js';

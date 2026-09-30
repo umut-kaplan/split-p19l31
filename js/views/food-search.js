@@ -3,7 +3,7 @@ import { V } from '../state.js';
 import { esc, fmt0, dShort, uid } from '../util.js';
 import { MEALS, entryNutrients } from '../domain/nutrition.js';
 import { normalize, searchFoods, pickNutrients, labelHasAmount } from '../domain/foods.js';
-import { searchOff, OFF_CREDIT } from '../store/off.js';
+import { searchOff, OFF_CREDIT_HTML } from '../store/off.js';
 import { ICON } from '../ui/icons.js';
 import { toast } from '../ui/toast.js';
 import { nut, topView, openView, closeAllViews, localFoods, recentFoods, remember, foodByKey, customFood, recipeFood, addEntries } from './food-state.js';
@@ -53,7 +53,7 @@ function offSection(v) {
       ? `${note}<ul class="food-hits">${o.items.map(hit).join('')}</ul>${err}`
       : (err || `<p class="food-note">Open Food Facts kennt dazu nichts. Probier ein anderes Wort oder lege das Lebensmittel selbst an.</p>`);
   }
-  return `<section class="food-sec"><h2>Open Food Facts</h2>${inner}<p class="small-print" style="margin-top:8px">${esc(OFF_CREDIT)}</p></section>`;
+  return `<section class="food-sec"><h2>Open Food Facts</h2>${inner}<p class="small-print" style="margin-top:8px">${OFF_CREDIT_HTML}</p></section>`;
 }
 
 /* Lokale Treffer. Der Open-Food-Facts-Teil steht in einem eigenen Container, damit ein Neuzeichnen dort

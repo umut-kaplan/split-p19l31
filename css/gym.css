@@ -23,14 +23,42 @@
 .pl-viz { display: block; width: 100%; max-width: 250px; height: auto; margin: 2px 0; }
 .pl-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; padding: 0; list-style: none; color: var(--steel); font-size: 14px; }
 .pl-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.pl-legend i { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35); }
+/* Wie die Scheiben in der Zeichnung von der Seite, damit es nicht nach einem Ankreuzfeld aussieht */
+.pl-legend i { width: 6px; height: 16px; border-radius: 2px; background: var(--pc); box-shadow: inset 0 0 0 1px var(--pe, rgba(0, 0, 0, .35)); }
 .pl-opt { padding: 10px 12px; border-radius: 14px; background: var(--floor); }
 .pl-opt p { font-size: 16px; }
+/* Wahl der Stange oben im Sheet */
+.pl-bars { display: grid; gap: 6px; }
+.pl-bars .chips { gap: 6px; }
+.pl-bars .chip { padding: 0 12px; font-size: 14px; }
+.pl-bars .chip .num { opacity: .75; font-weight: 600; }
 
-/* ---------- Profil ---------- */
+/* ---------- Einstellungen: Stangen und Scheiben ---------- */
+.pl-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pl-row {
+  display: flex; width: 100%; align-items: center; gap: 10px; min-height: 56px; padding: 10px 14px;
+  border-radius: 14px; border: 1px solid var(--line); background: var(--deck); color: var(--chalk); text-align: left;
+}
+.pl-row > span:first-child { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.pl-row b { font-size: 16px; overflow-wrap: anywhere; }
+.pl-row small { color: var(--steel); font-size: 13px; }
+.pl-row-kg { font-weight: 700; white-space: nowrap; }
+.pl-row svg { width: 18px; height: 18px; flex: none; color: var(--dim); }
+.pl-addlink { margin-top: 6px; min-height: 44px; }
 .pl-chip { display: inline-flex; align-items: center; gap: 8px; }
-.pl-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .25); }
-.pl-chip.on .pl-dot { box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); }
+/* Scheibe von der Seite wie in der Zeichnung; ein runder Punkt sähe bei schwarzen Scheiben wie ein Auswahlknopf aus */
+.pl-dot { width: 7px; height: 18px; border-radius: 2px; flex: none; background: var(--pc); box-shadow: inset 0 0 0 1px var(--pe, rgba(0, 0, 0, .35)); }
+.pl-chip.pl-add { border-style: dashed; color: var(--steel); }
+.pl-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pl-tools:empty { display: none; }
+/* Farbwahl im Sheet: Scheiben von vorn mit ihrem Gewicht, damit man den Kontrast gleich sieht */
+.pl-swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.pl-sw {
+  display: grid; justify-items: center; gap: 4px; padding: 6px 2px; min-height: 44px;
+  border: 2px solid transparent; border-radius: 14px; background: none; color: var(--steel); font-size: 12px; font-weight: 650;
+}
+.pl-sw svg { width: 44px; height: 44px; display: block; }
+.pl-sw.on { border-color: var(--c); background: var(--c-soft); color: var(--chalk); }
 
 /* ---------- Aufwärmen ---------- */
 .wu { margin-top: 10px; border-radius: 12px; background: var(--floor); }

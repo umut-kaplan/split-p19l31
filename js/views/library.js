@@ -94,7 +94,7 @@ export function vLibrary() {
     <ul class="lib-list">${filtered.map(e => libItem(e, t, q)).join('')}</ul>
     <p class="empty lib-none" ${visible ? 'hidden' : ''}>Keine Übung gefunden. Du kannst sie als eigene Übung anlegen.</p>
     <div class="stack"><button class="btn" data-act="libnew">Eigene Übung anlegen</button></div>
-    ${credited ? '<p class="small-print" style="margin-top:14px">Übungsbilder von wger.de unter CC-BY-SA. Die Urheber stehen in den Details jeder Übung.</p>' : ''}
+    ${credited ? '<p class="small-print" style="margin-top:14px">Übungsbilder von wger.de unter CC BY-SA 3.0 und 4.0, verkleinert und weiß hinterlegt. Urheber und Lizenz stehen in den Details jeder Übung.</p>' : ''}
   </div>`;
 }
 
@@ -141,8 +141,9 @@ export function showExercise(id) {
     ${e.steps && e.steps.length ? `<h3>So geht’s</h3><ol class="lib-steps">${e.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
     ${e.mistakes && e.mistakes.length ? `<h3>Typische Fehler</h3><ul class="lib-mistakes">${e.mistakes.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
     ${!hits.length && alts.length ? `<h3>Ähnliche Übungen</h3>${altChips(alts)}` : ''}
-    ${c ? `<p class="small-print lib-credit">Bild: ${esc(c.author || 'wger.de')}${c.license ? `, Lizenz ${esc(c.license)}` : ''}${c.url
-      ? `, <a href="${esc(c.url)}" target="_blank" rel="noopener">Quelle</a>` : ''}</p>` : ''}
+    ${c ? `<p class="small-print lib-credit">Bild: ${esc(c.author || 'wger.de')}${c.license
+      ? `, ${c.licenseUrl ? `<a href="${esc(c.licenseUrl)}" target="_blank" rel="noopener">${esc(c.license)}</a>` : esc(c.license)}` : ''}, verkleinert und weiß hinterlegt${c.url
+      ? `. <a href="${esc(c.url)}" target="_blank" rel="noopener">Quelle: wger.de</a>` : ''}</p>` : ''}
     ${e.custom ? '<p class="small-print lib-credit">Eigene Übung.</p>' : ''}
   </div>`;
   const actions = [];

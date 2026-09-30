@@ -1,0 +1,133 @@
+/* ---------- Schichtplan ---------- */
+/* Farben je Schichtart: Früh gelb, Spät blau, Nacht violett, Urlaub grün, frei grau */
+.sh-f { --sh: var(--yellow); --on-sh: #1E2124; }
+.sh-s { --sh: var(--blue);   --on-sh: #fff; }
+.sh-n { --sh: #8B7BEA;       --on-sh: #fff; }
+.sh-u { --sh: var(--green);  --on-sh: #fff; }
+.sh-x { --sh: var(--deck2);  --on-sh: var(--steel); }
+.sh-q { --sh: transparent;   --on-sh: var(--dim); }
+
+.sh-code {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 4px;
+  border-radius: 6px; background: var(--sh); color: var(--on-sh);
+  font-family: var(--round); font-size: 13px; font-weight: 800; line-height: 1;
+}
+.sh-code.sh-q { box-shadow: inset 0 0 0 1px var(--line); }
+/* Von Hand geändert: heller Ring */
+.sh-code.ov { box-shadow: 0 0 0 2px var(--floor), 0 0 0 3.5px var(--chalk); }
+
+/* Seite */
+.sh-top { min-height: 44px; display: flex; align-items: center; }
+.sh-seg { margin-top: 14px; }
+.sh-seg button { padding: 0 6px; font-size: 14px; }
+.sh-hint { margin: 12px 0 10px; }
+.sh-rules { margin-top: 10px; font-size: 14px; }
+
+/* Monatskalender */
+.sh-grid { gap: 3px; }
+.sh-day {
+  display: grid; justify-items: center; align-content: start; gap: 3px; min-width: 0;
+  min-height: 60px; padding: 5px 0 4px; border-radius: 11px; border: 1px solid transparent;
+  background: var(--floor); color: var(--chalk); font-size: 14px; font-weight: 650;
+}
+.sh-day.past { opacity: .5; }
+.sh-day.today { border-color: var(--chalk); }
+.sh-day.today .num { text-decoration: underline; text-underline-offset: 3px; }
+.sh-dots { display: flex; gap: 3px; min-height: 9px; }
+.sh-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.sh-dot.sh-trained { background: var(--c); }
+.sh-dot.sh-planned { box-shadow: inset 0 0 0 2px var(--c); }
+.sh-legend {
+  list-style: none; margin: 10px 0 0; padding: 0 4px;
+  display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--steel); font-size: 13px;
+}
+.sh-legend li { display: flex; align-items: center; gap: 6px; }
+
+/* Einrichtung */
+.sh-blocks { display: grid; gap: 8px; }
+.sh-block { display: grid; gap: 4px; }
+.sh-pills { display: flex; flex-wrap: wrap; gap: 3px; }
+.sh-start { margin-top: 16px; }
+.sh-len { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sh-len .stepper { gap: 6px; }
+.sh-len .stepper b { font-size: 22px; min-width: 2.2ch; }
+.sh-len .icon { font-size: 15px; font-weight: 700; color: var(--chalk); }
+.sh-cells { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 12px 0 4px; }
+.sh-cell {
+  display: grid; justify-items: center; gap: 1px; min-width: 0; min-height: 48px; padding: 4px 0;
+  border: 0; border-radius: 10px; background: var(--sh); color: var(--on-sh);
+}
+.sh-cell small { font-size: 11px; opacity: .75; }
+.sh-cell b { font-family: var(--round); font-size: 17px; line-height: 1.1; }
+.sh-cell.sh-x { box-shadow: inset 0 0 0 1px var(--line); }
+.sh-preview { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.sh-pv {
+  display: grid; justify-items: center; gap: 4px; min-width: 0; padding: 6px 0;
+  border-radius: 10px; background: var(--floor); border: 1px solid transparent;
+}
+.sh-pv.today { border-color: var(--chalk); }
+.sh-pv small { color: var(--steel); font-size: 10.5px; line-height: 1.2; text-align: center; }
+
+/* Die nächsten 2 Wochen */
+.sh-week { margin-top: 20px; }
+.sh-week h3 { font-size: 17px; margin-bottom: 8px; }
+.sh-week h3 small { margin-left: 6px; color: var(--dim); font-size: 14px; font-weight: 600; }
+.sh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sh-row {
+  display: grid; grid-template-columns: 84px 26px minmax(0, 1fr); gap: 10px; align-items: center;
+  min-height: 48px; padding: 8px 12px; border-radius: 14px; background: var(--deck); border: 1px solid var(--line);
+}
+.sh-row.today { border-color: var(--chalk); }
+.sh-row.train { box-shadow: inset 3px 0 0 var(--c); }
+.sh-date { color: var(--steel); font-size: 14px; font-weight: 650; }
+.sh-what { display: grid; min-width: 0; }
+.sh-what small { color: var(--steel); font-size: 13px; line-height: 1.3; }
+.sh-short { margin-top: 8px; }
+.sh-export { display: grid; gap: 2px; margin-top: 10px; }
+.sh-export .btn { width: 100%; }
+.sh-note { margin-top: 26px; }
+
+/* Karte auf „Heute“ */
+.sh-today { margin-top: 18px; }
+.sh-today-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) 20px; gap: 12px; align-items: center;
+  width: 100%; padding: 12px 14px; border-radius: 16px; text-align: left; color: inherit;
+  background: var(--deck); border: 1px solid color-mix(in srgb, var(--sh) 45%, var(--line));
+}
+.sh-today.sh-x .sh-today-row, .sh-today.sh-q .sh-today-row { border-color: var(--line); }
+.sh-today-row .sh-code { min-width: 34px; height: 34px; border-radius: 10px; font-size: 17px; }
+.sh-today-txt { display: grid; gap: 2px; }
+.sh-today-txt > b { font-size: 16px; }
+.sh-today-txt small { color: var(--steel); font-size: 14px; line-height: 1.35; }
+.sh-today-txt small b { color: var(--chalk); }
+.sh-today-row svg { width: 20px; height: 20px; color: var(--dim); }
+.sh-train-line { margin-top: 6px; }
+
+/* Einstellungen */
+.sh-times { display: grid; gap: 8px; margin-top: 8px; }
+.sh-trow { display: grid; grid-template-columns: 26px minmax(0, 1fr) 92px auto 92px; gap: 8px; align-items: center; }
+.sh-trow.pref { grid-template-columns: 26px minmax(0, 1fr) 110px; }
+.sh-time {
+  width: 100%; min-width: 0; min-height: 44px; padding: 0 6px;
+  background: var(--floor); border: 1px solid var(--line); border-radius: 12px;
+  color: var(--chalk); font-family: var(--round); font-size: 16px; text-align: center;
+  -webkit-appearance: none; appearance: none;
+}
+.sh-time:focus { outline: none; border-color: var(--c); }
+
+/* Import */
+.sh-sum, .sh-unknown { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.sh-sum li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.sh-unknown li { display: flex; justify-content: space-between; gap: 12px; color: var(--steel); font-size: 14px; }
+.sh-unknown li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.sh-last { margin-top: 12px; }
+
+/* Sheet eines Tages */
+.sh-chips .chip.on { background: var(--sh); border-color: var(--sh); color: var(--on-sh); }
+.sh-chips .chip.sh-x.on { background: var(--chalk); border-color: var(--chalk); color: var(--floor); }
+.sh-sheet-train { margin-top: 14px; color: var(--steel); }
+.sh-sheet-train b { color: var(--chalk); }
+
+/* iOS richtet Datum und Uhrzeit sonst selbst aus */
+.sh-time::-webkit-date-and-time-value { text-align: center; }
+.sh-start input::-webkit-date-and-time-value { text-align: left; }

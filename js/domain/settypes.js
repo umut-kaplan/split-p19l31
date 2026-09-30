@@ -21,9 +21,9 @@ export const isWarmup = s => setType(s) === 'w';
 export const isTop = s => { const t = setType(s); return t !== 'w' && t !== 'd'; };
 
 /* Arbeitssätze: alles außer Aufwärmen. Grundlage für Volumen, Muskelvolumen, Wochenbericht, Satzzähler. */
-export const workSets = (sets = []) => (sets || []).filter(s => !isWarmup(s));
+export const workSets = (sets = []) => (Array.isArray(sets) ? sets : []).filter(s => !isWarmup(s));
 /* Sätze für Rekorde und Progression: ohne Aufwärm- und Dropsätze */
-export const topSets = (sets = []) => (sets || []).filter(isTop);
+export const topSets = (sets = []) => (Array.isArray(sets) ? sets : []).filter(isTop);
 
 /* Gewicht mal Wiederholungen der Arbeitssätze in kg */
 export const tonnage = (sets = []) => workSets(sets).reduce((a, s) => a + (s.w || 0) * (s.r || 0), 0);

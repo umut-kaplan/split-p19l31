@@ -1,13 +1,13 @@
 /* Barcode-Scanner: Rückkamera, zuerst BarcodeDetector, sonst ZXing (iOS Safari). Nummer eintippen geht immer. */
 import { esc } from '../util.js';
 import { isValidBarcode } from '../domain/foods.js';
-import { lookupBarcode, OFF_CREDIT } from '../store/off.js';
+import { lookupBarcode, OFF_CREDIT_HTML } from '../store/off.js';
 import { toast } from '../ui/toast.js';
 import { loadZxing } from '../ui/zxing.js';
 import { nut, topView, closeView, replaceView, customFood } from './food-state.js';
 import { bar, amountSheet, newFoodView } from './food-forms.js';
 
-const cam = { stream: null, timer: null, busy: false, detector: undefined, zx: null, canvas: null, torch: false, view: null };
+const cam = { stream: null, timer: null, busy: false, pending: false, detector: undefined, zx: null, canvas: null, torch: false, view: null };
 
 export function view(v) {
   /* Nach dem Zeichnen die Kamera an das neue Video-Element hängen */
@@ -31,7 +31,7 @@ export function view(v) {
         <button class="btn primary small" data-act="foodcode">Nachschlagen</button>
       </div>
     </section>
-    <p class="small-print" style="margin-top:14px">${esc(OFF_CREDIT)}</p>
+    <p class="small-print" style="margin-top:14px">${OFF_CREDIT_HTML}</p>
   </div>`;
 }
 
@@ -52,16 +52,24 @@ export function stopCamera() {
 
 async function attach(v) {
   const video = document.getElementById('food-video');
-  if (!video || topView() !== v || v.done) return;
+  /* Läuft die Freigabe noch, hängt der erste Aufruf das Bild an das dann aktuelle Video-Element.
+     Sonst forderten Rückkehr und Neuzeichnen je einen Stream an, und einer bliebe offen. */
+  if (!video || topView() !== v || v.done || cam.pending) return;
   try {
     if (!cam.stream) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error(), { name: 'NoCamera' });
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
-      });
-      /* Während der Freigabe weggetippt? Dann gleich wieder aus. */
-      if (topView() !== v || !document.getElementById('food-video')) { stream.getTracks().forEach(t => t.stop()); return; }
-      cam.stream = stream;
+      cam.pending = true;
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
+        });
+      } finally { cam.pending = false; }
+      /* Während der Freigabe weggetippt oder schon ein Stream da? Dann den neuen gleich wieder aus. */
+      const gone = topView() !== v || !document.getElementById('food-video');
+      if (gone || cam.stream) stream.getTracks().forEach(t => t.stop());
+      if (gone) return;
+      if (!cam.stream) cam.stream = stream;
     }
     const el = document.getElementById('food-video');
     el.srcObject = cam.stream;

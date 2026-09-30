@@ -2,6 +2,9 @@
 import { defaultPlan } from '../plans.js';
 import { cleanSet } from '../domain/settypes.js';
 import { cleanLink } from '../domain/superset.js';
+import { defaultShifts, normalizeShifts } from '../domain/shifts.js';
+import { plateSettings } from '../domain/plates.js';
+import { cleanBirthDate } from '../domain/birthdate.js';
 
 export const SCHEMA = 2;
 export const APP_ID = 'fit';
@@ -9,7 +12,8 @@ export const APP_ID = 'fit';
 export function defaultProfile() {
   return {
     name: '',
-    age: null,
+    birthDate: null,    // 'JJJJ-MM-TT', siehe domain/birthdate.js
+    age: null,          // nur noch Notlösung für Stände ohne Geburtsdatum
     heightCm: null,
     weightKg: null,
     sex: null,          // 'm' | 'f'
@@ -26,14 +30,14 @@ export function defaultState() {
   return {
     schema: SCHEMA,
     profile: defaultProfile(),
-    /* plates: Stangengewichte und vorhandene Scheiben für Scheibenrechner und Aufwärmen */
+    /* plates: Stangen, vorhandene Scheiben mit Farbe und die Stange pro Übung für Scheibenrechner und Aufwärmen (domain/plates.js) */
     settings: {
       onboardingDone: false, disclaimerSeen: false, lastBackup: null, lastPhotoPrompt: null,
       /* Backup-Erinnerung auf „Heute“: nach 7, 14 oder 30 Tagen, 0 = aus; backupSnoozedAt: Zeitpunkt von „Später“ */
       backupRemindDays: 7, backupSnoozedAt: null,
       /* Vergleich: Körpergewicht im eigenen QR-Code mitteilen */
       compareWeight: true,
-      plates: { barKg: 20, szKg: 10, available: [25, 20, 15, 10, 5, 2.5, 1.25] },
+      plates: plateSettings(null),
     },
     /* Dauerhafte Notizen pro Übung: { 'exId|Name': 'Sitz Stufe 4' }. Trainings tragen optional rating: { rpe, note }. */
     exerciseNotes: {},
@@ -74,6 +78,8 @@ export function defaultState() {
     /* Zuletzt gescannter Stand eines Trainingspartners: { code, scannedAt }. code ist der Text aus dem QR-Code,
        gelesen wird er mit decodeStand aus domain/compare.js. */
     compare: null,
+    /* Schichtplan: Muster, Import, Einzeländerungen und Zeiten, siehe domain/shifts.js. Ohne Muster und Import plant die App nichts. */
+    shifts: defaultShifts(),
   };
 }
 
@@ -117,8 +123,8 @@ export function normalize(s) {
     ...d,
     ...s,
     schema: SCHEMA,
-    profile: { ...d.profile, ...p, limitations: { ...d.profile.limitations, ...(p.limitations || {}) } },
-    settings: { ...d.settings, ...(s.settings || {}) },
+    profile: { ...d.profile, ...p, birthDate: cleanBirthDate(p.birthDate), limitations: { ...d.profile.limitations, ...(p.limitations || {}) } },
+    settings: { ...d.settings, ...(s.settings || {}), plates: plateSettings(s.settings && s.settings.plates) },
     body: { ...d.body, ...(s.body || {}) },
     nutrition: { ...d.nutrition, ...(s.nutrition || {}) },
     exercisesCustom: Array.isArray(s.exercisesCustom) ? s.exercisesCustom : [],
@@ -133,6 +139,7 @@ export function normalize(s) {
     plans: cleanPlans(s.plans),
     sessions: cleanSessions(s.sessions),
     active: cleanActive('active' in s ? s.active : d.active),
+    shifts: normalizeShifts(s.shifts),
   };
 }
 

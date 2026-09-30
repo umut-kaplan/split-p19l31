@@ -9,12 +9,13 @@ import { recoveryFromState, LEVEL_LABEL, FEELING_LABEL } from '../domain/recover
 import { suggestToday, restText } from '../domain/today-plan.js';
 import { plateSVG } from '../ui/plate.js';
 import { toast } from '../ui/toast.js';
+import { plannedNextId, withShiftPlan } from './shift-today.js';
 
 const resolve = n => findExercise(n, S.exercisesCustom);
 
 /* Welche Einheit zeigt die Hantelscheibe oben gerade? Gleiche Regel wie auf der Startseite. */
 function heroDayId(plan) {
-  return V.pick && plan.days[V.pick] ? V.pick : nextDay(plan.order, S.sessions, plan.id);
+  return V.pick && plan.days[V.pick] ? V.pick : plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id);
 }
 
 /* ---------- Ampel und Tagesvorschlag ---------- */
@@ -23,11 +24,12 @@ export function trainTodayCard() {
   const today = ymd();
   const rec = recoveryFromState(S, today);
   const done = [...S.sessions].reverse().find(s => ymd(s.startedAt) === today && (!s.planId || s.planId === plan.id));
-  const sug = suggestToday({
+  /* Mit Schichtplan ist die geplante Einheit der Kandidat; an Tagen ohne Plan rät die Karte zur Pause */
+  const sug = withShiftPlan(suggestToday({
     plan, sessions: S.sessions, resolve, level: rec.level,
-    nextId: nextDay(plan.order, S.sessions, plan.id),
+    nextId: plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id),
     trainedToday: done ? { dayId: done.dayId, name: done.name } : null,
-  });
+  }));
   if (!sug) return '';
   const heroId = heroDayId(plan);
   const day = sug.dayId && plan.days[sug.dayId];

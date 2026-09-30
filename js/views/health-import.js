@@ -1,11 +1,14 @@
-/* Import aus dem Apple-Health-Export (Stufe 6). Abschnitt im Profil. */
+/* Import aus dem Apple-Health-Export (Stufe 6). Abschnitt unter Einstellungen.
+   Nach dem Übernehmen der Tageswerte fragt ein Sheet, ob Geburtsdatum, Geschlecht und Größe ins Profil sollen. */
 import { S, V, save, replaceState, KEY } from '../state.js';
 import { esc, fmt0, fmt1, dShort, ymd } from '../util.js';
 import { render } from '../render.js';
 import { toast } from '../ui/toast.js';
-import { confirmSheet, closeSheet } from '../ui/sheet.js';
+import { confirmSheet, openSheet, closeSheet } from '../ui/sheet.js';
 import { IMPORTERS } from '../importers/index.js';
-import { previewHealthImport, mergeHealthImport, removeHealthImport, HEALTH_SOURCE } from '../importers/health-merge.js';
+import {
+  previewHealthImport, mergeHealthImport, removeHealthImport, profileProposals, applyProfileProposals, HEALTH_SOURCE,
+} from '../importers/health-merge.js';
 
 const importer = IMPORTERS.find(i => i.id === 'apple-health');
 
@@ -51,7 +54,7 @@ function lastImport() {
 }
 
 function vIdle() {
-  return `<p class="muted">Übernimmt Gewicht, Schritte, Ruhepuls und Schlaf aus dem Export der Health-App. Die Datei wird nur auf diesem Handy gelesen.</p>
+  return `<p class="muted">Übernimmt Gewicht, Schritte, Ruhepuls und Schlaf aus dem Export der Health-App. Geburtsdatum, Geschlecht und Größe bietet die App dir danach fürs Profil an. Die Datei wird nur auf diesem Handy gelesen.</p>
     <ol class="ahi-steps">
       <li>In der Health-App oben rechts auf dein Profilbild tippen.</li>
       <li>Ganz unten <b>Alle Gesundheitsdaten exportieren</b> wählen und bestätigen. Das dauert ein paar Minuten.</li>
@@ -81,6 +84,7 @@ function vDone(s) {
   const since = sinceFor(s.period);
   const pre = previewHealthImport(S, r, { since });
   const any = METRICS.some(([k]) => pre[k].days);
+  const props = profileProposals(S.profile, r.profile);
   return `<p class="muted">Gefunden in <b>${esc(r.stats.file || s.name)}</b>:</p>
     <table class="ahi-sum">
       <thead><tr><th scope="col">Wert</th><th scope="col">Tage</th><th scope="col">Zeitraum</th></tr></thead>
@@ -95,8 +99,9 @@ function vDone(s) {
       `<button class="${s.period === k ? 'on' : ''}" aria-pressed="${s.period === k}" data-act="ahiperiod" data-v="${k}">${l}</button>`).join('')}</div>
     <ul class="ahi-pre">${METRICS.map(([k, l]) => `<li><span>${l}</span><span class="num">${pre[k].added ? `${days(pre[k].added)} neu` : 'nichts'}${pre[k].kept ? `, ${days(pre[k].kept)} ${pre[k].kept === 1 ? 'bleibt' : 'bleiben'} wie eingetragen` : ''}</span></li>`).join('')}</ul>
     ${any ? '' : '<p class="small-print">Im gewählten Zeitraum gibt es keine Werte. Wähle einen längeren Zeitraum.</p>'}
+    ${props.length ? `<p class="small-print ahi-prof">Fürs Profil: ${esc(props.map(x => x.label).join(', '))}. Was davon übernommen wird, fragt die App gleich.</p>` : ''}
     <div class="stack">
-      <button class="btn primary" data-act="ahiapply" ${any ? '' : 'disabled'}>Übernehmen</button>
+      <button class="btn primary" data-act="ahiapply" ${any || props.length ? '' : 'disabled'}>Übernehmen</button>
       <button class="btn ghost" data-act="ahidiscard">Verwerfen</button>
     </div>`;
 }
@@ -139,7 +144,7 @@ async function start(file) {
     job = null;
     Object.assign(s, { phase: 'done', result });
     render();
-    if (V.tab !== 'profile') toast('Health-Export gelesen, unter Profil übernehmen');
+    if (V.tab !== 'profile' || V.setView !== 'main') toast('Health-Export gelesen, unter Einstellungen übernehmen');
   } catch (e) {
     if (job !== ctrl) return;
     job = null;
@@ -157,20 +162,54 @@ function savedOk() {
 function apply() {
   const s = st();
   if (!s.result) return;
-  /* Passt der Import nicht in den Speicher, wird er vollständig zurückgenommen; das gelesene Ergebnis bleibt für einen kürzeren Zeitraum */
-  const before = JSON.parse(JSON.stringify(S));
-  const counts = mergeHealthImport(S, s.result, { since: sinceFor(s.period), source: HEALTH_SOURCE });
-  const ok = save() && savedOk();
-  if (!ok) {
-    replaceState(before);
+  const since = sinceFor(s.period);
+  const pre = previewHealthImport(S, s.result, { since });
+  const any = METRICS.some(([k]) => pre[k].days);
+  const props = profileProposals(S.profile, s.result.profile);
+  /* Ohne Tageswerte im Zeitraum bleibt ein früherer Import stehen; dann geht es nur ums Profil */
+  if (any) {
+    /* Passt der Import nicht in den Speicher, wird er vollständig zurückgenommen; das gelesene Ergebnis bleibt für einen kürzeren Zeitraum */
+    const before = JSON.parse(JSON.stringify(S));
+    const counts = mergeHealthImport(S, s.result, { since, source: HEALTH_SOURCE });
+    if (!(save() && savedOk())) {
+      replaceState(before);
+      render();
+      toast('Das passt nicht mehr in den Speicher. Nichts wurde übernommen. Wähle einen kürzeren Zeitraum.');
+      return;
+    }
+    V.ahi = { phase: 'idle', period: s.period };
     render();
-    toast('Das passt nicht mehr in den Speicher. Nichts wurde übernommen. Wähle einen kürzeren Zeitraum.');
-    return;
+    const n = METRICS.reduce((a, [k]) => a + counts[k].added, 0);
+    toast(n ? `Übernommen: ${fmt0(n)} Tageswerte aus Apple Health` : 'Nichts Neues übernommen');
+  } else {
+    V.ahi = { phase: 'idle', period: s.period };
   }
-  V.ahi = { phase: 'idle', period: s.period };
-  render();
-  const n = METRICS.reduce((a, [k]) => a + counts[k].added, 0);
-  toast(n ? `Übernommen: ${fmt0(n)} Tageswerte aus Apple Health` : 'Nichts Neues übernommen');
+  if (props.length) profileSheet(props); else if (!any) render();
+}
+
+/* Sheet mit Häkchen: nur Angaben, die im Profil fehlen oder abweichen. Überschrieben wird erst mit „Übernehmen“. */
+function profileSheet(props) {
+  const pick = Object.fromEntries(props.map(x => [x.key, true]));
+  const row = x => `<label class="hp-row">
+      <input type="checkbox" data-in="hppick" data-k="${esc(x.key)}" ${pick[x.key] ? 'checked' : ''}>
+      <span><b>${esc(x.label)} ${esc(x.text)}</b><small>${x.before ? `Im Profil: ${esc(x.before)}` : 'Im Profil noch leer'}</small></span>
+    </label>`;
+  V.hpPick = pick;
+  openSheet({
+    title: 'Aus Apple Health übernehmen',
+    text: 'Diese Angaben fehlen in deinem Profil oder weichen davon ab. Übernommen wird, was angehakt ist.',
+    /* Als Getter, damit ein erneutes Zeichnen die Häkchen behält */
+    get body() { return `<div class="hp-list">${props.map(row).join('')}</div>`; },
+    actions: [
+      { label: 'Übernehmen', kind: 'primary', fn: () => {
+        const chosen = props.filter(x => pick[x.key]);
+        applyProfileProposals(S, chosen);
+        save(); V.hpPick = null; closeSheet();
+        toast(chosen.length ? `Ins Profil übernommen: ${chosen.map(x => x.label).join(', ')}` : 'Profil unverändert');
+      } },
+      { label: 'Nicht übernehmen', kind: 'ghost', fn: () => { V.hpPick = null; closeSheet(); } },
+    ],
+  });
 }
 
 export const actions = {
@@ -185,6 +224,10 @@ export const actions = {
 };
 
 export const inputs = {
+  hppick: (el, type) => {
+    if (type !== 'change' || !V.hpPick || !(el.dataset.k in V.hpPick)) return;
+    V.hpPick[el.dataset.k] = el.checked;
+  },
   ahifile: (el, type) => {
     if (type !== 'change') return;
     const f = el.files && el.files[0];

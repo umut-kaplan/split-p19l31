@@ -1,6 +1,7 @@
 import { fmt0, fmt1, ymd } from '../util.js';
 import { leanMass, latestComposition, currentWeight } from './body.js';
 import { cardioKcalPerDay, stepsKcalPerDay, burnAverage, KCAL_PER_STEP_KG } from './activity.js';
+import { profileAge } from './birthdate.js';
 
 /* Aktivität im Alltag, ohne Sport. Das Training rechnet die App aus den eingetragenen Einheiten dazu. */
 export const ACTIVITY = {
@@ -31,11 +32,13 @@ export function bmrMifflin({ kg, cm, age, sex }) {
 /* Grundumsatz nach Katch-McArdle aus der fettfreien Masse */
 export const bmrKatch = leanKg => 370 + 21.6 * leanKg;
 
-export function missingForCalories(p) {
+/* Alter aus dem Geburtsdatum am Tag von now; ohne Geburtsdatum das früher eingetragene Alter (profile.age) */
+export function missingForCalories(p, now = Date.now()) {
   const missing = [];
   if (!(p.weightKg > 0)) missing.push('Gewicht');
   if (!(p.heightCm > 0)) missing.push('Größe');
-  if (!(p.age > 0)) missing.push('Alter');
+  const a = profileAge(p, now);
+  if (!(a && a.age > 0)) missing.push('Geburtsdatum');
   if (p.sex !== 'm' && p.sex !== 'f') missing.push('Geschlecht');
   return missing;
 }
@@ -70,20 +73,21 @@ function activityLines(cardio, steps, activityLabel) {
 export function calorieGoal(p, ctx = {}) {
   const comp = ctx.composition || null;
   const lean = comp && p.weightKg > 0 ? leanMass(p.weightKg, comp.bfPct) : null;
+  const now = ctx.now ?? Date.now();
   let bmr, bmrLine;
   if (lean) {
     bmr = bmrKatch(lean);
     bmrLine = `Grundumsatz nach Katch-McArdle aus ${fmt1(lean)} kg fettfreier Masse (${fmt1(comp.bfPct)} % Körperfett, ${comp.measured ? 'gemessen' : 'nach der Navy-Formel geschätzt'}): ${fmt0(bmr)} kcal.`;
   } else {
-    const missing = missingForCalories(p);
+    const missing = missingForCalories(p, now);
     if (missing.length) return { ok: false, missing };
-    bmr = bmrMifflin({ kg: p.weightKg, cm: p.heightCm, age: p.age, sex: p.sex });
-    bmrLine = `Grundumsatz nach Mifflin-St Jeor aus Gewicht, Größe, Alter und Geschlecht: ${fmt0(bmr)} kcal.`;
+    const { age, from } = profileAge(p, now);
+    bmr = bmrMifflin({ kg: p.weightKg, cm: p.heightCm, age, sex: p.sex });
+    bmrLine = `Grundumsatz nach Mifflin-St Jeor aus Gewicht, Größe, Alter (${age} Jahre${from === 'age' ? ', ohne Geburtsdatum im Profil' : ''}) und Geschlecht: ${fmt0(bmr)} kcal.`;
   }
   const actKey = ACTIVITY[p.activity] ? p.activity : DEFAULT_ACTIVITY;
   const act = ACTIVITY[actKey];
   const daily = bmr * act.factor;
-  const now = ctx.now ?? Date.now();
   const today = ymd(now);
   const tr = trainingKcalPerDay(ctx.sessions, p.weightKg, now);
   const a = ctx.activity || {};

@@ -5,20 +5,20 @@ import { calorieGoal, waterGoal } from '../domain/energy.js';
 import { PLAN_CHOICES, choosePlan, currentChoice } from '../domain/plan-choice.js';
 import { plateSVG } from '../ui/plate.js';
 import { profileNow } from '../ui/cards.js';
-import { fName, fAge, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
+import { fName, fBirth, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
 import { markSeen } from './whatsnew.js';
 
 const STEPS = [
   {
     title: () => 'Willkommen bei Split',
-    text: 'Richte die App in einer Minute ein. Jeder Schritt lässt sich überspringen, und alles ist später im Profil änderbar.',
+    text: 'Richte die App in einer Minute ein. Jeder Schritt lässt sich überspringen, und alles ist später im Profil und unter Einstellungen änderbar.',
     body: () => `<div class="plate-btn roll">${plateSVG('red', 'Split', 'Training, Körper, Ernährung')}</div>`,
   },
   { title: () => 'Wie heißt du?', text: 'Damit die App dich begrüßen kann.', body: p => `<div class="fields">${fName(p)}</div>` },
   {
     title: () => 'Ein paar Eckdaten',
     text: 'Daraus rechnet die App BMI, Kalorien- und Wasserziel. Die Werte bleiben auf deinem Handy.',
-    body: p => `<div class="fields">${fAge(p)}${fSex(p)}<div class="row2">${fHeight(p)}${fWeight(p)}</div></div>`,
+    body: p => `<div class="fields">${fBirth(p)}${fSex(p)}<div class="row2">${fHeight(p)}${fWeight(p)}</div></div>`,
   },
   { title: () => 'Was ist dein Ziel?', text: 'Davon hängt dein Kalorienziel ab.', body: fGoal },
   {

@@ -1,5 +1,6 @@
 /* ---------- Heute ---------- */
-.greet .date { color: var(--steel); font-size: 15px; }
+/* Halbfett: Die dünne graue Schrift wirkte auf dem gekörnten Hintergrund und im verkleinerten Simulatorfenster weich */
+.greet .date { color: var(--steel); font-size: 15px; font-weight: 600; letter-spacing: .01em; }
 .greet h1 { margin-top: 2px; font-family: var(--round); font-size: 32px; font-weight: 800; letter-spacing: -.01em; }
 .hero { margin-top: 18px; text-align: center; }
 .hero-title { margin-top: 18px; font-family: var(--round); font-size: 44px; font-weight: 800; letter-spacing: -.02em; }
@@ -79,6 +80,15 @@
 .calc li + li { margin-top: 6px; }
 
 /* ---------- Profil ---------- */
+.set-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.set-gear svg { width: 24px; height: 24px; }
+.set-link { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--deck); text-align: left; }
+.set-link span { display: grid; gap: 4px; }
+.set-link small { color: var(--steel); font-size: 14px; }
+.set-link svg { width: 20px; height: 20px; flex: none; color: var(--dim); }
+.settings .set-group { margin: 34px 0 12px; color: var(--dim); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.settings .set-group + .p-section { margin-top: 0; }
+.app-version { margin-top: 28px; text-align: center; color: var(--dim); font-size: 13px; }
 .p-section + .p-section { margin-top: 26px; }
 .p-section > h2 { font-size: 20px; margin-bottom: 12px; }
 
