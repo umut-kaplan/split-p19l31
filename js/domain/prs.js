@@ -1,5 +1,6 @@
 /* Rekorde pro Übung. Schlüssel wie im Verlauf: exId|name. Reine Funktionen. */
 import { fmt, fmt0, fmt1 } from '../util.js';
+import { workSets, topSets, tonnage } from './settypes.js';
 
 export const recordKey = x => x.exId + '|' + x.name;
 
@@ -21,19 +22,22 @@ export function formatRecord(kind, v) {
   return `${fmt0(v)} s`;
 }
 
-/* Kennzahlen einer Übung in einer Einheit. sets: [{ w, r }].
-   Sekunden-Übungen (Plank): längste Zeit. Wiederholungen ohne Zusatzgewicht: meiste Wiederholungen in einem Satz. */
+/* Kennzahlen einer Übung in einer Einheit. sets: [{ w, r, t }].
+   Sekunden-Übungen (Plank): längste Zeit. Wiederholungen ohne Zusatzgewicht: meiste Wiederholungen in einem Satz.
+   Satztypen (settypes.js): Aufwärmsätze zählen gar nicht. Dropsätze zählen nur beim Volumen,
+   Gewicht, 1RM, Wiederholungen und Zeit kommen aus normalen Sätzen und Sätzen bis Versagen. */
 export function exerciseStats(sets, unit = 'reps') {
-  const weight = Math.max(0, ...sets.map(s => s.w || 0));
+  const top = topSets(sets);
+  const weight = Math.max(0, ...top.map(s => s.w || 0));
   if (unit === 'sec') {
-    return { weight, e1rm: null, volume: null, reps: null, time: Math.max(0, ...sets.map(s => s.r || 0)) };
+    return { weight, e1rm: null, volume: null, reps: null, time: Math.max(0, ...top.map(s => s.r || 0)) };
   }
-  const es = sets.map(s => e1rm(s.w, s.r)).filter(v => v != null);
-  const bodyweight = sets.filter(s => !(s.w > 0));
+  const es = top.map(s => e1rm(s.w, s.r)).filter(v => v != null);
+  const bodyweight = top.filter(s => !(s.w > 0));
   return {
     weight,
     e1rm: es.length ? Math.max(...es) : null,
-    volume: sets.reduce((a, s) => a + (s.w || 0) * (s.r || 0), 0),
+    volume: tonnage(sets),
     reps: bodyweight.length ? Math.max(...bodyweight.map(s => s.r || 0)) : null,
     time: null,
   };
@@ -44,7 +48,8 @@ export function exerciseStats(sets, unit = 'reps') {
 export function personalRecords(sessions) {
   const map = new Map();
   sessions.forEach(s => s.ex.forEach(x => {
-    if (!x.sets || !x.sets.length) return;
+    /* Nur Aufwärmsätze: die Übung gilt in dieser Einheit als nicht trainiert */
+    if (!workSets(x.sets).length) return;
     const key = recordKey(x);
     let r = map.get(key);
     if (!r) {
@@ -65,7 +70,7 @@ export function personalRecords(sessions) {
 export function exerciseSeries(sessions, exId, name) {
   const out = [];
   sessions.forEach(s => {
-    const x = s.ex.find(y => y.exId === exId && y.name === name && y.sets && y.sets.length);
+    const x = s.ex.find(y => y.exId === exId && y.name === name && workSets(y.sets).length);
     if (x) out.push({ t: s.startedAt, unit: x.unit, ...exerciseStats(x.sets, x.unit) });
   });
   return out;
@@ -73,10 +78,12 @@ export function exerciseSeries(sessions, exId, name) {
 
 /* Ist ein gerade abgehakter Satz ein Rekord?
    prior: Eintrag aus personalRecords der früheren Einheiten, before: in dieser Einheit schon abgehakte Sätze.
+   Aufwärm- und Dropsätze sind nie ein Rekord und zählen auch in before nicht mit.
    Ein Rekord muss alles Frühere und alle schon abgehakten Sätze übertreffen. Ohne frühere Einheit gibt es keinen Rekord.
    Liefert z. B. [{ kind: 'weight', value: 85 }, { kind: 'e1rm', value: 99.2 }] oder []. */
 export function setRecords(prior, before, set, unit = 'reps') {
-  if (!prior) return [];
+  if (!prior || !topSets([set]).length) return [];
+  before = topSets(before);
   const out = [];
   const beat = (kind, v, earlier) => {
     const p = prior[kind];

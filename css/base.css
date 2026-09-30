@@ -165,3 +165,6 @@ nav.tabs .live { position: absolute; top: 5px; left: calc(50% + 9px); width: 9px
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+.banner.storage-full { display: grid; gap: 4px; }
+.banner.storage-full b { color: #FFD7D5; }
+.recover .card + .card { margin-top: 16px; }

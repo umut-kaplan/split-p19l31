@@ -6,6 +6,7 @@ import { dayTotals } from './nutrition.js';
 import { goalProgress, firstWeight, currentWeight, dayNumber } from './body.js';
 import { waterGoal, targetsFromState } from './energy.js';
 import { ymd } from '../util.js';
+import { tonnage } from './settypes.js';
 
 const bySession = sessions => [...sessions].sort((a, b) => a.startedAt - b.startedAt);
 const sessionAt = s => s.endedAt || s.startedAt;
@@ -59,10 +60,10 @@ export function nthLoggedDayAt(log, n) {
   return days.length >= n ? dayMs(days[n - 1]) : null;
 }
 
-/* Summe aus Gewicht mal Wiederholungen über alle Einheiten, in kg */
+/* Summe aus Gewicht mal Wiederholungen über alle Einheiten, in kg. Ohne Aufwärmsätze. */
 export function totalTonnage(sessions) {
   return sessions.reduce((a, s) => a + (s.ex || []).reduce((b, x) =>
-    b + (x.unit === 'sec' ? 0 : (x.sets || []).reduce((c, st) => c + (st.w || 0) * (st.r || 0), 0)), 0), 0);
+    b + (x.unit === 'sec' ? 0 : tonnage(x.sets)), 0), 0);
 }
 
 /* Längste Folge aufeinanderfolgender Kalendertage mit Wasser ≥ Ziel */

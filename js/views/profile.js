@@ -2,7 +2,7 @@ import { S, V, replaceState, LEGACY_KEY } from '../state.js';
 import { esc, dShort } from '../util.js';
 import { render } from '../render.js';
 import { defaultState } from '../store/migrate.js';
-import { exportData, importData, clearImages } from '../store/backup.js';
+import { exportData, exportCsv, importData, clearImages } from '../store/backup.js';
 import { release } from '../timer.js';
 import { toast } from '../ui/toast.js';
 import { confirmSheet } from '../ui/sheet.js';
@@ -10,9 +10,10 @@ import { fName, fAge, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipmen
 import * as healthImport from './health-import.js';
 import { plateSettingsSection } from './plates.js';
 import { section as whatsnewSection } from './whatsnew.js';
+import * as backupReminder from './backup-reminder.js';
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [healthImport];
+export const modules = [healthImport, backupReminder];
 
 export function view() {
   const p = S.profile;
@@ -39,7 +40,7 @@ export function view() {
     </section>
 
     <section class="p-section card"><h2>Backup</h2>
-      <p class="muted" style="margin:6px 0 14px">${n} Trainings gespeichert.
+      <p class="muted" style="margin:6px 0 14px">${n} ${n === 1 ? 'Training' : 'Trainings'} gespeichert.
         ${S.settings.lastBackup ? `Letztes Backup am ${esc(dShort(S.settings.lastBackup))}` : 'Noch kein Backup.'}
         Alles liegt nur auf diesem Handy. Speichere das Backup in iCloud Drive, dann überlebt es auch einen Handywechsel.
         ${S.body.photos.length ? `Fortschrittsfotos sind nur im Backup mit Fotos enthalten (${S.body.photos.length} Fotos).` : ''}</p>
@@ -47,7 +48,14 @@ export function view() {
         <button class="btn primary" data-act="export">Backup speichern</button>
         <button class="btn" data-act="import">Backup laden</button>
       </div>
+      ${backupReminder.remindSetting()}
       ${V.persisted === false ? '<p class="small-print" style="margin-top:10px">Der Browser hat dauerhaften Speicher nicht zugesagt. Über den Home-Bildschirm geöffnet klappt das meist.</p>' : ''}
+    </section>
+
+    <section class="p-section card"><h2>Trainings exportieren</h2>
+      <p class="muted" style="margin:6px 0 14px">${n === 1 ? 'Dein Training' : n ? `Alle ${n} Trainings` : 'Die Trainings'} als CSV-Datei im Format der App Strong, Satz für Satz. Hevy kann sie importieren, Tabellenprogramme öffnen sie auch. Split selbst liest sie nicht wieder ein, dafür ist das Backup da.</p>
+      <button class="btn" data-act="exportcsv" ${n ? '' : 'disabled'}>Trainings als CSV</button>
+      ${n ? '' : '<p class="small-print" style="margin-top:10px">Noch keine Trainings gespeichert.</p>'}
     </section>
 
     ${healthImport.importSection()}
@@ -70,6 +78,7 @@ export function view() {
 
 export const actions = {
   export: exportData,
+  exportcsv: exportCsv,
   import: importData,
   rerunob: () => { S.settings.onboardingDone = false; V.ob = 1; render(); window.scrollTo(0, 0); },
   wipe: () => confirmSheet('Alle Daten löschen?', 'Profil, Plan, Verlauf, Körperdaten, Fotos und ein laufendes Training werden gelöscht. Das lässt sich nur mit einem Backup rückgängig machen.', 'Alle Daten löschen', async () => {

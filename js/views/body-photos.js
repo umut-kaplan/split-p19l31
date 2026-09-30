@@ -134,8 +134,15 @@ async function addPhoto(file, pose) {
     await dbPut('photos', { id, blob, date, pose });
     S.body.photos = S.body.photos.filter(p => !old.includes(p));
     S.body.photos.push({ id, date, pose });
+    if (!save()) {
+      /* Ohne gespeicherten Verweis wäre das Bild nach dem Neustart verwaist */
+      S.body.photos = S.body.photos.filter(p => p.id !== id);
+      await dbDel('photos', id).catch(() => {});
+      render(); toast('Der Speicher ist voll. Das Foto wurde nicht gespeichert.');
+      return;
+    }
     urls.set(id, URL.createObjectURL(blob));
-    save(); render(); toast(`Foto ${POSES[pose].toLowerCase()} gespeichert`);
+    render(); toast(`Foto ${POSES[pose].toLowerCase()} gespeichert`);
   } catch (e) {
     toast(e && e.message ? e.message : 'Das Foto ließ sich nicht speichern.');
   }

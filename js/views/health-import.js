@@ -1,5 +1,5 @@
 /* Import aus dem Apple-Health-Export (Stufe 6). Abschnitt im Profil. */
-import { S, V, save, KEY } from '../state.js';
+import { S, V, save, replaceState, KEY } from '../state.js';
 import { esc, fmt0, fmt1, dShort, ymd } from '../util.js';
 import { render } from '../render.js';
 import { toast } from '../ui/toast.js';
@@ -157,12 +157,18 @@ function savedOk() {
 function apply() {
   const s = st();
   if (!s.result) return;
+  /* Passt der Import nicht in den Speicher, wird er vollständig zurückgenommen; das gelesene Ergebnis bleibt für einen kürzeren Zeitraum */
+  const before = JSON.parse(JSON.stringify(S));
   const counts = mergeHealthImport(S, s.result, { since: sinceFor(s.period), source: HEALTH_SOURCE });
-  save();
-  const ok = savedOk();
+  const ok = save() && savedOk();
+  if (!ok) {
+    replaceState(before);
+    render();
+    toast('Das passt nicht mehr in den Speicher. Nichts wurde übernommen. Wähle einen kürzeren Zeitraum.');
+    return;
+  }
   V.ahi = { phase: 'idle', period: s.period };
   render();
-  if (!ok) { toast('Der Speicher ist voll. Wähle einen kürzeren Zeitraum.'); return; }
   const n = METRICS.reduce((a, [k]) => a + counts[k].added, 0);
   toast(n ? `Übernommen: ${fmt0(n)} Tageswerte aus Apple Health` : 'Nichts Neues übernommen');
 }

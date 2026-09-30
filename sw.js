@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v4.2';
+const CACHE = 'split-v4.3';
 
 const CORE = [
   './',
@@ -209,9 +209,35 @@ const CHANGELOG = [
   'js/data/changelog.js',
   'js/domain/whatsnew.js',
   'js/views/whatsnew.js',
+  'js/views/storage.js',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG];
+/* Backup-Erinnerung und Trainings als CSV */
+const BACKUPCSV = [
+  'js/domain/backup-reminder.js',
+  'js/store/csv.js',
+  'js/ui/share-file.js',
+  'js/views/backup-reminder.js',
+];
+
+/* Satztypen und Supersätze */
+const SETTYPES = [
+  'css/settypes.css',
+  'js/domain/settypes.js',
+  'js/domain/superset.js',
+];
+
+/* Vergleich per QR-Code */
+const COMPARE = [
+  'css/compare.css',
+  'js/domain/compare.js',
+  'js/views/compare.js',
+  'js/views/compare-scan.js',
+  'js/ui/qr.js',
+  'js/ui/zxing.js',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE];
 
 self.addEventListener('install', ev => {
   /* Am Browser-Cache vorbei laden, sonst landen kurz vor einem Update geladene alte Dateien im neuen Cache */

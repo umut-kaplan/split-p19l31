@@ -7,10 +7,11 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 **Heute:** Begrüßung, nächste Einheit als Hantelscheibe, Wochenbericht jeden Montag (als Bild teilbar), Erholungsampel mit Begründung und „Was soll ich heute trainieren?“ mit Alternative, Check-in vor dem Training (Schlaf, Gefühl), bis zu zwei offene Vorschläge, Serie in Trainingswochen mit einem Joker pro Monat, Wochenziele (Training, Protein, Wasser), Tagesziele, Körperkarte mit Foto-Erinnerung oder Gewichtstrend, BMI. Unterseite „Erfolge“ mit Zielen, Meilensteinen und 17 Abzeichen.
 
 **Training**
-- Einheit: Satz-Log (kg, Wdh., RIR), Doppelprogression, Pausentimer pro Übung mit Ton, Rekord-Feier beim Abhaken, Anleitung zu jeder Übung, Scheibenrechner für Langhantel und SZ-Stange, Aufwärmrampe bei der ersten Grundübung jeder Muskelgruppe, dauerhafte Notiz pro Übung, Bewertung „Wie hart war es?“ nach der Einheit.
+- Einheit: Satz-Log (kg, Wdh., RIR), Doppelprogression, Pausentimer pro Übung mit Ton, Rekord-Feier beim Abhaken, Anleitung zu jeder Übung, Scheibenrechner für Langhantel und SZ-Stange, Aufwärmrampe bei der ersten Grundübung jeder Muskelgruppe, dauerhafte Notiz pro Übung, Bewertung „Wie hart war es?“ nach der Einheit. Satztypen Aufwärmen, Drop und bis Versagen per Tipp auf die Satznummer; Aufwärmsätze zählen für keine Auswertung, Dropsätze nur fürs Volumen. Supersätze: im Plan zwei oder mehr Übungen verbinden, in der Einheit ein gemeinsamer Rahmen, Pause erst nach der letzten Übung der Runde.
 - Verlauf: Liste und Monatskalender, Diagramm pro Übung (Gewicht, 1RM, Volumen), Rekorde (bestes Gewicht, 1RM nach Epley, bestes Volumen), Sätze pro Muskelgruppe und Woche gegen den Zielbereich 10 bis 20.
 - Plan: mehrere Pläne, Vorlagen (Ganzkörper 2×, Oberkörper/Unterkörper 4×, Push/Pull/Legs), Tage mit Farben, Übungen aus der Bibliothek.
 - Übungen: 50 Übungen mit Bild, Schritten, typischen Fehlern, Muskeln und Geräten; eigene Übungen mit Foto.
+- Vergleichen: eigener Stand als QR-Code (Rekorde der Grundübungen, letzte 7 Tage, Serie, auf Wunsch Körpergewicht), den Stand eines Trainingspartners scannen oder als Text einfügen, beide nebeneinander. Die Daten gehen direkt von Handy zu Handy; der zuletzt gescannte Stand liegt in `S.compare` und im Backup.
 - Vorschläge nach festen Regeln: Deload nach zwei verfehlten Einheiten, zusätzlicher Satz bei Volumenlücken, Tausch bei eingetragenen Einschränkungen.
 
 **Körper:** Gewicht mit 7-Tage-Schnitt, Zielgewicht mit Prognose und Spanne, Umfänge, Körperfett gemessen oder nach US-Navy geschätzt, fettfreie Masse, Silhouette aus den Umfängen, Fortschrittsfotos in drei Posen mit Vergleich. Unterseite Aktivität: Schritte, Ruhepuls, Schlaf, Cardio (kcal nach MET), gemessener Tagesverbrauch, jeweils mit Quelle.
@@ -19,7 +20,7 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 
 **Einrichtung:** fragt Eckdaten, Ziel, Plan (3er-Split, Ganzkörper 2×, Oberkörper/Unterkörper 4×, eigener Plan), Alltag, Trainingstage, Geräte und Einschränkungen ab; jeder Schritt lässt sich überspringen.
 
-**Profil:** Eckdaten, Ziel, Alltag, Trainingstage, Geräte, Einschränkungen, Stangen und Scheiben, Backup, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen).
+**Profil:** Eckdaten, Ziel, Alltag, Trainingstage, Geräte, Einschränkungen, Stangen und Scheiben, Backup mit Erinnerung auf „Heute“ nach 7, 14 oder 30 Tagen (oder aus), Export der Trainings als CSV im Strong-Format, das Hevy importiert, „Was ist neu“, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen).
 
 Jede Empfehlung nennt in einem Satz, warum die App sie gibt, und ist nur ein Vorschlag. Kalorien-, BMI- und Körperfettwerte sind Schätzungen aus Formeln.
 
@@ -34,7 +35,7 @@ PORT=9000 ./start.sh      # anderer Port
 
 ## Tests
 
-Die Rechenlogik ist ohne Build testbar: Kalorien, Makros, BMI, Navy-Formel, Trend und Prognose, Serie mit Joker, Progression, Rekorde, Volumen, Vorschlagsregeln, Erholungsampel, Tagesvorschlag, Wochenbericht, Abzeichen, MET und Schritte, Health-Import, Nährwerte, Lebensmitteldaten, Migration, Backup, Offline-Dateiliste.
+Die Rechenlogik ist ohne Build testbar: Kalorien, Makros, BMI, Navy-Formel, Trend und Prognose, Serie mit Joker, Progression, Rekorde, Volumen, Vorschlagsregeln, Erholungsampel, Tagesvorschlag, Wochenbericht, Abzeichen, MET und Schritte, Health-Import, Nährwerte, Lebensmitteldaten, Migration, Backup, Backup-Erinnerung, CSV-Export, Satztypen, Supersatz-Pausen, QR-Vergleich, Changelog, Zahleneingabe, Offline-Dateiliste.
 
 ```sh
 node --test "test/*.test.js"
@@ -67,7 +68,7 @@ Jede Person nutzt die App auf ihrem eigenen Handy. Die Daten liegen nur dort und
 
 - **Fotos:** Mit der Kamera aufgenommene Fortschrittsfotos landen nicht in der Mediathek, sondern nur in der App (verkleinert auf etwa 1080 px, IndexedDB). „In Fotos sichern“ legt die Posen einer Woche als ein Bild nebeneinander und speichert es über das Teilen-Menü in der Mediathek.
 - **Speicher:** kleine Daten im `localStorage` unter `fit.v2` (Schema 2), Bilder und der Lebensmittel-Cache in IndexedDB (`split`, Stores `photos`, `exerciseImages`, `foodCache`). Beim Start bittet die App mit `navigator.storage.persist()` darum, nichts zu löschen.
-- **Umzug:** Ein Stand der ersten Version (`split.v1`) wird beim ersten Start übernommen. Der alte Schlüssel bleibt, bis das erste Backup im neuen Format gespeichert ist.
+- **Umzug:** Ein Stand der ersten Version (`split.v1`) wird beim ersten Start übernommen. Der alte Schlüssel bleibt, bis ein Backup über das Teilen-Menü gespeichert ist. Ein Download ohne Teilen-Menü zählt dafür nicht.
 - **Backup:** *Profil → Backup speichern*, wahlweise mit oder ohne Fotos. Auf dem iPhone öffnet sich das Teilen-Menü, dort *In Dateien sichern* wählen, am besten in iCloud Drive.
 - **Wiederherstellen:** *Profil → Backup laden.* Backups der ersten Version (`app: 'split', version: 1`) enthalten nur Plan und Trainings; beim Laden bleiben Profil und Körperdaten stehen. Backups im neuen Format (`app: 'fit', version: 2`) ersetzen alles, Fotos kommen mit, wenn sie im Backup sind.
 
@@ -79,7 +80,7 @@ Jede Person nutzt die App auf ihrem eigenen Handy. Die Daten liegen nur dort und
 | Übungsanleitungen, typische Fehler | selbst geschrieben | – |
 | Grundnahrungsmittel (`js/data/foods-basic.js`) | Werte nach Bundeslebensmittelschlüssel, USDA FoodData Central und deutschen Etiketten | Richtwerte |
 | Lebensmittelsuche und Barcodes | [Open Food Facts](https://openfoodfacts.org) | ODbL |
-| Barcode-Leser für iOS | `@zxing/library` 0.23.0, `js/vendor/` | Apache-2.0 |
+| Barcode-Leser für iOS, QR-Codes lesen und schreiben | `@zxing/library` 0.23.0, `js/vendor/` | Apache-2.0 |
 | Entpacken des Health-Exports | `fflate` 0.8.3, `js/vendor/` | MIT |
 | MET-Werte für Cardio | Compendium of Physical Activities | Richtwerte |
 

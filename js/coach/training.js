@@ -5,6 +5,7 @@ import { findExercise, allExercises, limitationHits, safeAlternatives, defaultsF
 import { weekStart } from '../domain/streaks.js';
 import { weekMuscleSets, prevWeekStart, isoWeekKey } from '../domain/volume.js';
 import { MUSCLES, WEEKLY_SET_TARGET } from '../domain/muscles.js';
+import { topSets } from '../domain/settypes.js';
 
 /* Reihenfolge, in der Volumenlücken vorgeschlagen werden: große Muskelgruppen zuerst */
 const PRIORITY = ['back', 'chest', 'quads', 'hamstrings', 'glutes', 'shoulders', 'biceps', 'triceps', 'calves', 'abs', 'adductors', 'abductors', 'forearms'];
@@ -31,8 +32,12 @@ const findPlanExercise = (S, dayId, id) => {
 };
 
 /* ---------- a) Deload ---------- */
-/* Verfehlt: nicht alle geplanten Sätze mit mindestens der unteren Wiederholungszahl */
-export const missedTarget = (sets, e) => sets.length < e.sets || sets.some(s => !(s.r >= e.repMin));
+/* Verfehlt: nicht alle geplanten Sätze mit mindestens der unteren Wiederholungszahl.
+   Aufwärm- und Dropsätze zählen dabei nicht, sie sind keine geplanten Arbeitssätze. */
+export const missedTarget = (sets, e) => {
+  const top = topSets(sets);
+  return top.length < e.sets || top.some(s => !(s.r >= e.repMin));
+};
 
 export function deloadWeight(w, inc) {
   const step = inc > 0 ? inc : 0.5;
@@ -48,13 +53,13 @@ function deloads(S, now) {
     seen.add(key);
     if (S.trainingOverrides && S.trainingOverrides[key]) return;
     const hist = S.sessions
-      .map(s => ({ s, x: s.ex.find(x => x.exId === e.id && x.name === name && x.sets && x.sets.length) }))
+      .map(s => ({ s, x: s.ex.find(x => x.exId === e.id && x.name === name && topSets(x.sets).length) }))
       .filter(h => h.x);
     if (hist.length < 2) return;
     const [a, b] = hist.slice(-2);
     /* Gemessen am Ziel, das beim Training galt. Ältere Einheiten ohne gespeichertes Ziel nehmen den Plan von heute. */
     if (!missedTarget(a.x.sets, a.x.target || e) || !missedTarget(b.x.sets, b.x.target || e)) return;
-    const w = Math.max(...b.x.sets.map(s => s.w || 0));
+    const w = Math.max(...topSets(b.x.sets).map(s => s.w || 0));
     if (!(w > 0)) return;
     const nw = deloadWeight(w, e.inc);
     if (!(nw < w)) return;

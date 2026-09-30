@@ -1,0 +1,54 @@
+/* Satztypen und Supersätze */
+
+/* ---------- Satznummer als Schalter für den Satztyp ---------- */
+:root {
+  --st-w: #E9A23B;            /* Aufwärmen */
+  --st-w-soft: rgba(233, 162, 59, .14);
+  --st-d: #A993F5;            /* Drop */
+  --st-d-soft: rgba(169, 147, 245, .15);
+  --st-f: #F0716E;            /* bis Versagen */
+  --st-f-soft: rgba(240, 113, 110, .14);
+}
+.set-h, .set { grid-template-columns: 30px 1fr 1fr 50px 50px; }
+.sets.with-plates .set-h, .sets.with-plates .set { grid-template-columns: 28px minmax(0, 1fr) 40px minmax(0, 1fr) 46px 48px; }
+button.set-n {
+  width: 100%; height: 40px; padding: 0; border: 0; border-radius: 10px;
+  background: transparent; font-size: 16px; line-height: 1;
+}
+button.set-n:active { background: var(--deck2); }
+.set.st-w .set-n { color: var(--st-w); background: var(--st-w-soft); }
+.set.st-d .set-n { color: var(--st-d); background: var(--st-d-soft); }
+.set.st-f .set-n { color: var(--st-f); background: var(--st-f-soft); }
+/* Aufwärmsätze zählen nicht mit und treten etwas zurück */
+.set.st-w input { font-size: 18px; }
+.set.st-w.done input { color: var(--st-w); background: var(--st-w-soft); }
+.set.st-w.done .check { background: transparent; border-color: var(--st-w); color: var(--st-w); }
+@media (max-width: 360px) {
+  .set-h, .set { grid-template-columns: 26px 1fr 1fr 44px 46px; }
+  .sets.with-plates .set-h, .sets.with-plates .set { grid-template-columns: 24px minmax(0, 1fr) 36px minmax(0, 1fr) 42px 44px; }
+}
+
+/* ---------- Aufwärmrampe übernehmen ---------- */
+.wu-take { padding: 0 12px 12px; }
+
+/* ---------- Supersatz in der Einheit ---------- */
+.ss-group {
+  margin-top: 14px; padding: 10px 8px 8px; border-radius: 24px;
+  border: 1px solid var(--c); background: var(--c-soft);
+}
+.ss-group > .ex:first-of-type { margin-top: 8px; }
+.ss-group .ex { margin-top: 8px; }
+.ss-head { display: grid; gap: 4px; padding: 2px 6px 0; color: var(--steel); font-size: 14px; }
+.ss-tag {
+  justify-self: start; padding: 2px 10px; border-radius: 999px;
+  background: var(--c); color: var(--on-c); font-size: 13px; font-weight: 750; letter-spacing: .02em;
+}
+
+/* ---------- Supersatz im Plan-Editor ---------- */
+.pe-link { display: flex; justify-content: center; margin: -6px 0; position: relative; z-index: 1; }
+.pe-link-btn {
+  min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--line);
+  background: var(--floor); color: var(--dim); font-size: 13px; font-weight: 650;
+}
+.pe-link.on .pe-link-btn { border: 1px solid var(--c); background: var(--c); color: var(--on-c); }
+.pe.pe-ss { border-color: var(--c); box-shadow: inset 3px 0 0 var(--c); }

@@ -11,6 +11,7 @@ import { todayBodyCard } from './body.js';
 import * as goals from './goals.js';
 import * as report from './report.js';
 import * as recovery from './recovery.js';
+import * as backupReminder from './backup-reminder.js';
 
 export function greeting(h) {
   if (h >= 5 && h < 11) return 'Guten Morgen';
@@ -25,7 +26,7 @@ export function todayDay() {
 }
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [goals, report, recovery];
+export const modules = [goals, report, recovery, backupReminder];
 
 export function view() {
   /* Unterseiten wie „Erfolge“ oder der ganze Wochenbericht ersetzen die Startseite */
@@ -49,6 +50,7 @@ export function view() {
     ${S.active ? activeHero() : hero(id, d, plan, rolled)}
     ${S.active ? '' : recovery.trainTodayCard()}
     ${S.active ? '' : recovery.checkinCard()}
+    ${S.active ? '' : backupReminder.backupCard()}
     ${suggestionsBlock()}
     ${goals.streakCard(d.color)}
     ${goals.weeklyGoalsCard()}

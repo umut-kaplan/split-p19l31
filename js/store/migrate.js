@@ -1,5 +1,7 @@
 /* Schema-Versionen und Umzug alter Daten. Reine Funktionen, darum per node --test prüfbar. */
 import { defaultPlan } from '../plans.js';
+import { cleanSet } from '../domain/settypes.js';
+import { cleanLink } from '../domain/superset.js';
 
 export const SCHEMA = 2;
 export const APP_ID = 'fit';
@@ -27,6 +29,10 @@ export function defaultState() {
     /* plates: Stangengewichte und vorhandene Scheiben für Scheibenrechner und Aufwärmen */
     settings: {
       onboardingDone: false, disclaimerSeen: false, lastBackup: null, lastPhotoPrompt: null,
+      /* Backup-Erinnerung auf „Heute“: nach 7, 14 oder 30 Tagen, 0 = aus; backupSnoozedAt: Zeitpunkt von „Später“ */
+      backupRemindDays: 7, backupSnoozedAt: null,
+      /* Vergleich: Körpergewicht im eigenen QR-Code mitteilen */
+      compareWeight: true,
       plates: { barKg: 20, szKg: 10, available: [25, 20, 15, 10, 5, 2.5, 1.25] },
     },
     /* Dauerhafte Notizen pro Übung: { 'exId|Name': 'Sitz Stufe 4' }. Trainings tragen optional rating: { rpe, note }. */
@@ -65,6 +71,9 @@ export function defaultState() {
        badges:     { [id]: Zeitpunkt, an dem das Abzeichen verdient wurde }
        reportSeen: 'JJJJ-WW' der zuletzt angesehenen Berichtswoche */
     motivation: { goals: [], weekly: { proteinDays: 5, waterDays: 5 }, badges: {}, reportSeen: null },
+    /* Zuletzt gescannter Stand eines Trainingspartners: { code, scannedAt }. code ist der Text aus dem QR-Code,
+       gelesen wird er mit decodeStand aus domain/compare.js. */
+    compare: null,
   };
 }
 
@@ -77,6 +86,24 @@ export function fromV1(v1) {
   s.active = v1.active ? { ...v1.active, planId: 'split' } : null;
   s.settings.lastBackup = v1.lastBackup || null;
   return s;
+}
+
+/* Satztyp t an Sätzen und Supersatz-Verbindung ss an Übungen: gültige Werte bleiben, unbekannte fallen weg.
+   Stände ohne diese Felder kommen unverändert durch. */
+const mapList = (list, fn) => (Array.isArray(list) ? list.map(fn) : list);
+const withList = (o, k, fn) => (o && typeof o === 'object' && Array.isArray(o[k]) ? { ...o, [k]: o[k].map(fn) } : o);
+const cleanSessions = list => mapList(list, se => withList(se, 'ex', x => withList(x, 'sets', cleanSet)));
+const cleanPlans = list => mapList(list, p => {
+  if (!p || typeof p !== 'object' || !p.days || typeof p.days !== 'object') return p;
+  const days = {};
+  Object.keys(p.days).forEach(k => { days[k] = withList(p.days[k], 'exercises', (e, i, all) => cleanLink(e, i === all.length - 1)); });
+  return { ...p, days };
+});
+const cleanActive = a => withList(a, 'ex', (x, i, all) => withList(cleanLink(x, i === all.length - 1), 'log', cleanSet));
+/* Nur die Form prüfen; den Inhalt prüft decodeStand beim Anzeigen. 2000 Zeichen wie MAX_INPUT in domain/compare.js. */
+function normalizeCompare(c) {
+  if (!c || typeof c !== 'object' || typeof c.code !== 'string' || !c.code || c.code.length > 2000) return null;
+  return { code: c.code, scannedAt: Number.isFinite(c.scannedAt) ? c.scannedAt : null };
 }
 
 /* Füllt fehlende Felder auf, damit ältere Stände mit neuem Code laufen */
@@ -101,7 +128,11 @@ export function normalize(s) {
     motivation: { ...d.motivation, ...(s.motivation || {}), weekly: { ...d.motivation.weekly, ...((s.motivation && s.motivation.weekly) || {}) } },
     water: { ...(s.water || {}) },
     suggestions: { ...(s.suggestions || {}) },
+    compare: normalizeCompare(s.compare),
     activePlanId: s.plans.some(x => x.id === s.activePlanId) ? s.activePlanId : s.plans[0].id,
+    plans: cleanPlans(s.plans),
+    sessions: cleanSessions(s.sessions),
+    active: cleanActive('active' in s ? s.active : d.active),
   };
 }
 

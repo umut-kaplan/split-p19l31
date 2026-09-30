@@ -10,6 +10,7 @@
    5. Ampel gelb: trainieren wie bei grün, mit dem Hinweis, pro Übung einen Satz weniger zu machen oder RIR 3 zu halten.
    Bei grün und gelb ist die Alternative der nächstbeste andere Tag. */
 import { MUSCLES } from './muscles.js';
+import { workSets } from './settypes.js';
 
 export const REST_HOURS = 48;
 const MAIN_SHARE = 0.2;
@@ -34,7 +35,7 @@ export function lastTrained(sessions, resolve) {
   sessions.forEach(s => {
     const t = s.endedAt || s.startedAt;
     (s.ex || []).forEach(x => {
-      if (!x.sets || !x.sets.length) return;
+      if (!workSets(x.sets).length) return;
       const e = resolve(x.name);
       ((e && e.muscles && e.muscles.primary) || []).forEach(m => { if (!(out[m] >= t)) out[m] = t; });
     });

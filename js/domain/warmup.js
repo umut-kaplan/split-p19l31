@@ -1,5 +1,6 @@
 /* Aufwärm-Vorschlag. Reine Funktionen, darum per node --test prüfbar.
-   Aufwärmsätze zählen laut Plan nicht zu den Arbeitssätzen und werden nicht eingetragen. */
+   Aufwärmsätze zählen nicht zu den Arbeitssätzen. Auf Wunsch kommt die Rampe als Sätze vom Typ Aufwärmen
+   (t: 'w', siehe settypes.js) in die Einheit; dort zählen sie weder fürs Volumen noch für Rekorde. */
 
 /* Rampe aus dem Arbeitsgewicht: 40 % × 10, 60 % × 5, 80 % × 3 */
 export const RAMP = [{ pct: 0.4, reps: 10 }, { pct: 0.6, reps: 5 }, { pct: 0.8, reps: 3 }];
@@ -58,4 +59,10 @@ export function warmupTargets(items) {
 /* Kurztext „20 kg × 10, 40 × 5, 60 × 3“ */
 export function rampText(stages, fmt = v => String(v).replace('.', ',')) {
   return stages.map((s, k) => `${fmt(s.kg)}${k === 0 ? ' kg' : ''} × ${s.reps}`).join(', ');
+}
+
+/* Die Rampe als Sätze der laufenden Einheit: Typ Aufwärmen, Gewicht und Wiederholungen als graue Vorschläge.
+   fmt macht aus kg den Text fürs Eingabefeld. */
+export function rampSets(stages, fmt = v => String(v).replace('.', ',')) {
+  return stages.map(s => ({ t: 'w', w: '', r: '', rir: 2, done: false, pw: fmt(s.kg), pr: String(s.reps) }));
 }

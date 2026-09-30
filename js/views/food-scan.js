@@ -3,6 +3,7 @@ import { esc } from '../util.js';
 import { isValidBarcode } from '../domain/foods.js';
 import { lookupBarcode, OFF_CREDIT } from '../store/off.js';
 import { toast } from '../ui/toast.js';
+import { loadZxing } from '../ui/zxing.js';
 import { nut, topView, closeView, replaceView, customFood } from './food-state.js';
 import { bar, amountSheet, newFoodView } from './food-forms.js';
 
@@ -98,21 +99,6 @@ async function nativeDetector() {
     }
   } catch (e) { cam.detector = null; }
   return cam.detector;
-}
-
-let zxPromise = null;
-function loadZxing() {
-  if (window.ZXing) return Promise.resolve(window.ZXing);
-  if (!zxPromise) {
-    zxPromise = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'js/vendor/zxing.min.js';
-      s.onload = () => resolve(window.ZXing);
-      s.onerror = () => { zxPromise = null; reject(new Error('ZXing ließ sich nicht laden.')); };
-      document.head.appendChild(s);
-    });
-  }
-  return zxPromise;
 }
 
 /* Den mittleren Streifen des Kamerabilds mit ZXing lesen */

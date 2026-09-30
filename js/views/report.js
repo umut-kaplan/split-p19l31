@@ -13,6 +13,7 @@ import { plateSVG } from '../ui/plate.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { reportImageFile } from '../ui/report-image.js';
 import { toast } from '../ui/toast.js';
+import { shareFile, SHARE_FAILED } from '../ui/share-file.js';
 
 const resolve = n => findExercise(n, S.exercisesCustom);
 const mot = () => {
@@ -197,17 +198,10 @@ function share(start) {
   try { file = reportImageFile(r, rec, rangeText(start)); }
   catch (e) { toast('Das Bild ließ sich nicht erzeugen.'); return; }
   /* Muss direkt aus dem Tipp laufen, sonst verweigert Safari das Teilen-Menü */
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    navigator.share({ files: [file], title: `Wochenbericht ${weekLabel(r.key)}` }).catch(() => {});
-    return;
-  }
-  const url = URL.createObjectURL(file);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = file.name || `wochenbericht-${r.key}.png`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast('Bild gespeichert');
+  shareFile(file, file.name || `wochenbericht-${r.key}.png`, file.type || 'image/png', `Wochenbericht ${weekLabel(r.key)}`).then(res => {
+    if (res === 'downloaded' || res === 'unsure') toast('Bild heruntergeladen. Prüfe, ob es in Dateien liegt.');
+    else if (res === 'failed') toast(SHARE_FAILED);
+  });
 }
 
 export const actions = {

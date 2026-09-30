@@ -10,6 +10,8 @@ import { startRest, unlockAudio, wake, release } from '../timer.js';
 import { infoButton } from './library.js';
 import { personalRecords, setRecords, sessionRecords, RECORD_LABEL, formatRecord } from '../domain/prs.js';
 import { findExercise, limitationHits } from '../domain/library.js';
+import { setType, nextType, isWarmup, isTop, workSets, topSets, tonnage, setLabels, setName, typePrefix } from '../domain/settypes.js';
+import { groupsOf, groupAt, restAfter } from '../domain/superset.js';
 import * as notes from './exercise-notes.js';
 import * as warmup from './warmup.js';
 import * as rating from './session-rating.js';
@@ -23,9 +25,10 @@ const keyOf = x => x.exId + '|' + x.name;
 const overrideFor = x => (S.trainingOverrides && S.trainingOverrides[keyOf(x)]) || null;
 const recordText = recs => recs.map(r => `${RECORD_LABEL[r.kind]} ${formatRecord(r.kind, r.value)}`).join(', ');
 
+/* „80 × 8“, mit Satztyp davor: „A 40 × 10“, „D 60 × 12“ */
 const fmtSet = (s, unit) => {
   const r = s.r + (unit === 'sec' ? ' s' : '');
-  return s.w ? `${fmt(s.w)} × ${r}` : r;
+  return typePrefix(s) + (s.w ? `${fmt(s.w)} × ${r}` : r);
 };
 export { fmtSet };
 
@@ -36,24 +39,33 @@ function mkEx(e, v) {
     exId: e.id, names: e.names.slice(), v, name, unit: e.unit, sets: e.sets,
     repMin: e.repMin, repMax: e.repMax, rest: e.rest, inc: e.inc, log: [],
   };
+  /* Supersatz: mit der nächsten Übung verbunden (siehe domain/superset.js) */
+  if (e.ss === true) x.ss = true;
   x.log = Array.from({ length: e.sets }, () => ({ w: '', r: '', rir: 2, done: false }));
   prefill(x);
   return x;
 }
 
-/* Graue Vorschläge: Gewicht aus der Progression oder einem angenommenen Deload, Wiederholungen vom letzten Mal */
+/* Graue Vorschläge: Gewicht aus der Progression oder einem angenommenen Deload, Wiederholungen vom letzten Mal.
+   Aufwärmsätze behalten ihre eigenen Vorschläge. Normale Sätze und Sätze bis Versagen werden der Reihe nach
+   mit denen vom letzten Mal verglichen, Dropsätze mit den Dropsätzen; Aufwärmsätze verschieben dabei nichts. */
 function prefill(x) {
   const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name);
   const L = lastLog(S.sessions, x.exId, x.name);
+  const prevTop = L ? topSets(L.sets) : [];
+  const prevDrop = L ? L.sets.filter(s => setType(s) === 'd') : [];
   const ov = overrideFor(x);
   x.deload = ov ? ov.weight : null;
-  x.log.forEach((s, j) => {
+  let kt = 0, kd = 0;
+  x.log.forEach(s => {
+    if (isWarmup(s)) return;
+    const p = setType(s) === 'd' ? prevDrop[kd++] : prevTop[kt++];
     if (s.done) return;
     s.pw = x.deload != null ? fmt(x.deload) : sug.weight != null ? fmt(sug.weight) : '0';
     /* Beim Deload zählt das obere Ende des Bereichs, nicht die verfehlten Wiederholungen vom letzten Mal */
     s.pr = String(x.deload != null ? x.repMax
       : sug.kind === 'up' && x.unit !== 'sec' ? x.repMin
-        : (L && L.sets[j] ? L.sets[j].r : x.repMin));
+        : (p ? p.r : x.repMin));
   });
 }
 
@@ -72,8 +84,9 @@ export function startWorkout(dayId) {
 /* ---------- Ansicht ---------- */
 export function vWorkout() {
   const a = S.active;
-  const total = a.ex.reduce((n, x) => n + x.log.length, 0);
-  const done = a.ex.reduce((n, x) => n + x.log.filter(s => s.done).length, 0);
+  /* Aufwärmsätze zählen im Fortschritt nicht mit */
+  const total = a.ex.reduce((n, x) => n + workSets(x.log).length, 0);
+  const done = a.ex.reduce((n, x) => n + workSets(x.log).filter(s => s.done).length, 0);
   return `<div class="day-${a.color}">
     <div class="wo-bar">
       <div class="wo-row">
@@ -83,8 +96,8 @@ export function vWorkout() {
       </div>
       <div class="progress" aria-label="${done} von ${total} Sätzen"><i style="width:${total ? done / total * 100 : 0}%"></i></div>
     </div>
-    <p class="wo-note">Erst aufwärmen, diese Sätze zählen nicht. Bei den Arbeitssätzen 1–2 Wiederholungen im Tank lassen. Leere Felder übernehmen beim Abhaken den grauen Vorschlag.</p>
-    ${a.ex.map(exCard).join('')}
+    <p class="wo-note">Erst aufwärmen, Aufwärmsätze zählen nicht. Bei den Arbeitssätzen 1–2 Wiederholungen im Tank lassen. Leere Felder übernehmen beim Abhaken den grauen Vorschlag. Ein Tipp auf die Satznummer wechselt den Typ: A Aufwärmen, D Drop, V bis Versagen.</p>
+    ${groupsOf(a.ex).map(g => (g.length > 1 ? ssGroup(g) : exCard(a.ex[g[0]], g[0]))).join('')}
     <div class="wo-end">
       <button class="btn primary" data-act="finish">Training beenden</button>
       <button class="btn ghost" data-act="discard">Training verwerfen</button>
@@ -92,11 +105,26 @@ export function vWorkout() {
   </div>`;
 }
 
+/* Supersatz: gemeinsamer Rahmen um die Übungen der Gruppe */
+function ssGroup(g) {
+  const ex = S.active.ex;
+  const names = g.map(k => ex[k].name);
+  return `<div class="ss-group" role="group" aria-label="Supersatz: ${esc(names.join(' und '))}">
+    <p class="ss-head"><span class="ss-tag">Supersatz</span><span>Im Wechsel je ein Satz, ohne Pause dazwischen. Die Pause startet nach ${esc(names[names.length - 1])}.</span></p>
+    ${g.map(k => exCard(ex[k], k)).join('')}
+  </div>`;
+}
+
 function exCard(x, i) {
   const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name);
   const L = lastLog(S.sessions, x.exId, x.name);
-  const doneN = x.log.filter(s => s.done).length;
-  const complete = doneN >= x.log.length;
+  /* Satzzähler x/y ohne Aufwärmsätze */
+  const work = workSets(x.log);
+  const doneN = work.filter(s => s.done).length;
+  const complete = work.length > 0 && doneN >= work.length;
+  const g = groupAt(S.active.ex, i);
+  const direct = g.length > 1 && i !== g[g.length - 1];
+  const labels = setLabels(x.log);
   const hits = limitationHits(findExercise(x.name, S.exercisesCustom), (S.profile.limitations && S.profile.limitations.tags) || []);
   /* Langhantel oder SZ-Stange: Scheiben-Symbol neben dem Gewichtsfeld */
   const bar = plates.barInfo(x);
@@ -104,7 +132,7 @@ function exCard(x, i) {
     ? `<div class="hint deload"><strong>Deload: ${esc(fmt(x.deload))} kg</strong><span>Vorschlag angenommen: diese Einheit etwa 10&nbsp;% leichter und ${x.repMax} Wdh. pro Satz, danach geht es wieder aufwärts.</span></div>`
     : `<div class="hint ${sug.kind}"><strong>${esc(sug.text)}</strong><span>${esc(sug.sub)}</span></div>`;
   return `<section class="ex ${complete ? 'complete' : ''}" id="ex${i}">
-    <div class="ex-title"><h2>${esc(x.name)}</h2><span class="ex-count num">${doneN}/${x.log.length}</span></div>
+    <div class="ex-title"><h2>${esc(x.name)}</h2><span class="ex-count num">${doneN}/${work.length}</span></div>
     ${infoButton(x.name)}
     ${notes.exerciseNote(x, i)}
     ${x.names.length > 1 ? `<div class="seg" role="group" aria-label="Variante">${x.names.map((n, v) =>
@@ -112,7 +140,7 @@ function exCard(x, i) {
     <div class="ex-meta">
       <span><b class="num">${x.sets}</b> Sätze</span>
       <span><b class="num">${x.repMin}–${x.repMax}</b> ${unitL(x.unit)}</span>
-      <span>Pause <b class="num">${mmss(x.rest)}</b></span>
+      ${direct ? '<span>Danach ohne Pause weiter</span>' : `<span>Pause <b class="num">${mmss(x.rest)}</b></span>`}
     </div>
     ${L ? `<p class="last">Letztes Mal am ${esc(dShort(L.date))}: <span class="num">${L.sets.map(s => fmtSet(s, x.unit)).join(', ')}</span></p>` : ''}
     ${hits.length ? `<p class="ex-warn">Belastet ${esc(hits.join(' und '))}, das du als Einschränkung eingetragen hast. Bei Beschwerden leichter gehen oder unter „Anleitung“ eine Alternative wählen.</p>` : ''}
@@ -120,16 +148,20 @@ function exCard(x, i) {
     ${warmup.warmupLine(x, i)}
     <div class="sets ${bar ? 'with-plates' : ''}">
       <div class="set-h"><span>Satz</span><span>kg</span>${bar ? '<span></span>' : ''}<span>${unitL(x.unit)}</span><span>RIR</span><span></span></div>
-      ${x.log.map((s, j) => `
-      <div class="set ${s.done ? 'done' : ''} ${s.done && s.rec ? 'pr' : ''} ${V.prFlash === `${i}:${j}` ? 'pr-new' : ''}">
-        <span class="set-n num">${j + 1}</span>
-        <input class="num" inputmode="decimal" enterkeyhint="next" data-in="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" placeholder="${esc(s.pw || '0')}" aria-label="Satz ${j + 1} Gewicht in kg">
+      ${x.log.map((s, j) => {
+        const t = setType(s);
+        const name = setName(x.log, j);
+        return `
+      <div class="set ${t ? `st-${t}` : ''} ${s.done ? 'done' : ''} ${s.done && s.rec ? 'pr' : ''} ${V.prFlash === `${i}:${j}` ? 'pr-new' : ''}">
+        <button class="set-n num" data-act="settype" data-i="${i}" data-j="${j}" aria-label="${esc(name)}, tippen wechselt den Satztyp">${labels[j]}</button>
+        <input class="num" inputmode="decimal" enterkeyhint="next" data-in="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" placeholder="${esc(s.pw || '0')}" aria-label="${esc(name)} Gewicht in kg">
         ${bar ? plates.plateButton(i, j) : ''}
-        <input class="num" inputmode="numeric" enterkeyhint="done" data-in="r" data-i="${i}" data-j="${j}" value="${esc(s.r)}" placeholder="${esc(s.pr)}" aria-label="Satz ${j + 1} ${unitL(x.unit)}">
+        <input class="num" inputmode="numeric" enterkeyhint="done" data-in="r" data-i="${i}" data-j="${j}" value="${esc(s.r)}" placeholder="${esc(s.pr)}" aria-label="${esc(name)} ${unitL(x.unit)}">
         <button class="rir num" data-act="rir" data-i="${i}" data-j="${j}" aria-label="RIR ${s.rir}, tippen zum Ändern">${s.rir}</button>
-        <button class="check" data-act="check" data-i="${i}" data-j="${j}" aria-pressed="${s.done}" aria-label="Satz ${j + 1} abhaken">${ICON.check}</button>
+        <button class="check" data-act="check" data-i="${i}" data-j="${j}" aria-pressed="${s.done}" aria-label="${esc(name)} abhaken">${ICON.check}</button>
         ${s.done && s.rec ? `<span class="pr-badge">Neuer Rekord: ${esc(recordText(s.rec))}</span>` : ''}
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
     </div>
     <div class="ex-foot">
       <button class="link" data-act="addset" data-i="${i}">Satz hinzufügen</button>
@@ -139,6 +171,16 @@ function exCard(x, i) {
 }
 
 /* ---------- Sätze ---------- */
+/* Rekord gegen alle früheren Einheiten und die schon abgehakten Sätze dieser Einheit.
+   Aufwärm- und Dropsätze sind nie ein Rekord (domain/prs.js). */
+function recordsFor(x, j) {
+  const s = x.log[j];
+  if (!isTop(s)) return null;
+  const before = x.log.filter((b, k) => b.done && k !== j).map(b => ({ w: toNum(b.w) || 0, r: toNum(b.r), t: setType(b) }));
+  const recs = setRecords(personalRecords(S.sessions).get(keyOf(x)), before, { w: toNum(s.w) || 0, r: toNum(s.r) }, x.unit);
+  return recs.length ? recs : null;
+}
+
 function toggleSet(i, j) {
   const x = S.active.ex[i], s = x.log[j];
   if (s.done) { s.done = false; s.rec = null; save(); render(); return; }
@@ -148,14 +190,15 @@ function toggleSet(i, j) {
   if (!isFinite(w) || w < 0) { toast('Gewicht als Zahl eintragen, z. B. 42,5'); return; }
   s.w = fmt(w);
   s.r = String(Math.round(r));
-  /* Rekord gegen alle früheren Einheiten und die schon abgehakten Sätze dieser Einheit */
-  const before = x.log.filter((b, k) => b.done && k !== j).map(b => ({ w: toNum(b.w) || 0, r: toNum(b.r) }));
-  const recs = setRecords(personalRecords(S.sessions).get(keyOf(x)), before, { w, r: Math.round(r) }, x.unit);
-  s.rec = recs.length ? recs : null;
+  s.rec = recordsFor(x, j);
   s.done = true;
   if (document.activeElement) document.activeElement.blur();
   unlockAudio();
-  startRest(x.rest, x.name);
+  /* Pause nach Satztyp und Supersatz: vor einem Dropsatz und innerhalb der Runde keine */
+  const rest = restAfter(S.active.ex, i, j);
+  startRest(rest.seconds, rest.label);
+  if (rest.why === 'superset') toast(`Supersatz: weiter mit ${S.active.ex[rest.next].name}`);
+  else if (rest.why === 'drop') toast('Dropsatz: direkt weiter, ohne Pause');
   save();
   if (s.rec) {
     V.prFlash = `${i}:${j}`;
@@ -173,16 +216,22 @@ function finishWorkout() {
   const ex = a.ex.map(x => ({
     exId: x.exId, name: x.name, unit: x.unit,
     target: { sets: x.sets, repMin: x.repMin, repMax: x.repMax },
-    sets: x.log.filter(s => s.done).map(s => ({ w: toNum(s.w) || 0, r: toNum(s.r), rir: s.rir })),
+    /* t nur bei Aufwärm-, Drop- und Versagenssätzen; normale Sätze bleiben wie bisher { w, r, rir } */
+    sets: x.log.filter(s => s.done).map(s => {
+      const t = setType(s);
+      return t ? { w: toNum(s.w) || 0, r: toNum(s.r), rir: s.rir, t } : { w: toNum(s.w) || 0, r: toNum(s.r), rir: s.rir };
+    }),
   })).filter(x => x.sets.length);
-  if (!ex.length) {
-    confirmSheet('Noch kein Satz abgehakt', 'Ohne abgehakte Sätze gibt es nichts zu speichern.', 'Training verwerfen', discardWorkout);
+  if (!ex.some(x => workSets(x.sets).length)) {
+    confirmSheet(ex.length ? 'Nur Aufwärmsätze abgehakt' : 'Noch kein Satz abgehakt',
+      ex.length ? 'Gespeichert wird ein Training erst mit mindestens einem Arbeitssatz.' : 'Ohne abgehakte Sätze gibt es nichts zu speichern.',
+      'Training verwerfen', discardWorkout);
     return;
   }
   const prs = sessionRecords(S.sessions, ex);
   /* Ein angenommener Deload gilt für genau eine Einheit */
   a.ex.forEach(x => {
-    if (x.deload != null && x.log.some(s => s.done) && S.trainingOverrides) delete S.trainingOverrides[keyOf(x)];
+    if (x.deload != null && x.log.some(s => s.done && !isWarmup(s)) && S.trainingOverrides) delete S.trainingOverrides[keyOf(x)];
   });
   const session = {
     id: uid(), planId: a.planId, dayId: a.dayId, name: a.name, color: a.color,
@@ -190,17 +239,19 @@ function finishWorkout() {
   };
   S.sessions.push(session);
   S.active = null;
-  save(); release();
+  const saved = save(); release();
   V.summary = {
     sessionId: session.id,
     name: a.name, color: a.color,
     minutes: Math.max(1, Math.round((session.endedAt - session.startedAt) / 60000)),
-    sets: ex.reduce((n, x) => n + x.sets.length, 0),
-    volume: Math.round(ex.filter(x => x.unit !== 'sec').reduce((n, x) => n + x.sets.reduce((m, s) => m + s.w * s.r, 0), 0)),
+    /* Ohne Aufwärmsätze; Dropsätze zählen mit */
+    sets: ex.reduce((n, x) => n + workSets(x.sets).length, 0),
+    volume: Math.round(ex.filter(x => x.unit !== 'sec').reduce((n, x) => n + tonnage(x.sets), 0)),
     prs,
   };
   V.sheet = null;
   render(); window.scrollTo(0, 0);
+  if (!saved) toast('Der Speicher ist voll. Das Training ist nur bis zum Schließen der App da. Speichere jetzt ein Backup.');
 }
 
 function discardWorkout() {
@@ -239,10 +290,20 @@ export const actions = {
     prefill(x); save(); render();
   },
   rir: el => { const s = S.active.ex[+el.dataset.i].log[+el.dataset.j]; s.rir = (s.rir + 1) % 5; save(); render(); },
+  /* Satztyp wechseln: normal, Aufwärmen, Drop, Versagen, wieder normal */
+  settype: el => {
+    const x = S.active.ex[+el.dataset.i], j = +el.dataset.j, s = x.log[j];
+    if (!s) return;
+    const t = nextType(setType(s));
+    if (t) s.t = t; else delete s.t;
+    if (s.done) s.rec = recordsFor(x, j);
+    save(); render();
+  },
   check: el => toggleSet(+el.dataset.i, +el.dataset.j),
   addset: el => {
     const x = S.active.ex[+el.dataset.i];
-    const prev = x.log[x.log.length - 1];
+    const work = workSets(x.log);
+    const prev = work[work.length - 1] || x.log[x.log.length - 1];
     x.log.push({ w: '', r: '', rir: 2, done: false, pw: prev ? (prev.w || prev.pw) : '0', pr: prev ? (prev.r || prev.pr) : String(x.repMin) });
     save(); render();
   },
@@ -251,7 +312,7 @@ export const actions = {
     if (x.log.length > 1) { x.log.pop(); save(); render(); }
   },
   finish: () => {
-    const open = S.active.ex.reduce((n, x) => n + x.log.filter(s => !s.done).length, 0);
+    const open = S.active.ex.reduce((n, x) => n + workSets(x.log).filter(s => !s.done).length, 0);
     if (open === 0) { finishWorkout(); return; }
     confirmSheet('Training beenden?', `${open} Sätze sind noch offen. Gespeichert werden nur die abgehakten.`, 'Training beenden', finishWorkout, 'primary');
   },

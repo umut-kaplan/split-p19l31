@@ -2,6 +2,7 @@
    Ein Satz zählt für jeden primär beanspruchten Muskel voll, für mitbeanspruchte zur Hälfte. */
 import { SECONDARY_WEIGHT, WEEKLY_SET_TARGET } from './muscles.js';
 import { weekStart } from './streaks.js';
+import { workSets } from './settypes.js';
 
 /* ISO-Kalenderwoche als 'JJJJ-Www', z. B. 2026-W39 */
 export function isoWeekKey(t) {
@@ -20,7 +21,8 @@ export function prevWeekStart(start) {
 }
 
 /* Sätze pro Muskelgruppe in der Woche ab weekStartMs.
-   resolve(name) liefert den Bibliotheks-Eintrag mit muscles oder null. Unbekannte Übungen zählen nicht und werden genannt. */
+   resolve(name) liefert den Bibliotheks-Eintrag mit muscles oder null. Unbekannte Übungen zählen nicht und werden genannt.
+   Aufwärmsätze zählen nicht, Dropsätze schon. */
 export function weekMuscleSets(sessions, weekStartMs, resolve) {
   const sets = {};
   const unknown = new Set();
@@ -28,7 +30,7 @@ export function weekMuscleSets(sessions, weekStartMs, resolve) {
   sessions.forEach(s => {
     if (weekStart(s.startedAt) !== weekStartMs) return;
     s.ex.forEach(x => {
-      const n = (x.sets || []).length;
+      const n = workSets(x.sets).length;
       if (!n) return;
       const e = resolve(x.name);
       if (!e || !e.muscles || !(e.muscles.primary || []).length) { unknown.add(x.name); return; }

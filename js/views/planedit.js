@@ -12,6 +12,7 @@ import { ICON } from '../ui/icons.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import { exImage } from './library.js';
+import { groupsOf, swapKeepLinks, removeKeepLinks, tidyLinks, setLink } from '../domain/superset.js';
 
 const custom = () => S.exercisesCustom || [];
 const tags = () => (S.profile.limitations && S.profile.limitations.tags) || [];
@@ -41,9 +42,18 @@ function limitInfo(e) {
   return null;
 }
 
+/* Schalter zwischen zwei Übungen: „Mit nächster Übung als Supersatz“ */
+function ssLink(d, i) {
+  const on = d.exercises[i].ss === true;
+  const pair = `${exName(d.exercises[i])} und ${exName(d.exercises[i + 1])}`;
+  return `<li class="pe-link ${on ? 'on' : ''}"><button class="pe-link-btn" data-act="plss" data-i="${i}" aria-pressed="${on}"
+      aria-label="${esc(on ? `${pair} sind ein Supersatz. Tippen löst die Verbindung.` : `${pair} als Supersatz verbinden`)}">${on ? 'Supersatz' : 'Mit nächster Übung als Supersatz'}</button></li>`;
+}
+
 export function vPlan() {
   const plan = activePlan();
   const d = curDay();
+  const groups = groupsOf(d.exercises);
   const total = plan.order.reduce((n, id) => n + plan.days[id].exercises.length, 0);
   return `<div class="plan day-${d.color}">
     <section class="card plan-head">
@@ -74,8 +84,10 @@ export function vPlan() {
     ${d.exercises.length ? `<ul class="pe-list">
       ${d.exercises.map((e, i) => {
         const lim = limitInfo(e);
+        const g = groups.find(x => x.includes(i));
+        const ss = g.length > 1 ? 'pe-ss' : '';
         return `
-      <li class="pe ${lim ? 'pe-limit' : ''}">
+      <li class="pe ${lim ? 'pe-limit' : ''} ${ss}">
         <div><b>${esc(exName(e))}</b>
           <span class="num">${e.sets} × ${e.repMin}–${e.repMax} ${unitL(e.unit)}, Pause ${mmss(e.rest)}</span>
           ${lim ? `<span class="plan-warn">Belastet ${esc(lim.hits.join(', '))}.${lim.alts.length ? ` Schonender: ${esc(lim.alts.slice(0, 3).map(a => a.name).join(', '))}.` : ''}</span>` : ''}</div>
@@ -84,7 +96,7 @@ export function vPlan() {
           <button class="icon" data-act="mv" data-i="${i}" data-d="1" ${i === d.exercises.length - 1 ? 'disabled' : ''} aria-label="${esc(exName(e))} nach unten">${ICON.down}</button>
           <button class="icon" data-act="edit" data-i="${i}" aria-label="${esc(exName(e))} bearbeiten">${ICON.edit}</button>
         </div>
-      </li>`; }).join('')}
+      </li>${i < d.exercises.length - 1 ? ssLink(d, i) : ''}`; }).join('')}
     </ul>` : '<p class="empty" style="margin-top:18px">Dieser Tag hat noch keine Übungen.</p>'}
     <div class="stack">
       <button class="btn primary" data-act="addex">Übung hinzufügen</button>
@@ -140,6 +152,7 @@ function editExercise(i) {
       if (isNew) {
         e.id = exerciseIdFor(r.names[0], S.plans, custom());
         if (d.exercises.some(x => x.id === e.id)) { toast('Diese Übung steht schon in diesem Tag.'); return; }
+        tidyLinks(d.exercises);
         d.exercises.push(e);
       }
       save(); closeSheet(); toast(isNew ? 'Übung hinzugefügt' : 'Änderungen gespeichert');
@@ -148,7 +161,7 @@ function editExercise(i) {
   if (!isNew) actions.push({
     label: 'Übung löschen', kind: 'danger', fn: () =>
       confirmSheet(`${exName(e)} löschen?`, 'Die Übung verschwindet aus dem Plan. Bisherige Einträge im Verlauf bleiben.', 'Übung löschen', () => {
-        d.exercises.splice(i, 1); save(); closeSheet(); toast('Übung gelöscht');
+        removeKeepLinks(d.exercises, i); save(); closeSheet(); toast('Übung gelöscht');
       }),
   });
   actions.push({ label: 'Abbrechen', kind: 'ghost', fn: closeSheet });
@@ -186,6 +199,7 @@ function addFromLibrary(id) {
   const d = curDay();
   const exId = exerciseIdFor(lib.name, S.plans, custom());
   if (d.exercises.some(x => x.id === exId || x.names.includes(lib.name))) { toast('Diese Übung steht schon in diesem Tag.'); return; }
+  tidyLinks(d.exercises);
   d.exercises.push({ id: exId, names: [lib.name], ...defaultsFor(lib) });
   save(); closeSheet(); toast(`${lib.name} hinzugefügt`);
 }
@@ -297,10 +311,20 @@ export function resetPlan() {
 
 export const actions = {
   planday: el => { V.planDay = el.dataset.day; render(); },
+  /* Verschieben: Supersatz-Verbindungen bleiben an ihrem Platz, so lässt sich die Reihenfolge im Supersatz tauschen */
   mv: el => {
     const list = curDay().exercises, i = +el.dataset.i, j = i + +el.dataset.d;
     if (j < 0 || j >= list.length) return;
-    [list[i], list[j]] = [list[j], list[i]]; save(); render();
+    swapKeepLinks(list, i, j); save(); render();
+  },
+  /* Übung i mit der nächsten als Supersatz verbinden oder lösen */
+  plss: el => {
+    const list = curDay().exercises, i = +el.dataset.i;
+    if (!list[i] || i >= list.length - 1) return;
+    const on = list[i].ss !== true;
+    setLink(list[i], on);
+    save(); render();
+    toast(on ? `Supersatz: ${exName(list[i])} und ${exName(list[i + 1])}` : 'Supersatz gelöst');
   },
   edit: el => editExercise(+el.dataset.i),
   addex: pickExercise,

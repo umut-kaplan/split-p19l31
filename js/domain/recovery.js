@@ -16,6 +16,7 @@
 import { fmt0, fmt1 } from '../util.js';
 import { dayNumber, dateFromDayNumber } from './body.js';
 import { recentRating, RPE_LABEL, RPE_HARD, RPE_HOURS } from './rating.js';
+import { workSets } from './settypes.js';
 
 export const THRESHOLDS = {
   load: { yellow: 1.3, red: 1.5, minWeeks: 2, minAvgSets: 6 },
@@ -42,12 +43,12 @@ const localDay = t => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-/* Belastung pro Tag: Sätze aus Einheiten plus Cardio umgerechnet. Liefert Map tagNummer -> Sätze */
+/* Belastung pro Tag: Sätze aus Einheiten (ohne Aufwärmsätze) plus Cardio umgerechnet. Liefert Map tagNummer -> Sätze */
 export function dailyLoad(sessions = [], cardio = []) {
   const m = new Map();
   const add = (n, v) => m.set(n, (m.get(n) || 0) + v);
   sessions.forEach(s => {
-    const sets = (s.ex || []).reduce((a, x) => a + ((x.sets && x.sets.length) || 0), 0);
+    const sets = (s.ex || []).reduce((a, x) => a + workSets(x.sets).length, 0);
     if (sets) add(dayNumber(localDay(s.startedAt)), sets);
   });
   cardio.forEach(c => {

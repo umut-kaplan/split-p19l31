@@ -1,4 +1,5 @@
 import { fmt } from '../util.js';
+import { workSets, topSets } from './settypes.js';
 
 /* Nächste Einheit: die nach der zuletzt trainierten, in der Reihenfolge des Plans */
 export function nextDay(order, sessions, planId) {
@@ -8,20 +9,23 @@ export function nextDay(order, sessions, planId) {
   return order[(order.indexOf(last.dayId) + 1) % order.length];
 }
 
-export function lastLog(sessions, exId, name) {
+/* Letzte Einheit mit dieser Übung. sets: alle Sätze in der Reihenfolge des Trainings, auch Aufwärm- und Dropsätze.
+   pick wählt, welche Sätze die Einheit mindestens haben muss; Standard: ein Arbeitssatz (kein reines Aufwärmen). */
+export function lastLog(sessions, exId, name, pick = workSets) {
   for (let i = sessions.length - 1; i >= 0; i--) {
     const s = sessions[i];
-    const x = s.ex.find(x => x.exId === exId && x.name === name && x.sets.length);
+    const x = s.ex.find(x => x.exId === exId && x.name === name && x.sets && pick(x.sets).length);
     if (x) return { date: s.startedAt, sets: x.sets };
   }
   return null;
 }
 
-/* Doppelprogression: alle Sätze am oberen Ende mit RIR >= 1, dann mehr Gewicht */
+/* Doppelprogression: alle Sätze am oberen Ende mit RIR >= 1, dann mehr Gewicht.
+   Gezählt werden normale Sätze und Sätze bis Versagen; Aufwärm- und Dropsätze nicht. */
 export function suggest(sessions, e, name) {
-  const L = lastLog(sessions, e.id, name);
+  const L = lastLog(sessions, e.id, name, topSets);
   if (!L) return { kind: 'new', weight: null, text: 'Erstes Mal', sub: 'Wähle ein Gewicht, bei dem noch 1–2 Wiederholungen im Tank bleiben.' };
-  const sets = L.sets;
+  const sets = topSets(L.sets);
   const w = Math.max(...sets.map(s => s.w || 0));
   const allTop = sets.length >= e.sets
     && sets.every(s => s.r >= e.repMax)

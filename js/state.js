@@ -10,6 +10,9 @@ export const S = {};
 export const V = {
   tab: 'today', trainSub: 'start', pick: null, planDay: null, histKey: null,
   sheet: null, summary: null, roll: true, ob: 0, persisted: null,
+  /* storageFull: das letzte Speichern ist gescheitert (Speicher voll).
+     recover: der gespeicherte Stand ließ sich nicht lesen, { raw, key }. Solange gesetzt, speichert die App nichts. */
+  storageFull: false, recover: null,
 };
 
 function storageOK() {
@@ -18,17 +21,25 @@ function storageOK() {
 }
 export const CAN_STORE = storageOK();
 
+/* Ein beschädigter Stand wird nie überschrieben: Kopie unter eigenem Schlüssel, Speichern gesperrt, bis der Nutzer entscheidet */
+function keepBroken(raw) {
+  const key = `${KEY}.broken.${Date.now()}`;
+  let kept = null;
+  try { localStorage.setItem(key, raw); kept = key; } catch (e) { /* Speicher voll: der Rohtext bleibt unter fit.v2 stehen */ }
+  V.recover = { raw, key: kept };
+}
+
 export function load() {
   let st = null;
   let migrated = false;
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) st = normalize(JSON.parse(raw));
-  } catch (e) { st = null; }
-  if (!st) {
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { raw = null; }
+  if (raw) {
+    try { st = normalize(JSON.parse(raw)); } catch (e) { st = null; keepBroken(raw); }
+  } else {
     try {
       const old = localStorage.getItem(LEGACY_KEY);
-      /* Der alte Schlüssel bleibt stehen, bis ein Backup im neuen Format gemacht wurde */
+      /* Nur ohne neuen Stand. Der alte Schlüssel bleibt stehen, bis ein Backup im neuen Format über das Teilen-Menü gespeichert wurde. */
       if (old) { st = fromV1(JSON.parse(old)); migrated = true; }
     } catch (e) { st = null; }
   }
@@ -37,14 +48,17 @@ export function load() {
   return migrated;
 }
 
+/* true, wenn der Stand wirklich im Speicher liegt. Scheitert es (Speicher voll), zeigt die App ein Banner. */
 export function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* Banner zeigt es an */ }
+  if (V.recover) return false;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); V.storageFull = false; return true; }
+  catch (e) { V.storageFull = true; return false; }
 }
 
 export function replaceState(next) {
   Object.keys(S).forEach(k => delete S[k]);
   Object.assign(S, next);
-  save();
+  return save();
 }
 
 /* Bittet den Browser, die Daten nicht bei Platzmangel zu löschen */

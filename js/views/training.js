@@ -7,16 +7,20 @@ import { vWorkout } from './workout.js';
 import { vHistory } from './history.js';
 import { vPlan } from './planedit.js';
 import * as library from './library.js';
+import * as compare from './compare.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { pendingSuggestions } from '../coach/index.js';
 
 const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen']];
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [library];
+export const modules = [library, compare];
 
 export function view() {
   if (S.active) return vWorkout();
+  /* Unterseite „Vergleichen“ ersetzt die Trainingsseite, bis sie geschlossen oder über die Navigation verlassen wird */
+  const cmp = compare.subview();
+  if (cmp) return cmp;
   const sub = V.trainSub;
   const body = sub === 'history' ? vHistory() : sub === 'plan' ? vPlan() : sub === 'library' ? library.vLibrary() : vStart();
   return `<div class="train-head">
@@ -58,7 +62,8 @@ function vStart() {
         ? `<button class="btn" data-act="trainsub" data-sub="plan">Übungen eintragen</button>`
         : `<button class="btn ${id === next ? 'primary' : ''}" data-act="start" data-day="${id}">${esc(d.name)} starten</button>`}
     </section>`;
-  }).join('')}</div>`;
+  }).join('')}</div>
+    ${compare.entryCard()}`;
 }
 
 export const actions = {

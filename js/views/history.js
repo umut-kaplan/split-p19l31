@@ -10,6 +10,7 @@ import { muscleWeeks, volumeRating } from '../domain/volume.js';
 import { findExercise } from '../domain/library.js';
 import { MUSCLES, WEEKLY_SET_TARGET } from '../domain/muscles.js';
 import { ratingSummary, ratingBadge } from './session-rating.js';
+import { workSets } from '../domain/settypes.js';
 
 const VIEWS = [['sessions', 'Einheiten'], ['exercise', 'Übung'], ['records', 'Rekorde'], ['muscles', 'Muskeln']];
 const CHEV = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -111,7 +112,7 @@ function exerciseKeys() {
   return { keys, seen };
 }
 
-const hasData = k => S.sessions.some(s => s.ex.some(x => x.exId + '|' + x.name === k && x.sets.length));
+const hasData = k => S.sessions.some(s => s.ex.some(x => x.exId + '|' + x.name === k && workSets(x.sets).length));
 
 /* Welche Kennzahlen hat diese Übung? */
 function metricsOf(series) {
@@ -124,9 +125,9 @@ function metricsOf(series) {
 }
 const METRIC_LABEL = { weight: 'Gewicht', e1rm: '1RM', volume: 'Volumen', reps: 'Wdh.', time: 'Zeit' };
 const METRIC_NOTE = {
-  weight: 'Schwerster Satz pro Training.',
+  weight: 'Schwerster Satz pro Training, ohne Aufwärm- und Dropsätze.',
   e1rm: 'Geschätztes Maximalgewicht für eine Wiederholung nach Epley, aus Sätzen mit bis zu 12 Wiederholungen.',
-  volume: 'Gewicht mal Wiederholungen, alle Sätze eines Trainings zusammen.',
+  volume: 'Gewicht mal Wiederholungen, alle Sätze eines Trainings zusammen, ohne Aufwärmsätze.',
   reps: 'Meiste Wiederholungen in einem Satz ohne Zusatzgewicht.',
   time: 'Längste Zeit in einem Satz.',
 };
@@ -197,7 +198,7 @@ function vRecords() {
       <span class="rec-name"><b>${esc(r.name)}</b><small>${r.count} ${r.count === 1 ? 'Training' : 'Trainings'}</small></span>
       <span class="rec-grid">${cells || '<small class="muted">Noch kein Bestwert</small>'}</span></button></li>`;
   }).join('')}</ul>
-  <p class="small-print hist-note">1RM ist das geschätzte Maximalgewicht für eine Wiederholung nach Epley, gerechnet aus Sätzen mit bis zu 12 Wiederholungen. Volumen ist Gewicht mal Wiederholungen eines Trainings.</p>`;
+  <p class="small-print hist-note">1RM ist das geschätzte Maximalgewicht für eine Wiederholung nach Epley, gerechnet aus Sätzen mit bis zu 12 Wiederholungen. Volumen ist Gewicht mal Wiederholungen eines Trainings. Aufwärmsätze zählen nie, Dropsätze nur beim Volumen.</p>`;
 }
 
 /* ---------- Muskeln: Sätze pro Woche ---------- */
@@ -243,7 +244,7 @@ function vMuscles() {
         <button class="icon" data-act="histweek" data-d="-1" aria-label="Woche danach" ${thisWeek ? 'disabled' : ''}>${RIGHT}</button>
       </div>
       ${shown.length ? `<ul class="vol-list">${rows}</ul>` : '<p class="empty">Sobald Übungen aus der Bibliothek im Plan stehen, zeigt die App hier die Sätze pro Muskelgruppe.</p>'}
-      <p class="small-print vol-legend"><span class="vol-sw"></span>Zielbereich ${lo} bis ${hi} Sätze pro Woche. Hauptsächlich beanspruchte Muskeln zählen einen Satz voll, mitbeanspruchte einen halben. Rechts die letzten ${weeks.length} Wochen.</p>
+      <p class="small-print vol-legend"><span class="vol-sw"></span>Zielbereich ${lo} bis ${hi} Sätze pro Woche. Hauptsächlich beanspruchte Muskeln zählen einen Satz voll, mitbeanspruchte einen halben, Aufwärmsätze gar nicht. Rechts die letzten ${weeks.length} Wochen.</p>
       ${w.unknown.length ? `<p class="small-print vol-unknown">Nicht zugeordnet: ${esc(w.unknown.join(', '))}. Diese Übungen kennt die Bibliothek nicht, sie zählen nicht mit.</p>` : ''}
     </section>`;
 }

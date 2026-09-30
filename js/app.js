@@ -17,6 +17,7 @@ import * as profile from './views/profile.js';
 import * as fields from './views/profile-fields.js';
 import * as onboarding from './views/onboarding.js';
 import * as whatsnew from './views/whatsnew.js';
+import * as storage from './views/storage.js';
 
 const TABS = [
   ['today', 'Heute', ICON.today, today],
@@ -26,7 +27,7 @@ const TABS = [
   ['profile', 'Profil', ICON.profile, profile],
 ];
 
-const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew];
+const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew, storage];
 /* Ein Modul kann Untermodule in `export const modules = [...]` nennen. Deren actions und inputs zählen mit. */
 const flatten = list => list.flatMap(m => [m, ...flatten(m.modules || [])]);
 const all = [...new Set(flatten(modules))];
@@ -38,6 +39,7 @@ ACT.tab = el => {
   /* Ein Tipp auf die Navigation schließt Unterseiten wie „Erfolge“ oder den ganzen Wochenbericht */
   V.motView = null;
   V.repView = null;
+  V.cmpView = null;
   if (el.dataset.sub && V.tab === 'training') V.trainSub = el.dataset.sub;
   if (el.dataset.day && V.tab === 'training') V.planDay = el.dataset.day;
   if (V.tab === 'today') V.roll = true;
@@ -61,6 +63,10 @@ function vNav() {
 
 const app = document.getElementById('app');
 function render() {
+  if (V.recover) {
+    app.innerHTML = `<main>${storage.recoverView()}</main>${sheet.vSheet('red')}`;
+    return;
+  }
   if (!S.settings.onboardingDone) {
     app.innerHTML = `<main class="ob-main">${onboarding.view()}</main>${sheet.vSheet('red')}`;
     return;
@@ -68,7 +74,7 @@ function render() {
   let view;
   if (V.summary) view = workout.vSummary();
   else view = (TABS.find(t => t[0] === V.tab) || TABS[0])[3].view();
-  app.innerHTML = `<main>${view}</main>${V.summary ? '' : timer.vTimer() + vNav()}${sheet.vSheet(tone())}`;
+  app.innerHTML = `<main>${storage.storageBanner()}${view}</main>${V.summary ? '' : timer.vTimer() + vNav()}${sheet.vSheet(tone())}`;
   timer.tick();
 }
 setRender(render);

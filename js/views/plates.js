@@ -6,6 +6,7 @@ import { findExercise } from '../domain/library.js';
 import { PLATE_CATALOG, plateSettings, barFor, loadBar, perSideText } from '../domain/plates.js';
 import { openSheet, closeSheet } from '../ui/sheet.js';
 import { toast } from '../ui/toast.js';
+import { setName } from '../domain/settypes.js';
 
 /* Farben der Scheiben nach Wettkampfnorm: 25 rot, 20 blau, 15 gelb, 10 grün, 5 weiß;
    kleine Wechselscheiben 2,5 rot und 1,25 verchromt (grau), 0,5 weiß. Größe und Dicke grob wie echte Scheiben. */
@@ -32,7 +33,9 @@ export function barInfo(x) {
 
 /* Kleines Scheiben-Symbol neben dem Gewichtsfeld */
 export function plateButton(i, j) {
-  return `<button class="pl-btn" data-act="gymplates" data-i="${i}" data-j="${j}" aria-label="Scheiben für Satz ${j + 1}">
+  const x = S.active && S.active.ex[i];
+  const name = x ? setName(x.log, j) : `Satz ${j + 1}`;
+  return `<button class="pl-btn" data-act="gymplates" data-i="${i}" data-j="${j}" aria-label="Scheiben für ${esc(name)}">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M2 14h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       <rect x="7" y="4" width="4" height="20" rx="1.5" fill="currentColor"/><rect x="12.5" y="7" width="3.5" height="14" rx="1.5" fill="currentColor"/>
       <rect x="17.5" y="9.5" width="3" height="9" rx="1.2" fill="currentColor"/></svg></button>`;
@@ -80,7 +83,7 @@ function sheetFor(i, j) {
   const done = () => closeSheet();
   const setTo = total => () => {
     s.w = fmt(total);
-    save(); closeSheet(); toast(`Satz ${j + 1}: ${kgText(total)} kg`);
+    save(); closeSheet(); toast(`${setName(x.log, j)}: ${kgText(total)} kg`);
   };
   if (!(w > 0)) {
     openSheet({ title: 'Scheiben', text: `Trag zuerst ein Gewicht ein, dann zeigt die App die Scheiben für die ${bar.label}.`, actions: [{ label: 'Fertig', kind: 'primary', fn: done }] });

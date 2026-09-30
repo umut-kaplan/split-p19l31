@@ -1,0 +1,59 @@
+/* Vergleich per QR-Code. Farben und Bausteine aus tokens.css, base.css, components.css; Scanner-Kasten aus nutrition.css. */
+
+/* ---------- Schalter „Körpergewicht mitteilen“ ---------- */
+.cmp-switch {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; min-height: 52px; margin-top: 12px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--floor);
+  color: var(--chalk); font-weight: 650; font-size: 16px; text-align: left;
+}
+.cmp-switch i { position: relative; flex: none; width: 50px; height: 30px; border-radius: 15px; background: var(--deck2); transition: background .2s ease; }
+.cmp-switch i::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--steel); transition: transform .2s ease, background .2s ease;
+}
+.cmp-switch[aria-checked="true"] i { background: var(--c); }
+.cmp-switch[aria-checked="true"] i::after { transform: translateX(20px); background: #fff; }
+
+/* ---------- Gegenüberstellung ---------- */
+.cmp-table > h2 { font-size: 20px; margin-bottom: 4px; }
+.cmp-card { margin-top: 12px; padding: 4px 14px 10px; }
+.cmp-row {
+  display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px;
+  align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line);
+}
+.cmp-cols { border-top: 0; padding: 10px 0 2px; }
+.cmp-cols b { text-align: right; color: var(--steel); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-l { min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+.cmp-l small { display: block; color: var(--dim); font-size: 12px; margin-top: 1px; }
+.cmp-v { min-width: 0; text-align: right; }
+.cmp-v b { font-size: 16px; font-weight: 650; color: var(--chalk); }
+.cmp-v.lead b { color: var(--c); font-weight: 800; }
+.cmp-diff { display: block; color: var(--c); opacity: .75; font: 700 12px var(--round); }
+.cmp-none { color: var(--dim); }
+.cmp-sub { margin: 16px 0 0; color: var(--steel); font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.cmp-sub small { color: var(--dim); font-weight: 600; letter-spacing: 0; text-transform: none; }
+.cmp-sub + .cmp-row { border-top: 0; }
+.cmp-empty { padding: 8px 0 2px; }
+
+/* ---------- Eigener Code im Sheet: schwarz auf weiß, so groß wie möglich ---------- */
+.cmp-qr { width: min(100%, 380px); margin: 4px auto 0; background: #fff; border-radius: 14px; overflow: hidden; }
+.cmp-qr svg { display: block; width: 100%; height: auto; }
+.cmp-qr-hint { margin-top: 10px; color: var(--steel); font-size: 14px; text-align: center; }
+.cmp-qr-hint b { color: var(--chalk); }
+.cmp-in { margin-top: 16px; }
+.cmp-contents { margin-top: 6px; font-size: 14px; }
+.cmp-contents b { overflow-wrap: anywhere; }
+.cmp-text { margin-top: 6px; }
+.cmp-text textarea, .cmp-paste textarea { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+.cmp-text textarea {
+  display: block; width: 100%; min-height: 96px; margin: 4px 0 10px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--floor); color: var(--chalk); resize: vertical;
+}
+
+/* ---------- Scanner ---------- */
+.cmp-scan-box { aspect-ratio: 1 / 1; max-width: 420px; margin-left: auto; margin-right: auto; }
+.cmp-frame { position: absolute; inset: 12%; border: 3px solid var(--c); border-radius: 18px; box-shadow: 0 0 0 999px rgba(0, 0, 0, .38); }
+.cmp .scan-status { text-align: center; }
+.cmp .scan-btns { justify-content: center; }
+.cmp .scan-btns:has(> [hidden]:only-child) { display: none; }

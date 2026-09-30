@@ -6,6 +6,8 @@ import { render } from '../render.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import { blobToDataURL, dataURLToBlob } from '../ui/image.js';
+import { shareFile, SHARE_FAILED } from '../ui/share-file.js';
+import { trainingsCsv, csvFileName } from './csv.js';
 import { release } from '../timer.js';
 import { resetPhotoCache, reconcilePhotos } from '../views/body-photos.js';
 import { resetImageCache } from '../views/library.js';
@@ -37,28 +39,27 @@ export function sizeLabel(bytes) {
 /* ---------- Speichern ---------- */
 const fileName = () => `split-backup-${new Date().toISOString().slice(0, 10)}.json`;
 
-function done() {
+/* Nur ein Backup über das Teilen-Menü gilt als belegt. Erst dann ist der alte Speicherstand der ersten Version überflüssig. */
+function saved() {
   S.settings.lastBackup = Date.now();
-  /* Erst jetzt ist der alte Speicherstand der ersten Version überflüssig */
   try { localStorage.removeItem(LEGACY_KEY); } catch (e) { /* egal */ }
   save(); render(); toast('Backup gespeichert');
 }
 
+/* Beim Download meldet der Browser nicht, ob die Datei ankommt. Der alte Speicherstand bleibt darum stehen,
+   und als letztes Backup zählt der Download nur, wenn der Browser so überhaupt speichern kann. */
+function downloaded(likely) {
+  if (likely) { S.settings.lastBackup = Date.now(); save(); render(); }
+  toast('Backup-Datei heruntergeladen. Prüfe, ob sie in Dateien liegt.');
+}
+
 /* Muss direkt aus einem Tipp heraus laufen, sonst verweigert Safari das Teilen-Menü */
 function deliver(data) {
-  const name = fileName();
-  let file = null;
-  try { file = new File([data], name, { type: 'application/json' }); } catch (e) { /* alter Browser */ }
-  /* Auf dem iPhone öffnet das Teilen-Menü, dort „In Dateien sichern“ wählen */
-  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-    navigator.share({ files: [file], title: 'Split-Backup' }).then(done).catch(() => {});
-    return;
-  }
-  const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-  done();
+  shareFile(data, fileName(), 'application/json', 'Split-Backup').then(res => {
+    if (res === 'shared') saved();
+    else if (res === 'downloaded' || res === 'unsure') downloaded(res === 'downloaded');
+    else if (res === 'failed') toast(SHARE_FAILED);
+  });
 }
 
 async function collectImages() {
@@ -102,6 +103,18 @@ export async function exportData() {
   });
 }
 
+/* ---------- Trainings als CSV ---------- */
+/* Format von Strong, das Hevy importiert. Kein Backup: Split liest die Datei nicht wieder ein.
+   Muss direkt aus einem Tipp heraus laufen, sonst verweigert Safari das Teilen-Menü. */
+export function exportCsv() {
+  if (!S.sessions.length) { toast('Noch keine Trainings gespeichert.'); return; }
+  shareFile(trainingsCsv(S), csvFileName(), 'text/csv', 'Split-Trainings').then(res => {
+    if (res === 'shared') toast('CSV gespeichert');
+    else if (res === 'downloaded' || res === 'unsure') toast('CSV-Datei heruntergeladen. Prüfe, ob sie in Dateien liegt.');
+    else if (res === 'failed') toast(SHARE_FAILED);
+  });
+}
+
 /* ---------- Laden ---------- */
 async function restoreImages(images) {
   for (const store of IMAGE_STORES) await dbClear(store).catch(() => {});
@@ -132,9 +145,19 @@ export function initImport() {
         ? `Es stammt aus der ersten Version und enthält ${next.sessions.length} Trainings. Plan und Verlauf werden ersetzt, Profil und Körperdaten bleiben.`
         : `Es enthält ${next.sessions.length} Trainings${images.length ? ` und ${images.length} ${images.length === 1 ? 'Bild' : 'Bilder'}` : ''} und ersetzt alle Daten auf diesem Gerät.${!images.length && next.body.photos.length ? ' Fotos sind nicht enthalten; vorhandene Fotos auf diesem Gerät bleiben, soweit sie zum Backup passen.' : ''}`;
       confirmSheet('Backup laden?', text, 'Backup laden', async () => {
-        release();
         next.settings.lastBackup = Date.now();
-        replaceState(next);
+        /* Erst wenn der neue Stand wirklich gespeichert ist, werden Fotos angeglichen. Sonst bleibt alles, wie es war. */
+        const prev = JSON.parse(JSON.stringify(S));
+        const recover = V.recover;
+        V.recover = null;
+        if (!replaceState(next)) {
+          replaceState(prev);
+          V.recover = recover;
+          V.sheet = null; render();
+          toast('Das Backup passt nicht in den Speicher dieses Browsers. Nichts wurde geändert.');
+          return;
+        }
+        release();
         V.sheet = null; V.tab = 'today'; V.roll = true; V.planDay = null; V.histKey = null;
         if (images.length) {
           try { await restoreImages(images); } catch (e) { toast('Die Bilder ließen sich nicht alle wiederherstellen.'); }
