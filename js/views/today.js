@@ -6,6 +6,7 @@ import { pickHints } from '../domain/today-hints.js';
 import { plateSVG } from '../ui/plate.js';
 import { suggestionCardList } from '../ui/suggestion.js';
 import { dayFacts } from './training.js';
+import { shortStartButton } from './short-start.js';
 import { photoReminderCard } from './body.js';
 import * as goals from './goals.js';
 import * as report from './report.js';
@@ -15,6 +16,7 @@ import * as quick from './today-quick.js';
 import * as overview from './today-overview.js';
 import { shiftTodayCard, plannedNextId } from './shift-today.js';
 import { birthCard } from './birthdate.js';
+import { gearCheckCard } from './gear.js';
 
 export function greeting(h) {
   if (h >= 5 && h < 11) return 'Guten Morgen';
@@ -24,7 +26,7 @@ export function greeting(h) {
 
 export function todayDay() {
   const plan = activePlan();
-  const id = V.pick && plan.days[V.pick] ? V.pick : plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id);
+  const id = V.pick && plan.days[V.pick] ? V.pick : plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id, plan.days);
   return { id, d: plan.days[id], plan };
 }
 
@@ -48,6 +50,7 @@ export function view() {
     { kind: 'report', html: report.reportCard() },
     { kind: 'ampel', html: amp.hint },
     !active && { kind: 'backup', html: backupReminder.backupCard() },
+    !active && { kind: 'gear', html: gearCheckCard() },
     /* Nach „Ändern“ steht die Check-in-Karte unter der Ampel, nicht hier */
     !active && V.recEdit !== ymd() && { kind: 'checkin', html: recovery.checkinCard() },
     !active && { kind: 'birth', html: birthCard() },
@@ -104,6 +107,7 @@ function hero(id, d, plan, rolled) {
     <p class="hero-facts">${d.muscles ? `${esc(d.muscles)}. ` : ''}${empty ? 'Für diesen Tag stehen noch keine Übungen im Plan.' : `<b>${d.exercises.length}</b> ${plural(d.exercises.length, 'Übung', 'Übungen')}, <b>${sets}</b> ${plural(sets, 'Arbeitssatz', 'Arbeitssätze')}, etwa <b>${min}</b> ${plural(min, 'Minute', 'Minuten')}.
       ${lastOfDay ? `Zuletzt am ${esc(dShort(lastOfDay.startedAt))}` : ''}`}</p>
     <button class="btn primary" ${go}>${empty ? 'Übungen eintragen' : `${esc(d.name)} starten`}</button>
+    ${empty ? '' : shortStartButton(id, d, 'hero-short')}
     ${others.length ? `<div class="others"><span class="others-label">Heute lieber</span>${others.map(o => { const od = plan.days[o]; return `
       <button class="other" data-act="pick" data-day="${o}">${plateSVG(od.color, '', '', { small: true })}${esc(od.name)}</button>`; }).join('')}</div>` : ''}
   </div>`;

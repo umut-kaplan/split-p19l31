@@ -13,6 +13,7 @@ import { dailyLoad } from '../js/domain/recovery.js';
 import { missedTarget } from '../js/coach/training.js';
 import { rampSets, warmupRamp } from '../js/domain/warmup.js';
 import { normalize, defaultState, toBackup, fromBackup } from '../js/store/migrate.js';
+import { LEGACY_SPLIT } from '../js/plans.js';
 import { dayNumber } from '../js/domain/body.js';
 
 const at = (d, h = 18) => new Date(`${d}T${String(h).padStart(2, '0')}:00`).getTime();
@@ -193,6 +194,7 @@ test('Rampe als Aufwärmsätze: Typ A, Werte als graue Vorschläge', () => {
 /* ---------- Speicher und Backup ---------- */
 test('normalize: alte Stände ohne Satztyp und Supersatz bleiben unverändert', () => {
   const s = defaultState();
+  s.plans = [JSON.parse(JSON.stringify(LEGACY_SPLIT))];   // Plan bis 4.6, ohne Supersatz
   s.sessions = [{ id: 'a', startedAt: 1, endedAt: 2, ex: [bank([N(80, 8), N(80, 7)])] }];
   const before = JSON.parse(JSON.stringify(s));
   const n = normalize(s);

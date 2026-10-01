@@ -25,14 +25,17 @@
           Uhrzeiten und zählt darum nie als frühe Schicht.
       P2: Nach einer Nachtschicht und nach einem 24-h-Dienst frühestens 8 Stunden nach Schichtende.
       P3: Am Tag nach der letzten Nachtschicht einer Folge (heute keine Nacht) Ende spätestens 20:00.
-      Dauer wie auf der Trainingsseite geschätzt (je Satz Pause plus 45 Sekunden, dazu 10 Minuten),
-      auf 5 Minuten aufgerundet; ein Tag ohne Übungen zählt 75 Minuten.
+      Dauer wie auf der Trainingsseite geschätzt (je Satz Pause plus 45 Sekunden, im Supersatz statt der Pause der
+      Wechsel, dazu 10 Minuten; domain/plan-stats.js), auf 5 Minuten aufgerundet; ein Tag ohne Übungen zählt 75 Minuten.
+      4.7: Passt keine volle Einheit in die Fenster des Tages, nimmt die App die Kurzversion (die ersten vier Übungen
+      mit je zwei Sätzen), zuerst in der Reihenfolge des Plans. Jede Kurzversion zählt bei der Tagwahl wie shortRank
+      Ränge mehr, damit ein Tag mit voller Einheit vorgeht.
    6. Tagwahl je Woche (P4): zuerst möglichst viele Trainings bis zum Ziel, dann die kleinste Summe aus den Rängen
       frei und Urlaub 0, Dispo 0,5, Spät 1, Früh und Tag 2, Nacht 3, je 1 dazu für kurze Ruhe (weniger als 11 Stunden
       zwischen der Schicht dieses Tages und der davor oder danach) und für einen Tag zwischen zwei Nachtschichten,
       je 1 für jeden zweiten Tag in Folge; bei Gleichstand weniger Tage in Folge, dann möglichst nah an den
       Wunschzeiten, dann früher in der Woche. Tage ohne Schichtangabe zählen wie frei.
-   7. Hinweise am Plan-Eintrag (hints): eine Regel, die die Uhrzeit verschoben hat, mit ihrer Wissen-Karte;
+   7. Hinweise am Plan-Eintrag (hints): Kurzversion (4.7); eine Regel, die die Uhrzeit verschoben hat, mit ihrer Wissen-Karte;
       P7 leichtere Einheit ab der zweiten Nachtschicht einer Folge und an Tagen mit kurzer Ruhe (light); vor der ersten
          Nacht ist man meist ausgeschlafen;
       P8 kein koffeinhaltiger Booster, wenn das Training weniger als 8 Stunden vor der geschätzten Schlafenszeit endet.
@@ -45,6 +48,7 @@ import { REST_HOURS, dayProfile, lastTrained } from './today-plan.js';
 import { nextDay } from './progression.js';
 import { findExercise } from './library.js';
 import { workSets } from './settypes.js';
+import { dayMinutes, shortExercises, hasShortVersion, shortText } from './plan-stats.js';
 import { ymd } from '../util.js';
 import {
   hasShiftPlan, dayShift, addDays, dayNum, mondayOf, toMin, fromMin, localMs, shiftMinutes, DEFAULT_TYPES, DEFAULT_IDS, TYPE_TIMES, isTimedCat,
@@ -79,6 +83,8 @@ export const PLAN_RULES = {
   dayEnd: '22:00',
   step: 15,
   defaultMinutes: 75,
+  /* 4.7: Kurzversion zählt bei der Tagwahl wie so viele Ränge mehr */
+  shortRank: 1.5,
 };
 /* Höchstens so viele Trainings passen in eine Woche, wenn nach maxInRow Tagen in Folge ein Ruhetag kommt */
 export const MAX_PER_WEEK = 7 - Math.floor(7 / (PLAN_RULES.maxInRow + 1));
@@ -86,12 +92,17 @@ export const MAX_PER_WEEK = 7 - Math.floor(7 / (PLAN_RULES.maxInRow + 1));
 export const CAT_RANK = { off: 0, vacation: 0, none: 0, dispo: 0.5, late: 1, early: 2, day: 2, night: 3 };
 const H = 36e5;
 
-/* Dauer einer Einheit in Minuten, wie dayFacts auf der Trainingsseite, auf 5 Minuten aufgerundet */
+/* Dauer einer Einheit in Minuten, wie dayFacts auf der Trainingsseite (Supersätze ohne Pause dazwischen),
+   auf 5 Minuten aufgerundet */
 export function sessionMinutes(day) {
   const ex = (day && day.exercises) || [];
   if (!ex.length) return PLAN_RULES.defaultMinutes;
-  const min = Math.round(ex.reduce((a, e) => a + (e.sets || 0) * ((e.rest || 0) + 45), 0) / 60 + 10);
-  return Math.ceil(min / 5) * 5;
+  return Math.ceil(dayMinutes(ex) / 5) * 5;
+}
+/* Dauer der Kurzversion oder null, wenn sie nicht kürzer ist */
+export function shortMinutes(day) {
+  const ex = (day && day.exercises) || [];
+  return hasShortVersion(ex) ? sessionMinutes({ exercises: shortExercises(ex) }) : null;
 }
 
 /* ---------- Schichten eines Tages und seiner Nachbarn ---------- */
@@ -243,14 +254,22 @@ const RULE_HINTS = {
   }),
 };
 
+/* Für die Kurzversion gibt es keine eigene Wissen-Karte; die zum Wochenvolumen sagt, dass weniger Sätze den Stand halten */
+export const SHORT_CARD = 'saetze-pro-woche';
 function hintsFor(c, a) {
   const R = PLAN_RULES;
   const out = [];
+  if (a.short) {
+    out.push({
+      id: 'short', short: 'Kurzversion', card: SHORT_CARD,
+      text: `Kurzversion: ${a.u.shortText}, etwa ${a.minutes} Minuten. Für die ganze Einheit (${a.u.minutes} Minuten) reicht das Zeitfenster nicht.`,
+    });
+  }
   /* Die Regel, die die Wunschzeit verschoben hat: nach hinten der Beginn, nach vorn das Ende des Fensters */
   const by = a.want > a.pref ? a.w.loBy : a.want < a.pref ? a.w.hiBy : null;
   if (RULE_HINTS[by]) out.push({ id: by, ...RULE_HINTS[by](a.w) });
   if (c.light) out.push({ id: 'light', text: LIGHT_TEXT, short: 'leichter', card: 'kurze-nacht-leichter' });
-  if (c.sleepKnown && c.sleep - (a.t + a.u.minutes) < R.caffeineHours * 60) {
+  if (c.sleepKnown && c.sleep - (a.t + a.minutes) < R.caffeineHours * 60) {
     out.push({
       id: 'caffeine', card: 'koffein-wirkdauer', short: 'ohne Booster',
       text: `Koffeinhaltigen Booster vor dem Training weglassen, bis zum Schlafen bleiben weniger als ${hours(R.caffeineHours * 60)}.`,
@@ -268,22 +287,27 @@ const overlaps = (a, b) => !a.length || !b.length || a.some(m => b.includes(m));
 
 /* Eine Einheit auf einen Tag legen: erste Einheit der Warteschlange, deren Hauptmuskeln zum Beginn 48 Stunden Pause haben
    und sich nicht mit der Einheit vom Vortag überschneiden (block, null ohne Training am Vortag).
-   Hat der Tag zwei Fenster (vor und nach einer Tagschicht), kommt zuerst das, in dem die Wunschzeit besser liegt. */
+   Hat der Tag zwei Fenster (vor und nach einer Tagschicht), kommt zuerst das, in dem die Wunschzeit besser liegt.
+   Passt keine volle Einheit, dann dasselbe noch einmal mit den Kurzversionen (4.7). */
 function assign(c, queue, last, ctx, block) {
   const R = PLAN_RULES;
   const pref = Math.round(c.pref / R.step) * R.step;
-  for (let i = 0; i < queue.length; i++) {
-    const u = ctx.units[queue[i]];
-    if (block && overlaps(block, u.main)) continue;
-    const wins = c.wins.map(w => {
-      const hi = Math.floor((w.hiEnd - u.minutes) / R.step) * R.step;
-      return { w, hi, want: Math.min(Math.max(pref, w.lo), hi) };
-    }).filter(x => x.hi >= x.w.lo).sort((a, b) => Math.abs(a.want - c.pref) - Math.abs(b.want - c.pref));
-    for (const x of wins) {
-      for (let t = x.want; t <= x.hi; t += R.step) {
-        const start = localMs(c.date, t);
-        if (u.main.every(m => !last[m] || start - last[m] >= R.restHours * H)) {
-          return { i, u, t, want: x.want, pref, w: x.w, kind: x.w.kind, end: localMs(c.date, t + u.minutes) };
+  for (const short of [false, true]) {
+    for (let i = 0; i < queue.length; i++) {
+      const u = ctx.units[queue[i]];
+      if (block && overlaps(block, u.main)) continue;
+      const minutes = short ? u.shortMinutes : u.minutes;
+      if (!minutes) continue;
+      const wins = c.wins.map(w => {
+        const hi = Math.floor((w.hiEnd - minutes) / R.step) * R.step;
+        return { w, hi, want: Math.min(Math.max(pref, w.lo), hi) };
+      }).filter(x => x.hi >= x.w.lo).sort((a, b) => Math.abs(a.want - c.pref) - Math.abs(b.want - c.pref));
+      for (const x of wins) {
+        for (let t = x.want; t <= x.hi; t += R.step) {
+          const start = localMs(c.date, t);
+          if (u.main.every(m => !last[m] || start - last[m] >= R.restHours * H)) {
+            return { i, u, t, want: x.want, pref, w: x.w, kind: x.w.kind, minutes, short, end: localMs(c.date, t + minutes) };
+          }
         }
       }
     }
@@ -296,6 +320,7 @@ function simulate(picks, ctx, state) {
   const last = { ...state.last };
   const items = [];
   let dev = 0;
+  let shorts = 0;
   let prevDay = state.lastDay;
   let prevMain = state.lastMain;
   for (const c of picks) {
@@ -308,14 +333,17 @@ function simulate(picks, ctx, state) {
     prevDay = c.date;
     prevMain = a.u.main;
     dev += Math.abs(a.t - c.pref);
+    if (a.short) shorts++;
     let note = null;
     if (skipped) note = `${skipped.name} braucht noch Pause, darum zuerst ${a.u.name}.`;
     else if (a.t > a.want) note = 'Später als sonst, damit die Muskeln 48 Stunden Pause haben.';
     items.push({
       date: c.date,
       time: fromMin(a.t),
-      end: fromMin(a.t + a.u.minutes),
-      minutes: a.u.minutes,
+      end: fromMin(a.t + a.minutes),
+      minutes: a.minutes,
+      /* 4.7: Kurzversion, weil die volle Einheit nicht ins Fenster passt */
+      shortVersion: a.short,
       dayId: a.u.id,
       name: a.u.name,
       color: a.u.color,
@@ -328,7 +356,7 @@ function simulate(picks, ctx, state) {
       hints: hintsFor(c, a),
     });
   }
-  return { items, queue, last, dev, lastMain: prevMain };
+  return { items, queue, last, dev, shorts, lastMain: prevMain };
 }
 
 /* Beste Auswahl an Tagen einer Woche. Kandidaten sind nach Datum sortiert; höchstens 7. */
@@ -359,12 +387,14 @@ function chooseWeek(cands, need, ctx, state) {
     if (count === best.count && (cost > best.cost || (cost === best.cost && pairs > best.pairs))) continue;
     const sim = simulate(picks, ctx, state);
     if (!sim) continue;
+    /* Kurzversionen kosten erst nach der Simulation; cost oben ist darum eine untere Schranke */
+    const total = cost + sim.shorts * R.shortRank;
     const key = picks.map(p => p.date).join(',');
     const better = count > best.count
-      || cost < best.cost
-      || (cost === best.cost && (pairs < best.pairs
+      || total < best.cost
+      || (total === best.cost && (pairs < best.pairs
         || (pairs === best.pairs && (sim.dev < best.dev || (sim.dev === best.dev && key < best.key)))));
-    if (better) best = { ...sim, count, cost, pairs, key, run };
+    if (better) best = { ...sim, count, cost: total, pairs, key, run };
   }
   return best;
 }
@@ -378,7 +408,7 @@ function runUntil(days, day) {
 
 /* Plant die Trainings ab fromYmd für `days` Tage.
    Liefert null ohne Schichtplan, sonst
-   { trainings: [{ date, time, end, minutes, dayId, name, color, muscles, shift, shiftCat, reason, note, light, hints }],
+   { trainings: [{ date, time, end, minutes, dayId, name, color, muscles, shift, shiftCat, reason, note, light, shortVersion, hints }],
      weeks: [{ monday, target, done, planned, short }], target } */
 export function planTrainings(state, fromYmd, days = 14, opts = {}) {
   const sh = state && state.shifts;
@@ -407,15 +437,18 @@ export function planTrainings(state, fromYmd, days = 14, opts = {}) {
       const e = resolve(ex.names[0]);
       ((e && e.muscles && e.muscles.primary) || []).forEach(m => primary.add(m));
     });
-    units[id] = { id, name: d.name, color: d.color, muscles: d.muscles || '', main: prof.main, primary: [...primary], minutes: sessionMinutes(d) };
+    units[id] = {
+      id, name: d.name, color: d.color, muscles: d.muscles || '', main: prof.main, primary: [...primary],
+      minutes: sessionMinutes(d), shortMinutes: shortMinutes(d), shortText: shortText(d.exercises, { first: true }),
+    };
   });
   let ids = Object.keys(units);
   if (!ids.length) {
-    units._ = { id: null, name: 'Training', color: 'red', muscles: '', main: [], primary: [], minutes: PLAN_RULES.defaultMinutes };
+    units._ = { id: null, name: 'Training', color: 'red', muscles: '', main: [], primary: [], minutes: PLAN_RULES.defaultMinutes, shortMinutes: null };
     ids = ['_'];
   }
   const ordered = plan.order.filter(id => units[id]);
-  const start = nextDay(plan.order, past, plan.id);
+  const start = nextDay(plan.order, past, plan.id, plan.days);
   const at = ordered.indexOf(start);
   const queue = ordered.length ? (at > 0 ? [...ordered.slice(at), ...ordered.slice(0, at)] : ordered) : ['_'];
 

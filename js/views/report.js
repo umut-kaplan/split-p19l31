@@ -8,7 +8,7 @@ import { recoveryFromState, LEVEL_LABEL } from '../domain/recovery.js';
 import { targetsFromState } from '../domain/energy.js';
 import { findExercise } from '../domain/library.js';
 import { formatRecord, RECORD_LABEL } from '../domain/prs.js';
-import { WEEKLY_SET_TARGET } from '../domain/muscles.js';
+import { weeklyTarget, weeklyTargetText } from '../domain/muscles.js';
 import { plateSVG } from '../ui/plate.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { reportImageFile } from '../ui/report-image.js';
@@ -92,15 +92,17 @@ function trainingSection(r) {
 
 function muscleSection(r) {
   if (!r.muscles.length) return '';
-  const [lo, hi] = WEEKLY_SET_TARGET;
-  const rate = { low: 'unter dem Zielbereich', ok: 'im Zielbereich', high: 'über dem Zielbereich' };
+  /* Nacken/Trapez und unterer Rücken ohne Zielbereich: keine Zone, keine Ampel */
+  const zone = m => { const t = weeklyTarget(m); return t ? `<span class="vol-zone" style="left:${t[0] / SCALE * 100}%;width:${(t[1] - t[0]) / SCALE * 100}%"></span>` : ''; };
+  const rate = { low: 'unter dem Zielbereich', ok: 'im Zielbereich', high: 'über dem Zielbereich', none: 'ohne Zielbereich' };
+  const rated = r.muscles.filter(m => m.rating !== 'none').length;
   return `<section class="block card">
     <h2>Sätze pro Muskelgruppe</h2>
-    <p class="small-print">Zielbereich ${lo} bis ${hi} Sätze pro Woche, mitbeanspruchte Muskeln zählen halb. ${r.musclesOk} von ${r.muscles.length} im Ziel.</p>
+    <p class="small-print">${esc(weeklyTargetText())} Mitbeanspruchte Muskeln zählen halb. ${r.musclesOk} von ${rated} im Ziel.</p>
     <ul class="vol-list">${r.muscles.map(m => `
       <li class="vol-row ${m.rating}" aria-label="${esc(m.label)}: ${esc(fmt1(m.sets))} ${m.sets === 1 ? 'Satz' : 'Sätze'}, ${rate[m.rating]}">
         <div class="vol-top"><span>${esc(m.label)}</span><span><b class="num">${esc(fmt1(m.sets))}</b> ${m.sets === 1 ? 'Satz' : 'Sätze'}</span></div>
-        <div class="vol-bar" aria-hidden="true"><span class="vol-zone" style="left:${lo / SCALE * 100}%;width:${(hi - lo) / SCALE * 100}%"></span><i style="width:${Math.min(100, m.sets / SCALE * 100).toFixed(0)}%"></i></div>
+        <div class="vol-bar" aria-hidden="true">${zone(m.key)}<i style="width:${Math.min(100, m.sets / SCALE * 100).toFixed(0)}%"></i></div>
       </li>`).join('')}</ul>
     ${r.unknown.length ? `<p class="small-print" style="margin-top:10px">Nicht gezählt, weil die Bibliothek sie nicht kennt: ${esc(r.unknown.join(', '))}.</p>` : ''}
   </section>`;

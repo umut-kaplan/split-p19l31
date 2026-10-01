@@ -1,14 +1,15 @@
 /* Hinweis-Karten auf „Heute“: welche zwei stehen oben, welche stehen unter „Weitere Hinweise“. Reine Funktionen, per node --test geprüft.
    Reihenfolge, von wichtig nach weniger wichtig:
    1. disclaimer  „Gut zu wissen“, einmal nach der Einrichtung, bis bestätigt
-   2. report      Wochenbericht, nur montags bis angesehen oder „Später“
-   3. ampel       Die Ampel rät heute etwas anderes als die Scheibe (Pause oder anderer Tag); gilt nur heute
-   4. backup      Backup fällig: ohne Backup gehen die Daten mit dem Handy verloren
-   5. checkin     Kurzer Check-in, täglich und freiwillig, macht die Ampel genauer
-   6. birth       Geburtsdatum fehlt, einmalig, „Später“ möglich
-   7. photo       Fortschrittsfoto der Woche fehlt
-   8. suggestion  Vorschläge des Coachs; sie stehen auch unter Training, Ernährung und im Wochenbericht */
-export const HINT_ORDER = ['disclaimer', 'report', 'ampel', 'backup', 'checkin', 'birth', 'photo', 'suggestion'];
+   2. gear        Einmal nach dem Update auf 4.7: Geräte aus den Kategorien bis 4.6 übernommen, bitte prüfen
+   3. report      Wochenbericht, nur montags bis angesehen oder „Später“
+   4. ampel       Die Ampel rät heute etwas anderes als die Scheibe (Pause oder anderer Tag); gilt nur heute
+   5. backup      Backup fällig: ohne Backup gehen die Daten mit dem Handy verloren
+   6. checkin     Kurzer Check-in, täglich und freiwillig, macht die Ampel genauer
+   7. birth       Geburtsdatum fehlt, einmalig, „Später“ möglich
+   8. photo       Fortschrittsfoto der Woche fehlt
+   9. suggestion  Vorschläge des Coachs; sie stehen auch unter Training, Ernährung und im Wochenbericht */
+export const HINT_ORDER = ['disclaimer', 'gear', 'report', 'ampel', 'backup', 'checkin', 'birth', 'photo', 'suggestion'];
 export const MAX_HINTS = 2;
 
 const rank = kind => { const i = HINT_ORDER.indexOf(kind); return i < 0 ? HINT_ORDER.length : i; };

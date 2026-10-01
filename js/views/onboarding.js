@@ -2,7 +2,9 @@ import { S, V, save, activePlan } from '../state.js';
 import { esc, fmt0, plural } from '../util.js';
 import { render } from '../render.js';
 import { calorieGoal, waterGoal } from '../domain/energy.js';
-import { PLAN_CHOICES, choosePlan, currentChoice } from '../domain/plan-choice.js';
+import { choicesFor, choosePlan, currentChoice, isFreshSetup } from '../domain/plan-choice.js';
+import { hasSmartCircuit } from '../domain/equipment.js';
+import { swapSummary } from '../plans.js';
 import { plateSVG } from '../ui/plate.js';
 import { profileNow } from '../ui/cards.js';
 import { fName, fBirth, fSex, fHeight, fWeight, fGoal, fActivity, fDays, fEquipment, fLimits } from './profile-fields.js';
@@ -22,12 +24,6 @@ const STEPS = [
   },
   { title: () => 'Was ist dein Ziel?', text: 'Davon hängt dein Kalorienziel ab.', body: fGoal },
   {
-    id: 'plan',
-    title: () => 'Welcher Plan?',
-    text: 'Damit startest du. Die Trainingstage pro Woche stellt die App passend ein, im nächsten Schritt kannst du sie ändern.',
-    body: () => planChoices(),
-  },
-  {
     title: () => 'Wie aktiv bist du?',
     text: 'Wähle, wie viel du dich im Alltag bewegst.',
     body: p => `${fActivity(p)}<div style="margin-top:22px">${fDays(p)}</div>`,
@@ -38,6 +34,13 @@ const STEPS = [
     text: 'Zum Beispiel ein empfindliches Knie. Die App soll das später bei Übungsvorschlägen berücksichtigen.',
     body: fLimits,
   },
+  /* 4.7: nach Trainingstagen und Geräten, damit die Empfehlung passt und fehlende Geräte ersetzt werden */
+  {
+    id: 'plan',
+    title: () => 'Welcher Plan?',
+    text: 'Damit startest du. Empfohlen ist der Plan, der zu deinen Trainingstagen passt.',
+    body: () => planChoices(),
+  },
   {
     title: p => (p.name ? `Alles bereit, ${p.name}` : 'Alles bereit'),
     text: 'Deine Startwerte:',
@@ -45,7 +48,7 @@ const STEPS = [
       const p = profileNow();
       const cg = calorieGoal(p);
       return `<ul class="rules">
-        <li>Plan: <b>${esc(activePlan().name)}</b></li>
+        <li>Plan: <b>${esc(activePlan().name)}</b>${V.obSwaps && V.obSwaps.length ? `, angepasst an deine Geräte: ${esc(swapSummary(V.obSwaps))}. Unter Training, Plan kannst du jede Übung ändern.` : ''}</li>
         <li>${cg.ok ? `Kalorienziel: <b class="num">${fmt0(cg.kcal)} kcal</b> am Tag` : `Für das Kalorienziel fehlt noch: ${esc(cg.missing.join(', '))}`}</li>
         <li>Wasser: <b class="num">${(waterGoal(p.weightKg) / 1000).toLocaleString('de-DE')} l</b> am Tag</li>
         <li>Serie: <b>${p.daysPerWeek}</b> ${plural(p.daysPerWeek, 'Einheit', 'Einheiten')} pro Woche</li>
@@ -54,24 +57,33 @@ const STEPS = [
   },
 ];
 
-/* Auswahl im Schritt „Welcher Plan?“. Angewendet wird sie erst mit „Weiter“. */
+/* Auswahl im Schritt „Welcher Plan?“. Empfehlungen stehen oben; bei einer frischen Einrichtung ist die erste
+   vorausgewählt. Angewendet wird die Wahl erst mit „Weiter“. */
+const fallbackChoice = () => (isFreshSetup(S) ? choicesFor(S)[0].id : null);
+
 function planChoices() {
   const cur = currentChoice(S);
-  const sel = V.obPlan || cur;
+  const list = choicesFor(S, cur);
+  const sel = V.obPlan || fallbackChoice() || cur;
   const active = activePlan();
-  return `<div class="choices ob-plans">${PLAN_CHOICES.map(c => `
+  const n = S.profile.daysPerWeek;
+  const smart = hasSmartCircuit(S.profile.equipment);
+  return `<div class="choices ob-plans">${list.map(c => `
     <button class="choice ${sel === c.id ? 'on' : ''}" aria-pressed="${sel === c.id}" data-act="obplan" data-id="${c.id}">
-      <b>${esc(c.name)}</b><span>${esc(c.hint)}</span>
-      <span class="ob-days">${c.days} ${c.days === 1 ? 'Einheit' : 'Einheiten'} pro Woche</span></button>`).join('')}</div>
-    <p class="small-print" style="margin-top:12px">${cur ? '' : `Gerade aktiv ist „${esc(active.name)}“. Er bleibt, wenn du nichts auswählst. `}Unter Training, Plan kannst du jederzeit wechseln oder anpassen. Vorhandene Pläne und dein Verlauf bleiben erhalten.</p>`;
+      <b>${esc(c.name)}${c.recommended ? ' <i class="ob-rec">Empfohlen</i>' : ''}</b><span>${esc(c.hint)}</span>
+      ${c.days ? `<span class="ob-days">Gedacht für ${c.days} ${c.days === 1 ? 'Einheit' : 'Einheiten'} pro Woche</span>` : ''}</button>`).join('')}</div>
+    <p class="small-print" style="margin-top:12px">Empfohlen für ${n} ${n === 1 ? 'Trainingstag' : 'Trainingstage'} pro Woche${smart ? ' und, weil du den Smart-Zirkel angehakt hast, der Zirkel' : ''}. Fehlt dir ein Gerät, setzt die App eine Übung für dieselben Muskeln ein, sonst steht im Plan, was fehlt. ${cur || sel ? '' : `Gerade aktiv ist „${esc(active.name)}“. Er bleibt, wenn du nichts auswählst. `}Unter Training, Plan kannst du jederzeit wechseln oder anpassen. Vorhandene Pläne und dein Verlauf bleiben erhalten.</p>`;
 }
 
 /* Gewählten Plan übernehmen. Ein in diesem Durchgang angelegter, unbenutzter Plan fällt bei einer anderen Wahl wieder weg. */
 function applyPlanChoice() {
-  const choice = V.obPlan;
-  if (!choice || choice === currentChoice(S)) return;
+  const choice = V.obPlan || fallbackChoice();
+  if (!choice) return;
+  /* Derselbe Plan wie bisher: nichts zu tun, außer der mitgelieferte 3er-Split passt sich noch an die Geräte an */
+  if (choice === currentChoice(S) && !isFreshSetup(S)) return;
   const r = choosePlan(S, choice, { discardId: V.obCreated });
   V.obCreated = r.created ? r.planId : (r.planId === V.obCreated ? V.obCreated : null);
+  V.obSwaps = r.swaps;
   V.planDay = null;
   V.pick = null;
   save();
@@ -122,7 +134,7 @@ export const actions = {
     S.settings.onboardingDone = true;
     markSeen();
     V.ob = 0; V.tab = 'today'; V.roll = true;
-    V.obPlan = null; V.obCreated = null;
+    V.obPlan = null; V.obCreated = null; V.obSwaps = null;
     save(); render(); window.scrollTo(0, 0);
   },
 };

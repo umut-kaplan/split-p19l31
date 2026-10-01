@@ -2,7 +2,7 @@
    Zusammenfassung erledigter Übungen. Reine Funktionen.
    ex: Übungen der Einheit wie in S.active.ex, je { name, unit, log: [{ w, r, done, t }] }. Aufwärmsätze zählen nie mit. */
 import { fmt, toNum } from '../util.js';
-import { workSets, typePrefix } from './settypes.js';
+import { workSets, typePrefix, methodSuffix } from './settypes.js';
 import { groupsOf } from './superset.js';
 
 /* Wohin die App beim Start springt: Läuft ein Training, direkt in die Einheit, sonst auf „Heute“ */
@@ -43,25 +43,27 @@ export function overviewOf(ex = []) {
   };
 }
 
-/* Sätze kurz als eine Zeile, gleiche Gewichte und Satztypen am Stück zusammengefasst:
+/* Sätze kurz als eine Zeile, gleiche Gewichte, Satztypen und Methoden am Stück zusammengefasst:
    „100 kg × 8, 8, 7“, „A 40 kg × 10 · 100 kg × 8 · D 70 kg × 12“, „12, 10, 9 Wdh.“, „45, 50 s“.
-   sets: [{ w, r, t }], Werte als Zahl oder Eingabetext („42,5“); leere Gewichte gelten als 0. */
+   Am Smart-Zirkel steht eine Methode außer „Regulär“ dahinter: „90 kg × 10, 10 (Negativ)“.
+   sets: [{ w, r, t, m }], Werte als Zahl oder Eingabetext („42,5“); leere Gewichte gelten als 0. */
 export function setsSummary(sets = [], unit = 'reps') {
-  const list = (Array.isArray(sets) ? sets : []).map(s => ({ w: num(s.w), r: Math.round(num(s.r)), p: typePrefix(s) }));
+  const list = (Array.isArray(sets) ? sets : []).map(s => ({ w: num(s.w), r: Math.round(num(s.r)), p: typePrefix(s), m: methodSuffix(s) }));
   if (!list.length) return '';
-  if (list.every(s => !(s.w > 0))) return list.map(s => s.p + s.r).join(', ') + (unit === 'sec' ? ' s' : ' Wdh.');
+  if (list.every(s => !(s.w > 0))) return list.map(s => s.p + s.r + s.m).join(', ') + (unit === 'sec' ? ' s' : ' Wdh.');
   const runs = [];
   list.forEach(s => {
     const last = runs[runs.length - 1];
-    if (last && last.w === s.w && last.p === s.p) last.r.push(s.r);
-    else runs.push({ w: s.w, p: s.p, r: [s.r] });
+    if (last && last.w === s.w && last.p === s.p && last.m === s.m) last.r.push(s.r);
+    else runs.push({ w: s.w, p: s.p, m: s.m, r: [s.r] });
   });
   const tail = unit === 'sec' ? ' s' : '';
-  return runs.map(run => run.p + (run.w > 0 ? `${fmt(run.w)} kg × ` : '') + run.r.join(', ') + tail).join(' · ');
+  return runs.map(run => run.p + (run.w > 0 ? `${fmt(run.w)} kg × ` : '') + run.r.join(', ') + tail + run.m).join(' · ');
 }
 
-/* Zeile der eingeklappten Übung: die abgehakten Arbeitssätze */
-export const foldSummary = x => setsSummary(workSets((x && x.log) || []).filter(s => s.done), x && x.unit);
+/* Zeile der eingeklappten Übung: die abgehakten Arbeitssätze, am Smart-Zirkel mit der Methode der Karte */
+export const foldSummary = x => setsSummary(workSets((x && x.log) || []).filter(s => s.done)
+  .map(s => (x.m && !s.m ? { ...s, m: x.m } : s)), x && x.unit);
 
 /* Eingabe („42,5“, „1.000“) oder Zahl als Zahl, Leeres als 0 */
 const num = v => { const n = typeof v === 'number' ? v : toNum(v); return Number.isFinite(n) ? n : 0; };

@@ -3,14 +3,15 @@ import { S, save } from '../state.js';
 import { esc, fmtIn, toNum } from '../util.js';
 import { render } from '../render.js';
 import { ACTIVITY, GOALS } from '../domain/energy.js';
-import { SEX, EQUIPMENT, LIMIT_TAGS } from '../domain/profile-options.js';
+import { SEX, LIMIT_TAGS } from '../domain/profile-options.js';
 import { currentWeight } from '../domain/body.js';
 import { toast } from '../ui/toast.js';
 import { recordWeight } from './body.js';
 import * as birth from './birthdate.js';
+import * as gear from './gear.js';
 
-/* Untermodule, deren actions und inputs app.js einsammelt: Geburtsdatum mit Karte auf „Heute“ */
-export const modules = [birth];
+/* Untermodule, deren actions und inputs app.js einsammelt: Geburtsdatum mit Karte auf „Heute“, Geräteseite */
+export const modules = [birth, gear];
 
 const RANGE = {
   heightCm: [120, 230, 'Größe in cm eintragen, z. B. 180'],
@@ -47,8 +48,8 @@ export const fDays = p => `<div><p class="label">Trainingstage pro Woche</p>
   </div>
   <p class="small-print" style="margin-top:6px">Danach zählt die Serie auf der Startseite.</p></div>`;
 
-export const fEquipment = p => `<div class="chips">${EQUIPMENT.map(e => chip('ptoggle', 'equipment', e, e, p.equipment.includes(e))).join('')}</div>
-  <div style="margin-top:12px"><button class="btn small ghost" data-act="pequipall">Alles, was ein Studio hat</button></div>`;
+/* Geräte (4.7): Schnellauswahl, Smart-Zirkel, Gruppen zum Abhaken (views/gear.js) */
+export const fEquipment = gear.fEquipment;
 
 export const fLimits = p => `<div class="chips">${LIMIT_TAGS.map(t => chip('ptoggle', 'tags', t, t, p.limitations.tags.includes(t))).join('')}</div>
   <label class="field" style="margin-top:14px">Was genau?
@@ -57,13 +58,12 @@ export const fLimits = p => `<div class="chips">${LIMIT_TAGS.map(t => chip('ptog
 export const actions = {
   pset: el => { S.profile[el.dataset.k] = el.dataset.v; save(); render(); },
   ptoggle: el => {
-    const list = el.dataset.k === 'tags' ? S.profile.limitations.tags : S.profile.equipment;
+    const list = S.profile.limitations.tags;
     const v = el.dataset.v;
     const i = list.indexOf(v);
     if (i >= 0) list.splice(i, 1); else list.push(v);
     save(); render();
   },
-  pequipall: () => { S.profile.equipment = EQUIPMENT.slice(); save(); render(); },
   pdays: el => {
     S.profile.daysPerWeek = Math.max(1, Math.min(7, (S.profile.daysPerWeek || 3) + Number(el.dataset.d)));
     save(); render();

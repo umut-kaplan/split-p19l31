@@ -2,6 +2,20 @@
    Vor jeder Veröffentlichung hier einen Eintrag anlegen; die Version muss zu CACHE in sw.js passen, ein Test prüft das. */
 export const CHANGES = [
   {
+    version: '4.7',
+    date: '2026-10-01',
+    items: [
+      '77 neue Übungen mit Anleitung, typischen Fehlern und Alternativen, davon 18 für die Smart-Zirkel-Geräte (z. B. EGYM) und „Rudern mit Band“ für zu Hause. Die Bibliothek hat jetzt 127 Übungen, die neuen zeigen vorerst ein Platzhalter-Bild. Bei Klimmzügen und Dips mit Unterstützung zählen die kg als Unterstützung, Fortschritt heißt dort weniger davon.',
+      'Geräte deines Studios: Unter Einstellungen · Studio hakst du sie ab, eine Schnellauswahl für großes Studio, Discount-Studio oder Zuhause nimmt dir das meiste ab, dazu kommt ein Schalter für den Smart-Zirkel. Deine bisherige Auswahl hat Split übernommen, prüf bitte kurz, ob alles stimmt. Dort stellst du auch ein, in welchen Schritten deine Kurzhanteln steigen.',
+      'Am Smart-Zirkel stellt das Gerät das Gewicht ein. Split schlägt dort kein Gewicht vor, du trägst ein, was das Gerät anzeigt, und wählst die Methode, etwa Negativ oder Adaptiv. Rekorde zählen nur aus Sätzen mit „Regulär“.',
+      'Sechs Plan-Vorlagen, neu dabei Ganzkörper 3×, Push/Pull/Beine 6× und „Nur Smart-Zirkel“. Die Einrichtung empfiehlt die Vorlage, die zu deinen Trainingstagen passt, und tauscht Übungen, für die dir ein Gerät fehlt. Für knappe Tage gibt es neben dem Startknopf eine Kurzversion mit etwa 30 Minuten; passt laut Schichtplan keine ganze Einheit, plant Split sie ein.',
+      'Der 3er-Split ist überarbeitet: Jede Einheit dauert höchstens eine Stunde, die Rückseite der Oberschenkel bekommt mehr. Trainierst du nach dem bisherigen, zeigt Split dir unter Training · Plan einmal den Vergleich. Übernimmst du den überarbeiteten 3er-Split, kommt er als neuer Plan dazu; dein bisheriger bleibt.',
+      'Neue Muskelgruppen Nacken und unterer Rücken. Kreuzheben zählt jetzt zum unteren Rücken, darum kann dein Rücken-Volumen niedriger erscheinen als bisher.',
+      'Ernährung: Beim Abnehmen zieht das Startziel höchstens 500 kcal ab, dein Kalorienziel kann darum nach dem Update steigen. Beim Aufbau peilt Split jetzt 0,25 bis 0,5 % Zunahme pro Woche an. Einen Kalorienvorschlag gibt es erst ab 10 Wiegungen, er folgt nicht mehr jedem Ausschlag der Waage und meldet sich nach einer Anpassung erst nach vier Wochen wieder.',
+      'Der Coach schaut vor einem Deload auf Schlaf und Schichten: Hast du zu wenig geschlafen oder kommst du aus der Nachtschicht, rät er, das Gewicht zu halten. Wochen mit drei oder mehr Nachtschichten zählen nicht als zu wenig Training.',
+    ],
+  },
+  {
     version: '4.6',
     date: '2026-10-01',
     items: [

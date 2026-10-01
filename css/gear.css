@@ -1,0 +1,100 @@
+/* 4.7: Geräteseite, Filter in Bibliothek und Übungsauswahl, Methode am Smart-Zirkel. Tippflächen mindestens 44 px. */
+
+/* ---------- Geräteseite ---------- */
+.gear-presets .choice { min-height: 56px; padding: 10px 14px; }
+.gear-presets .choice b { font-size: 16px; }
+.gear-smart { min-height: 64px; padding: 10px 14px; }
+.gear-t { display: grid; gap: 2px; min-width: 0; text-align: left; }
+.gear-t b { font-size: 16px; font-weight: 650; overflow-wrap: anywhere; }
+.gear-t small { color: var(--steel); font-size: 13px; font-weight: 500; line-height: 1.3; }
+.gear-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.gear-head .label { margin: 0; }
+.gear-head .label .num { margin-left: 6px; color: var(--dim); }
+.gear-clear { flex: none; }
+.gear-clear:disabled { opacity: .4; text-decoration: none; }
+.gear-groups {
+  display: grid; margin-top: 4px; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 18px; background: var(--deck);
+}
+.gear-group + .gear-group { box-shadow: inset 0 1px 0 var(--line); }
+.gear-group > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 0 16px 0 14px; font-weight: 650;
+}
+.gear-group > summary::-webkit-details-marker { display: none; }
+.gear-group > summary::after {
+  content: ''; flex: none; width: 8px; height: 8px; margin: -4px 2px 0 4px;
+  border: solid var(--dim); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .15s ease;
+}
+.gear-group[open] > summary::after { margin-top: 4px; transform: rotate(-135deg); }
+.gear-group > summary:active { background: var(--deck2); }
+.gear-gn { flex: 1; min-width: 0; }
+.gear-cnt { color: var(--dim); font-size: 14px; font-weight: 700; }
+.gear-cnt.on { color: var(--c); }
+.gear-items { display: grid; padding: 0 6px 8px; }
+.gear-item {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; align-items: center;
+  width: 100%; min-height: 48px; padding: 8px; border: 0; border-radius: 12px;
+  background: none; color: var(--chalk); text-align: left;
+}
+.gear-item:active { background: var(--deck2); }
+.gear-item .gear-t b { font-weight: 600; }
+.gear-box {
+  position: relative; width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--dim);
+}
+.gear-item.on .gear-box { background: var(--c); border-color: var(--c); }
+.gear-item.on .gear-box::after {
+  content: ''; position: absolute; left: 6px; top: 2px; width: 6px; height: 11px;
+  border: solid var(--on-c); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+}
+.gear-item.cov .gear-box { border-style: dashed; border-color: var(--c); }
+.gear-t small.gear-cov { color: var(--c); }
+.gear-t small.gear-warn { color: var(--yellow); }
+.gear-status { margin-top: 10px; }
+.gear-dbapply { margin-top: 10px; }
+.gear-dbapply .link { min-height: 44px; padding: 0; }
+
+/* ---------- Bibliothek: nur meine Geräte, Gerätefilter ---------- */
+.lib-mine { margin-top: 0; min-height: 60px; padding: 8px 14px; }
+.lib-mine .gear-t b { font-size: 16px; }
+.lib-gearnote { margin-top: -4px; }
+.lib-none-all { display: block; min-height: 44px; }
+.lib-none-all[hidden] { display: none; }
+.lib-txt .lib-miss { color: var(--yellow); font-size: 13px; font-weight: 650; }
+.pick-sep { margin: 14px 2px 4px; color: var(--dim); font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.pick-sep[hidden] { display: none; }
+.plan-pick .pick-rest .lib-item { background: transparent; }
+.plan-pick .pick-rest .lib-thumb { opacity: .7; }
+
+/* Editor eigener Übungen: Geräte in Gruppen, Schalter alle nötig / eines genügt */
+.lib-form .gear-groups { margin-top: 10px; }
+.lib-form .gear-req { margin-top: 8px; }
+.lib-form .gear-req b { color: var(--chalk); font-weight: 650; }
+
+/* ---------- Training: Smart-Zirkel ---------- */
+.hint.auto { display: block; background: rgba(162, 169, 178, .1); box-shadow: inset 3px 0 0 var(--steel); color: var(--chalk); font-size: 15px; }
+.sm-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin-top: 10px; }
+.sm-chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid var(--c); background: var(--c-soft); color: var(--chalk);
+  font-weight: 650; font-size: 15px;
+}
+.sm-chip small { color: var(--steel); font-size: 13px; font-weight: 600; }
+.sm-chip::after {
+  content: ''; width: 7px; height: 7px; margin: -4px 0 0 2px;
+  border: solid var(--steel); border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.sm-note { color: var(--dim); font-size: 13px; }
+.set-m { grid-column: 2 / -1; margin-top: -2px; color: var(--c); font-size: 13px; font-weight: 700; }
+.sm-sheet .choices { gap: 6px; }
+.sm-sheet .choice { min-height: 52px; padding: 9px 14px; }
+.sm-sheet .choice b { font-size: 16px; }
+.sm-sheet .choice span { font-size: 13px; }
+.sm-sets { display: grid; gap: 8px; }
+.sm-sets .field { grid-template-columns: 70px minmax(0, 1fr); align-items: center; }
+.sm-sheet .label { margin-top: 16px; }
+.lib-smart { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--floor); color: var(--steel); font-size: 14px; }
+.gear-smartrow { padding-top: 6px; box-shadow: inset 0 1px 0 var(--line); }
+
+/* Plan-Editor: Übung, für die beim Anlegen kein Ersatz mit derselben Hauptmuskelgruppe da war (Abschluss 4.7) */
+.pe .pe-miss { display: block; margin-top: 4px; color: var(--yellow); font-size: 13px; font-weight: 650; }

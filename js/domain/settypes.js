@@ -5,7 +5,11 @@
      nicht im Muskelvolumen und nicht im Satzzähler der Einheit.
    - Dropsätze zählen fürs Volumen (auch Muskelvolumen und Satzzähler), aber nicht für Rekorde
      (Gewicht, 1RM, Wiederholungen, Zeit) und nicht für die Progression.
-   - Sätze bis Versagen zählen wie normale Sätze. */
+   - Sätze bis Versagen zählen wie normale Sätze.
+   4.7, Feld m am Satz: Methode am Smart-Zirkel (SET_METHODS). Fehlt es, gilt der Satz als regulär.
+   Sätze mit einer anderen Methode zählen fürs Muskelvolumen und den Satzzähler, aber nicht für Rekorde und
+   Progression: Die kg am Display sind dann nicht vergleichbar (Negativ etwa zeigt in der nachgebenden Phase mehr). */
+import { toNum } from '../util.js';
 
 export const SET_TYPES = ['w', 'd', 'f'];
 /* Reihenfolge beim Tippen auf die Satznummer: normal, Aufwärmen, Drop, Versagen, wieder normal */
@@ -19,6 +23,19 @@ export const nextType = t => CYCLE[(CYCLE.indexOf(SET_TYPES.includes(t) ? t : nu
 export const isWarmup = s => setType(s) === 'w';
 /* Zählt für Rekorde und Progression: normal oder bis Versagen */
 export const isTop = s => { const t = setType(s); return t !== 'w' && t !== 'd'; };
+
+/* Methoden am Smart-Zirkel, Reihenfolge für die Auswahl */
+export const SET_METHODS = {
+  regular: 'Regulär', negative: 'Negativ', adaptive: 'Adaptiv', isokinetic: 'Isokinetisch', explonic: 'Explonic', maxout: 'Max Out',
+};
+export const setMethod = s => (s && typeof s.m === 'string' && Object.prototype.hasOwnProperty.call(SET_METHODS, s.m) ? s.m : null);
+/* Kurzer Zusatz für „Letztes Mal“ und den Verlauf: „ (Negativ)“; bei „Regulär“ oder ohne Methode nichts */
+export const methodSuffix = s => { const m = setMethod(s); return m && m !== 'regular' ? ` (${SET_METHODS[m]})` : ''; };
+/* Methode regulär oder keine */
+export const isRegular = s => (setMethod(s) || 'regular') === 'regular';
+/* Zählt für Rekorde und Progression: normal oder bis Versagen, Methode regulär oder keine */
+export const isRecordSet = s => isTop(s) && isRegular(s);
+export const recordSets = (sets = []) => (Array.isArray(sets) ? sets : []).filter(isRecordSet);
 
 /* Arbeitssätze: alles außer Aufwärmen. Grundlage für Volumen, Muskelvolumen, Wochenbericht, Satzzähler. */
 export const workSets = (sets = []) => (Array.isArray(sets) ? sets : []).filter(s => !isWarmup(s));
@@ -38,11 +55,27 @@ export function setLabels(sets = []) {
   });
 }
 
-/* Satz mit gültigem Typ oder ohne Feld t. Unbekannte Werte fallen weg, alles andere bleibt, wie es ist. */
+/* Satz mit gültigem Typ und gültiger Methode oder ohne die Felder t und m. Unbekannte Werte fallen weg,
+   alles andere bleibt, wie es ist. */
 export function cleanSet(s) {
-  if (!s || typeof s !== 'object' || !('t' in s) || SET_TYPES.includes(s.t)) return s;
-  const { t, ...rest } = s;
-  return rest;
+  if (!s || typeof s !== 'object') return s;
+  const badT = 't' in s && !SET_TYPES.includes(s.t);
+  const badM = 'm' in s && !setMethod(s);
+  if (!badT && !badM) return s;
+  const out = { ...s };
+  if (badT) delete out.t;
+  if (badM) delete out.m;
+  return out;
+}
+
+/* Satz aus der laufenden Einheit (Eingaben als Text) zum Speichern: { w, r, rir }, dazu t und m nur, wenn gesetzt */
+export function storedSet(s) {
+  const out = { w: toNum(s.w) || 0, r: toNum(s.r), rir: s.rir };
+  const t = setType(s);
+  const m = setMethod(s);
+  if (t) out.t = t;
+  if (m) out.m = m;
+  return out;
 }
 
 /* Kurzes Präfix für Listen wie „Letztes Mal“ oder den Verlauf, z. B. „A “ */

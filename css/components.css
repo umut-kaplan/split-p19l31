@@ -53,6 +53,8 @@
 .set-h, .set { display: grid; grid-template-columns: 26px 1fr 1fr 50px 50px; gap: 8px; align-items: center; }
 .set-h { color: var(--dim); font-size: 13px; padding: 0 0 4px; }
 .set-h span:nth-child(n+2) { text-align: center; }
+/* Gegengewicht (4.7): „kg Unter-stützung“ bricht an der weichen Trennung, statt die Spalte zu sprengen */
+.set-h .set-h-assist { font-size: 11px; line-height: 1.15; overflow-wrap: normal; }
 .set { padding: 3px 0; }
 .set-n { color: var(--steel); font-weight: 700; text-align: center; }
 .set input {

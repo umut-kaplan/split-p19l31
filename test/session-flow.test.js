@@ -78,3 +78,15 @@ test('Letztes Mal als kurze Zeile: Satztypen bleiben sichtbar und trennen die Gr
   assert.equal(setsSummary([]), '');
   assert.equal(setsSummary(null), '');
 });
+
+test('Smart-Zirkel (4.7): Methode außer „Regulär“ steht hinter der Gruppe und trennt Gruppen', () => {
+  assert.equal(setsSummary([{ w: 90, r: 10, m: 'negative' }, { w: 90, r: 10, m: 'negative' }]), '90 kg × 10, 10 (Negativ)');
+  assert.equal(setsSummary([{ w: 90, r: 10, m: 'regular' }, { w: 90, r: 9 }]), '90 kg × 10, 9');
+  assert.equal(setsSummary([{ w: 90, r: 10 }, { w: 90, r: 8, m: 'maxout' }]), '90 kg × 10 · 90 kg × 8 (Max Out)');
+  /* Unbekannte Methoden zählen als regulär */
+  assert.equal(setsSummary([{ w: 50, r: 12, m: 'egym' }]), '50 kg × 12');
+  /* Eingeklappte Übung: die Methode der Karte gilt für Sätze ohne eigene */
+  const set = (w, r, m) => ({ w, r, rir: 2, done: true, ...(m ? { m } : {}) });
+  assert.equal(foldSummary({ name: 'Brustpresse (Smart-Zirkel)', m: 'adaptive', log: [set('60', '12'), set('60', '11', 'regular')] }),
+    '60 kg × 12 (Adaptiv) · 60 kg × 11');
+});

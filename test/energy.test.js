@@ -32,7 +32,10 @@ test('Kalorienziel nach Mifflin, ohne Training', () => {
   assert.match(r.lines[2], /Kein Zuschlag fürs Training/);
   assert.match(r.lines[3], /Plus 10 % für das Ziel „Muskelaufbau“/);
   assert.match(r.lines[r.lines.length - 1], /Auf 10 gerundet: 3.030 kcal/);
-  assert.equal(calorieGoal({ ...base, goal: 'lose' }, { now: NOW }).kcal, 2210);   // 2759 * 0,8
+  /* 20 % wären 552 kcal, gedeckelt auf 500 kcal Defizit (4.7): 2759 - 500 */
+  const lose = calorieGoal({ ...base, goal: 'lose' }, { now: NOW });
+  assert.equal(lose.kcal, 2260);
+  assert.match(lose.lines[3], /Minus 500 kcal für das Ziel „Abnehmen“: 2\.259 kcal\. 20 % wären 552 kcal, die App zieht aber höchstens 500 kcal am Tag ab/);
   assert.equal(calorieGoal({ ...base, goal: 'recomp' }, { now: NOW }).kcal, 2760);
 });
 

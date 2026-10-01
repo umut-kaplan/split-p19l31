@@ -13,8 +13,8 @@
 import { personalRecords } from './prs.js';
 import { weekStreakWithJokers } from './streaks.js';
 import { dayNumber } from './body.js';
-import { findExercise } from './library.js';
-import { workSets, tonnage } from './settypes.js';
+import { findExercise, exerciseTonnage } from './library.js';
+import { workSets } from './settypes.js';
 import { ymd } from '../util.js';
 
 export const CMP_APP = 'split-cmp';
@@ -86,7 +86,7 @@ export function weekLoad(sessions, now = Date.now()) {
     if (n > t || n <= t - 7) return;
     (s.ex || []).forEach(x => {
       sets += workSets(x.sets).length;
-      if (x.unit !== 'sec') kg += tonnage(x.sets);
+      kg += exerciseTonnage(x);
     });
   });
   return { sets, kg: Math.round(kg) };

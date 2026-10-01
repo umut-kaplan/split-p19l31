@@ -25,7 +25,7 @@ export function woHeader(a, ov) {
   return `<div class="wo-bar">
     <div class="wo-row">
       ${plateSVG(a.color, '', '', { small: true })}
-      <div class="grow"><h1>${esc(a.name)}</h1><span class="elapsed num" id="elapsed" data-tick="elapsed">${mmss((Date.now() - a.startedAt) / 1000)}</span></div>
+      <div class="grow"><h1>${esc(a.name)}</h1><span class="elapsed num" id="elapsed" data-tick="elapsed">${mmss((Date.now() - a.startedAt) / 1000)}</span>${a.short ? '<span class="short-badge wo-short" aria-label="Kurzversion">Kurz<span class="wo-short-x">version</span></span>' : ''}</div>
       <button class="wo-ov" data-act="wooverview" aria-label="Übersicht: ${ov.exDone} von ${n} ${plural(n, 'Übung', 'Übungen')} erledigt">${LIST}<span class="wo-ov-l"><span>Übersicht</span><b class="num">${ov.exDone}/${n}</b></span></button>
     </div>
     <div class="wo-prog" role="img" aria-label="${ov.setsDone} von ${ov.setsTotal} ${plural(ov.setsTotal, 'Satz', 'Sätzen')}, ${ov.exDone} von ${n} ${plural(n, 'Übung', 'Übungen')} erledigt">${ov.items.map(it =>

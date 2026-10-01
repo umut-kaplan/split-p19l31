@@ -51,3 +51,16 @@ test('Der Changelog-Speicherstand steckt nicht im Grundzustand, sonst sähen Bes
   const { defaultState } = await import('../js/store/migrate.js');
   assert.equal(defaultState().settings.seenVersion, undefined);
 });
+
+test('Changelog 4.7 (Prüfung M4): höchstens 8 Punkte, „EGYM“ höchstens einmal, Plan-Satz richtig, Neuerungen genannt', () => {
+  const c = CHANGES.find(x => x.version === '4.7');
+  assert.ok(c.items.length <= 8, `${c.items.length} Punkte`);
+  const all = c.items.join(' ');
+  assert.ok((all.match(/EGYM/g) || []).length <= 1);
+  assert.match(all, /Smart-Zirkel-Geräte \(z\. B\. EGYM\)/);
+  assert.match(all, /Übernimmst du den überarbeiteten 3er-Split, kommt er als neuer Plan dazu; dein bisheriger bleibt\./);
+  assert.doesNotMatch(all, /außer du übernimmst/);
+  [/höchstens 500 kcal/, /Kalorienziel kann darum nach dem Update steigen/, /0,25 bis 0,5 % Zunahme pro Woche/, /erst ab 10 Wiegungen/,
+    /Kurzhanteln steigen/, /Nacken und unterer Rücken/, /Rücken-Volumen niedriger/, /prüf bitte kurz, ob alles stimmt/, /Push\/Pull\/Beine 6×/]
+    .forEach(re => assert.match(all, re));
+});

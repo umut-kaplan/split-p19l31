@@ -124,3 +124,15 @@ body:has(#timer) .wo { padding-bottom: calc(40px + var(--timer-h)); }
   .wo-next { padding: 0 10px 0 12px; }
   .live-go { font-size: 0; gap: 0; }
 }
+
+/* Kurzversion (4.7): kleines Schild in der laufenden Einheit, in der Zusammenfassung und im Verlauf */
+.short-badge {
+  display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px;
+  background: var(--deck2); color: var(--steel); font-size: 12px; font-weight: 700; vertical-align: middle;
+}
+.wo-row .wo-short { margin-left: 8px; white-space: nowrap; }
+/* Unter 361 px reicht der Platz neben der Zeit nur für „Kurz“, sonst bricht die Kopfleiste um */
+@media (max-width: 360px) { .wo-short-x { display: none; } }
+.sum-short { margin-top: 6px; }
+.sum-short .short-badge { margin-left: 0; font-size: 13px; }
+.cal-detail-h h2 .short-badge { font-size: 12px; }

@@ -1,0 +1,1075 @@
+/* Weitere Kern-Übungen (4.7). Arbeitsliste mit ids, Namen, Aliasen, Muskeln, Geräte-Anforderung und Alternativen:
+   docs/kern-uebungen.json; Regeln: docs/geraete-und-uebungen.md. Schema in data/exercise-schema.js.
+   Anleitungen selbst geschrieben, im Stil von data/exercises.js. Bilder gibt es noch keine, die Bibliothek zeigt
+   den Platzhalter. Belastungen (stresses) bewusst leer nur dort, wo die Übung bei üblichem Gewicht kaum ein Gelenk
+   fordert; test/exercises-kern.test.js hält diese Liste fest.
+
+   Alias-Umzüge (data/exercises.js, ALIAS_MOVES) passieren von selbst, sobald reverse-butterfly und rudermaschine hier stehen. */
+import { exercise } from './exercise-schema.js';
+
+/* credit (optional): [Urheber, Lizenz, Übungsnummer auf wger.de]; dann gehört das Bild nach data/img/exercises/<id>.jpg,
+   in die Liste GEAR_KERN in sw.js und in data/QUELLEN.md. */
+const X = (id, name, d, credit = null) => exercise(id, name, d, credit);
+
+export const EXERCISES_KERN = [
+  /* ---------- Brust ---------- */
+  X('multipresse-bankdruecken', 'Bankdrücken an der Multipresse', {
+    aliases: ['Multipresse Bankdrücken', 'Smith Machine Bench Press'],
+    type: 'compound', primary: ['chest'], secondary: ['triceps', 'shoulders'], equipment: ['multipresse', 'flachbank'],
+    steps: [
+      'Flachbank so unter die Stange stellen, dass die Stange beim Absenken über der unteren Brust ankommt.',
+      'Sicherheitsanschläge so einstellen, dass die Stange knapp über der Brust stoppt.',
+      'Hinlegen, Füße fest auf den Boden, Schulterblätter zusammen und nach unten ziehen.',
+      'Stange etwas breiter als schulterbreit greifen und durch Drehen aus den Haken lösen.',
+      'Kontrolliert zur unteren Brust senken, die Ellenbogen etwa 45 bis 70 Grad vom Körper.',
+      'Beim Ausatmen nach oben drücken, bis die Arme fast gestreckt sind; zum Ablegen die Stange wieder in die Haken drehen.',
+    ],
+    mistakes: [
+      'Die Bank steht so, dass die Stange zum Hals oder zum Bauch läuft.',
+      'Ohne eingestellte Sicherheitsanschläge schwer trainieren.',
+      'Die Stange auf der Brust abfedern lassen.',
+      'Der Po hebt von der Bank ab.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen', 'Handgelenk'],
+    alternatives: ['bankdruecken', 'brustpresse', 'kh-bankdruecken', 'butterfly'],
+  }),
+  X('multipresse-schraegbank', 'Schrägbankdrücken an der Multipresse', {
+    aliases: ['Multipresse schräg', 'Smith Incline Press'],
+    type: 'compound', primary: ['chest'], secondary: ['shoulders', 'triceps'], equipment: ['multipresse', 'schraegbank'],
+    steps: [
+      'Bank auf 30 bis 45 Grad stellen und so unter die Stange schieben, dass sie über der oberen Brust ankommt.',
+      'Sicherheitsanschläge so einstellen, dass die Stange knapp über der Brust stoppt.',
+      'Füße fest auf den Boden, Schulterblätter zurück und nach unten ziehen.',
+      'Stange etwas breiter als schulterbreit greifen und durch Drehen aus den Haken lösen.',
+      'Langsam zur oberen Brust unterhalb des Schlüsselbeins senken.',
+      'Beim Ausatmen nach oben drücken, bis die Arme fast gestreckt sind.',
+    ],
+    mistakes: [
+      'Die Bank ist zu steil, dann arbeiten fast nur die Schultern.',
+      'Die Bank steht zu weit vorn oder hinten, die Stange landet am Hals oder am Bauch.',
+      'Die Schulterblätter lösen sich von der Bank.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen', 'Handgelenk'],
+    alternatives: ['schraegbankdruecken', 'kh-schraegbankdruecken', 'schraeg-brustpresse', 'brustpresse', 'kabel-flys-unten'],
+  }),
+  X('schraeg-brustpresse', 'Schräge Brustpresse (Maschine)', {
+    aliases: ['Incline Chest Press', 'Schrägbank-Brustpresse', 'Hebel-Schrägbankdrücken'],
+    type: 'compound', primary: ['chest'], secondary: ['shoulders', 'triceps'], equipment: ['schraeg-brustpresse'],
+    steps: [
+      'Sitz so einstellen, dass die Griffe etwa auf Höhe der oberen Brust sind.',
+      'Rücken an die Lehne, Füße fest auf den Boden, Schulterblätter nach hinten und unten.',
+      'Die Griffe beim Ausatmen schräg nach oben vorn drücken, bis die Arme fast gestreckt sind.',
+      'Langsam zurückführen, bis die Brust leicht gedehnt ist, ohne das Gewicht abzulegen.',
+    ],
+    mistakes: [
+      'Den Sitz zu tief einstellen, dann wird fast ein Schulterdrücken daraus.',
+      'Die Schultern rollen beim Drücken nach vorn.',
+      'Die Arme vorn ganz durchdrücken.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen'],
+    alternatives: ['kh-schraegbankdruecken', 'multipresse-schraegbank', 'brustpresse', 'kabel-flys-unten'],
+  }),
+  X('kh-flys', 'Kurzhantel-Flys', {
+    aliases: ['Fliegende', 'Flys Kurzhantel', 'Dumbbell Flyes'],
+    type: 'isolation', primary: ['chest'], secondary: ['shoulders'], equipment: ['kurzhanteln', 'flachbank'],
+    steps: [
+      'Mit den Kurzhanteln auf den Oberschenkeln auf die Flachbank setzen und sie beim Zurücklegen über die Brust bringen.',
+      'Die Handflächen zeigen zueinander, die Ellenbogen sind leicht gebeugt, die Schulterblätter zusammen.',
+      'Die Arme in einem weiten Bogen seitlich absenken, bis die Brust gedehnt ist; der Winkel im Ellenbogen bleibt gleich.',
+      'Die Hanteln beim Ausatmen im selben Bogen wieder über die Brust führen.',
+    ],
+    mistakes: [
+      'Die Hanteln zu tief sinken lassen, dann zieht es vorn in der Schulter.',
+      'Die Arme beugen und strecken, sodass ein Drücken daraus wird.',
+      'Zu schwere Hanteln nehmen und sie unten fallen lassen.',
+    ],
+    stresses: ['Schulter'],
+    alternatives: ['butterfly', 'kabel-flys', 'brustpresse'],
+  }),
+  X('liegestuetze-erhoeht', 'Liegestütze erhöht', {
+    aliases: ['Incline Push-ups', 'Liegestütze an der Bank'],
+    type: 'compound', primary: ['chest'], secondary: ['triceps', 'shoulders', 'abs'], equipment: [],
+    steps: [
+      'Die Hände etwas breiter als schulterbreit auf eine stabile Erhöhung setzen, etwa eine Bank oder eine Tischkante.',
+      'Die Füße nach hinten setzen, bis der Körper von Kopf bis Ferse eine gerade Linie bildet; Bauch und Po fest.',
+      'Die Brust kontrolliert zur Kante senken, die Ellenbogen zeigen schräg nach hinten.',
+      'Beim Ausatmen zurückdrücken, bis die Arme gestreckt sind.',
+      'Je höher die Hände, desto leichter. Ohne Erhöhung geht es auch auf den Knien, der Körper bleibt dann von den Knien bis zum Kopf gerade.',
+    ],
+    mistakes: [
+      'Die Hüfte hängt durch.',
+      'Der Po ragt nach oben.',
+      'Eine Erhöhung nehmen, die rutschen oder kippen kann.',
+    ],
+    stresses: ['Handgelenk', 'Schulter'],
+    alternatives: ['liegestuetze', 'brustpresse', 'kh-bankdruecken'],
+  }),
+  X('dips-assistiert', 'Dips mit Unterstützung', {
+    aliases: ['Assisted Dips', 'Dips an der Gegengewichtsmaschine'],
+    type: 'compound', primary: ['chest', 'triceps'], secondary: ['shoulders'], equipment: ['assist-maschine'], assisted: true,
+    steps: [
+      'Gegengewicht wählen: Mehr Gewicht heißt mehr Unterstützung, die Übung wird leichter.',
+      'Auf die Kniebank knien oder auf die Fußplattform stellen und die Dip-Griffe fassen, die Arme gestreckt, die Schultern unten.',
+      'Den Oberkörper leicht nach vorn neigen und langsam absenken, bis die Oberarme etwa waagerecht sind.',
+      'Beim Ausatmen nach oben drücken, bis die Arme fast gestreckt sind.',
+      'Zum Absteigen oben bleiben, erst sicher auf die Trittstufen stellen und dann die Kniebank langsam loslassen.',
+    ],
+    mistakes: [
+      'Zu tief absenken, sodass die Schultern nach vorn kippen.',
+      'Die Schultern zu den Ohren ziehen.',
+      'Beim Absteigen die Kniebank hochschnellen lassen.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen'],
+    alternatives: ['dip-maschine', 'barren-dips', 'trizepsmaschine', 'trizepsdruecken-kabel'],
+  }),
+
+  /* ---------- Schultern ---------- */
+  X('seitheben-maschine', 'Seitheben an der Maschine', {
+    aliases: ['Seithebemaschine', 'Lateral Raise Machine'],
+    type: 'isolation', primary: ['shoulders'], secondary: ['traps'], equipment: ['seitheben-maschine'],
+    steps: [
+      'Sitz so einstellen, dass die Schultergelenke auf Höhe der Drehachsen sind.',
+      'Die Oberarme seitlich an die Polster legen und die Griffe locker fassen.',
+      'Die Arme seitlich anheben, bis die Oberarme etwa waagerecht sind; die Schultern bleiben unten.',
+      'Kurz halten, dann langsam absenken, ohne das Gewicht abzulegen.',
+    ],
+    mistakes: [
+      'Die Schultern zu den Ohren ziehen.',
+      'Mit Schwung aus dem Oberkörper arbeiten.',
+      'Die Arme über Schulterhöhe heben.',
+    ],
+    stresses: ['Schulter'],
+    alternatives: ['seitheben', 'seitheben-kabel', 'face-pulls'],
+  }),
+  X('reverse-butterfly', 'Reverse Butterfly (Maschine)', {
+    aliases: ['Reverse Butterfly', 'Butterfly reverse', 'Rear Delt Machine', 'Reverse Pec Deck'],
+    type: 'isolation', primary: ['shoulders'], secondary: ['back', 'traps'], equipment: ['butterfly'],
+    steps: [
+      'Die Hebelarme der Maschine ganz nach vorn stellen und mit der Brust zur Lehne setzen.',
+      'Sitz so einstellen, dass die Griffe etwa auf Schulterhöhe sind; die Arme sind fast gestreckt, die Ellenbogen leicht gebeugt.',
+      'Die Arme in einem Bogen nach hinten außen führen, bis sie etwa in einer Linie mit den Schultern sind.',
+      'Langsam wieder nach vorn führen, ohne das Gewicht abzulegen.',
+    ],
+    mistakes: [
+      'Die Schulterblätter kräftig zusammenziehen, dann arbeitet vor allem der Rücken.',
+      'Die Brust von der Lehne lösen.',
+      'Mit Schwung arbeiten.',
+    ],
+    stresses: [],
+    alternatives: ['reverse-flys', 'face-pulls', 'smart-butterfly-reverse'],
+  }),
+  X('multipresse-schulterdruecken', 'Schulterdrücken an der Multipresse', {
+    aliases: ['Smith Shoulder Press', 'Multipresse Schulterdrücken'],
+    type: 'compound', primary: ['shoulders'], secondary: ['triceps'], equipment: ['multipresse', 'schraegbank'],
+    steps: [
+      'Die Lehne senkrecht oder fast senkrecht stellen und die Bank so unter die Stange schieben, dass sie knapp vor dem Gesicht vorbeiläuft.',
+      'Sicherheitsanschläge etwas unter Kinnhöhe einstellen.',
+      'Rücken an die Lehne, die Stange etwas breiter als schulterbreit greifen und durch Drehen aus den Haken lösen.',
+      'Beim Ausatmen nach oben drücken, bis die Arme fast gestreckt sind.',
+      'Kontrolliert bis etwa auf Kinnhöhe senken.',
+    ],
+    mistakes: [
+      'Die Stange hinter den Nacken senken.',
+      'Ins Hohlkreuz drücken und den Rücken von der Lehne lösen.',
+      'Die Bank so stellen, dass die Stange an Kinn oder Nase stößt.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen', 'Handgelenk'],
+    alternatives: ['kh-schulterdruecken', 'schulterpresse-maschine', 'schulterdruecken', 'reverse-flys'],
+  }),
+  X('frontheben', 'Frontheben', {
+    aliases: ['Front Raises', 'Frontheben Kurzhantel', 'Frontheben mit Scheibe'],
+    type: 'isolation', primary: ['shoulders'], equipment: ['kurzhanteln'],
+    steps: [
+      'Aufrecht stehen, die Kurzhanteln vor den Oberschenkeln, die Handflächen zeigen zum Körper.',
+      'Bauch fest, die Ellenbogen leicht gebeugt.',
+      'Die Arme beidarmig oder abwechselnd nach vorn anheben, bis die Hände etwa auf Schulterhöhe sind.',
+      'Langsam wieder absenken.',
+      'Mit einer Hantelscheibe geht es genauso, dann die Scheibe mit beiden Händen seitlich fassen.',
+    ],
+    mistakes: [
+      'Mit dem Oberkörper nach hinten lehnen und Schwung holen.',
+      'Die Arme über Schulterhöhe heben.',
+      'Die Schultern zu den Ohren ziehen.',
+    ],
+    stresses: ['Schulter'],
+    alternatives: ['kh-schulterdruecken', 'schulterpresse-maschine', 'face-pulls'],
+  }),
+  X('aufrechtes-rudern', 'Aufrechtes Rudern', {
+    aliases: ['Upright Row', 'Kinnziehen'],
+    type: 'compound', primary: ['shoulders'], secondary: ['traps', 'biceps'], equipment: [['sz-stange', 'kabelturm']],
+    steps: [
+      'Aufrecht stehen, die SZ-Stange oder die Stange am unteren Kabelzug im Obergriff vor den Oberschenkeln, die Hände gut schulterbreit.',
+      'Bauch fest, die Schultern unten.',
+      'Die Stange nah am Körper nach oben ziehen, die Ellenbogen führen nach außen.',
+      'Nur bis etwa auf Brusthöhe ziehen, die Ellenbogen enden höchstens auf Schulterhöhe.',
+      'Langsam wieder absenken.',
+    ],
+    mistakes: [
+      'Eng greifen und die Stange bis unters Kinn ziehen.',
+      'Die Ellenbogen über Schulterhöhe heben.',
+      'Weitermachen, obwohl es in der Schulter zwickt; dann lieber Seitheben.',
+    ],
+    stresses: ['Schulter', 'Handgelenk'],
+    alternatives: ['seitheben', 'seitheben-kabel', 'kh-shrugs'],
+  }),
+  X('aussenrotation-kabel', 'Außenrotation am Kabel', {
+    aliases: ['External Rotation', 'Rotatorenmanschette am Kabel', 'Außenrotation mit Band', 'Cable External Rotation'],
+    type: 'isolation', primary: ['shoulders'], equipment: [['kabelturm', 'widerstandsband']],
+    steps: [
+      'Leichtes Gewicht wählen und die Rolle etwa auf Ellenbogenhöhe stellen oder ein Band dort befestigen.',
+      'Seitlich zum Zug stellen und den Griff mit der Hand fassen, die weiter vom Zug weg ist.',
+      'Den Ellenbogen 90 Grad beugen und an den Körper legen, der Unterarm liegt vor dem Bauch; ein gerolltes Handtuch zwischen Ellenbogen und Körper hilft.',
+      'Den Unterarm langsam nach außen drehen, so weit es ohne Ausweichen geht.',
+      'Kurz halten, langsam zurück, dann die Seite wechseln.',
+    ],
+    mistakes: [
+      'Zu schwer wählen und mit dem Oberkörper mitdrehen.',
+      'Den Ellenbogen vom Körper lösen.',
+      'Das Handgelenk abknicken, statt den Unterarm zu drehen.',
+    ],
+    stresses: [],
+    alternatives: ['face-pulls', 'reverse-butterfly'],
+  }),
+
+  /* ---------- Nacken/Trapez ---------- */
+  X('kh-shrugs', 'Schulterheben mit Kurzhanteln', {
+    aliases: ['Shrugs', 'Kurzhantel-Shrugs', 'Nackenheben', 'Dumbbell Shrugs'],
+    type: 'isolation', primary: ['traps'], secondary: ['forearms'], equipment: ['kurzhanteln'],
+    steps: [
+      'Aufrecht stehen, die Kurzhanteln seitlich neben dem Körper, die Arme gestreckt.',
+      'Die Schultern gerade nach oben Richtung Ohren ziehen; die Arme bleiben locker gestreckt.',
+      'Oben kurz halten.',
+      'Langsam absenken, bis die Schultern ganz unten sind.',
+    ],
+    mistakes: [
+      'Die Schultern kreisen lassen.',
+      'Die Arme beugen und mitziehen.',
+      'Den Kopf nach vorn schieben.',
+    ],
+    stresses: ['Nacken'],
+    alternatives: ['farmers-walk', 'aufrechtes-rudern'],
+  }),
+  X('farmers-walk', "Farmer's Walk", {
+    aliases: ['Farmers Carry', 'Bauerngang', 'Farmers Walk'],
+    type: 'compound', unit: 'sec', primary: ['traps', 'forearms'], secondary: ['abs', 'glutes'],
+    equipment: [['kurzhanteln', 'kettlebell', 'trap-bar']],
+    steps: [
+      'Zwei schwere Kurzhanteln, Kettlebells oder die Trap-Bar mit geradem Rücken aus der Hocke aufnehmen.',
+      'Aufrecht stehen, die Schultern leicht nach hinten und unten, Bauch fest.',
+      'Mit kurzen, ruhigen Schritten geradeaus gehen und gleichmäßig weiteratmen.',
+      'Gehen, bis die Zeit um ist oder der Griff nachlässt, dann die Gewichte kontrolliert absetzen.',
+    ],
+    mistakes: [
+      'Die Gewichte mit rundem Rücken aufnehmen oder absetzen.',
+      'Sich zur Seite neigen oder schwanken.',
+      'Die Schultern nach vorn hängen lassen.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['kh-shrugs', 'handgelenkcurls'],
+  }),
+
+  /* ---------- Trizeps ---------- */
+  X('sz-french-press', 'French Press mit SZ-Stange', {
+    aliases: ['Stirndrücken', 'Skull Crusher', 'French Press liegend', 'French Press', 'Lying Triceps Extension'],
+    type: 'isolation', primary: ['triceps'], equipment: ['sz-stange', 'flachbank'],
+    steps: [
+      'Auf die Flachbank legen, die SZ-Stange eng an den schrägen Griffen fassen und mit gestreckten Armen über die Brust halten.',
+      'Die Oberarme senkrecht oder leicht Richtung Kopf geneigt halten.',
+      'Nur die Ellenbogen beugen und die Stange langsam zur Stirn oder knapp hinter den Kopf senken.',
+      'Beim Ausatmen die Arme wieder strecken; die Oberarme bleiben ruhig.',
+      'Mit leichtem Gewicht anfangen, denn die Stange bewegt sich über dem Gesicht.',
+    ],
+    mistakes: [
+      'Die Ellenbogen weit nach außen fallen lassen.',
+      'Die Oberarme mitbewegen, sodass ein Drücken daraus wird.',
+      'Zu schwer wählen und die Stange unkontrolliert senken.',
+    ],
+    stresses: ['Ellenbogen'],
+    alternatives: ['ueberkopf-trizeps-kabel', 'trizepsmaschine', 'trizepsdruecken-kabel'],
+  }),
+  X('enges-bankdruecken', 'Enges Bankdrücken', {
+    aliases: ['Bankdrücken eng', 'Close Grip Bench Press'],
+    type: 'compound', primary: ['triceps', 'chest'], secondary: ['shoulders'], equipment: ['langhantel', 'bankdrueckstation'],
+    steps: [
+      'Auf die Bank legen, die Augen unter der Stange, Füße fest am Boden, Schulterblätter zusammen.',
+      'Die Stange etwa schulterbreit greifen, nicht enger, und aus der Ablage heben.',
+      'Kontrolliert zur unteren Brust senken, die Ellenbogen bleiben nah am Körper.',
+      'Beim Ausatmen nach oben drücken, bis die Arme fast gestreckt sind.',
+    ],
+    mistakes: [
+      'Zu eng greifen, das belastet die Handgelenke.',
+      'Die Ellenbogen weit nach außen drehen.',
+      'Die Stange auf der Brust abfedern lassen.',
+    ],
+    stresses: ['Ellenbogen', 'Handgelenk', 'Schulter'],
+    alternatives: ['barren-dips', 'dips-assistiert', 'sz-french-press', 'trizepsdruecken-kabel'],
+  }),
+  X('trizepsmaschine', 'Trizepsmaschine', {
+    aliases: ['Trizepsstrecker Maschine', 'Triceps Extension Machine', 'Trizeps-Dip-Maschine'],
+    type: 'isolation', primary: ['triceps'], equipment: ['trizepsmaschine'],
+    steps: [
+      'Am Strecker den Sitz so einstellen, dass die Oberarme auf dem Polster liegen und die Ellenbogen auf Höhe der Drehachse sind.',
+      'Am sitzenden Dip die Griffe seitlich neben dem Körper fassen, Rücken an die Lehne.',
+      'Die Arme beim Ausatmen strecken, bis sie fast gerade sind; die Oberarme bleiben ruhig.',
+      'Langsam zurückbeugen, ohne das Gewicht abzulegen.',
+    ],
+    mistakes: [
+      'Mit den Schultern nachdrücken.',
+      'Die Ellenbogen nach außen wandern lassen.',
+      'Die Arme am Ende mit einem Ruck durchstrecken.',
+    ],
+    stresses: ['Ellenbogen'],
+    alternatives: ['trizepsdruecken-kabel', 'smart-trizeps'],
+  }),
+  X('kh-ueberkopf-trizeps', 'Trizepsdrücken über Kopf mit Kurzhantel', {
+    aliases: ['Overhead Triceps Extension', 'Trizeps über Kopf'],
+    type: 'isolation', primary: ['triceps'], equipment: ['kurzhanteln'],
+    steps: [
+      'Aufrecht sitzen oder stehen und eine Kurzhantel mit beiden Händen unter der oberen Scheibe fassen.',
+      'Die Hantel mit gestreckten Armen über den Kopf bringen, Bauch fest.',
+      'Nur die Ellenbogen beugen und die Hantel langsam hinter den Kopf senken, bis der Trizeps gedehnt ist.',
+      'Beim Ausatmen die Arme wieder strecken; die Oberarme bleiben nah am Kopf.',
+    ],
+    mistakes: [
+      'Die Ellenbogen weit auseinandergehen lassen.',
+      'Ins Hohlkreuz ausweichen.',
+      'Die Hantel so locker greifen, dass sie rutschen kann.',
+    ],
+    stresses: ['Ellenbogen', 'Schulter'],
+    alternatives: ['ueberkopf-trizeps-kabel', 'sz-french-press', 'trizepsdruecken-kabel'],
+  }),
+  X('trizeps-kickbacks', 'Trizeps-Kickbacks', {
+    aliases: ['Kickbacks Kurzhantel', 'Triceps Kickback'],
+    type: 'isolation', primary: ['triceps'], equipment: ['kurzhanteln'],
+    steps: [
+      'Eine Hand und ein Knie auf eine Flachbank, der Rücken ist gerade und etwa waagerecht.',
+      'Ohne Bank: in Schrittstellung mit geradem Rücken weit vorbeugen und eine Hand auf den vorderen Oberschenkel stützen.',
+      'Die Kurzhantel mit der anderen Hand fassen, den Oberarm parallel zum Oberkörper an den Körper legen, den Ellenbogen 90 Grad beugen.',
+      'Den Unterarm nach hinten strecken, bis der Arm gerade ist; der Oberarm bleibt still.',
+      'Kurz halten, langsam zurück, nach dem Satz die Seite wechseln.',
+    ],
+    mistakes: [
+      'Den Oberarm mitschwingen lassen.',
+      'Zu schwer wählen und mit Schwung arbeiten.',
+      'Einen runden Rücken machen.',
+    ],
+    stresses: [],
+    alternatives: ['trizepsdruecken-kabel', 'trizepsmaschine'],
+  }),
+
+  /* ---------- Bizeps ---------- */
+  X('scottcurls', 'Scottcurls', {
+    aliases: ['Preacher Curls', 'Scott-Curls SZ', 'Larry Scott Curls', 'Scott-Curls'],
+    type: 'isolation', primary: ['biceps'], secondary: ['forearms'], equipment: ['sz-stange', 'scottbank'],
+    steps: [
+      'Sitz so einstellen, dass die Achseln knapp an der Oberkante des Polsters liegen.',
+      'Die Oberarme flach auf das Polster legen und die SZ-Stange im Untergriff an den schrägen Griffen fassen.',
+      'Die Stange zu den Schultern beugen; die Oberarme bleiben auf dem Polster.',
+      'Langsam ablassen, bis die Arme fast gestreckt sind.',
+    ],
+    mistakes: [
+      'Unten ruckartig ganz durchstrecken.',
+      'Die Ellenbogen vom Polster heben und mit dem Oberkörper ziehen.',
+      'Die Handgelenke stark nach hinten abknicken.',
+    ],
+    stresses: ['Ellenbogen'],
+    alternatives: ['bizepsmaschine', 'sz-curls', 'kh-curls'],
+  }),
+  X('bizepsmaschine', 'Bizepsmaschine', {
+    aliases: ['Bizepscurl-Maschine', 'Biceps Curl Machine'],
+    type: 'isolation', primary: ['biceps'], equipment: ['bizepsmaschine'],
+    steps: [
+      'Sitz so einstellen, dass die Ellenbogen auf Höhe der Drehachse sind und die Oberarme flach auf dem Polster liegen.',
+      'Die Griffe im Untergriff fassen.',
+      'Die Griffe beim Ausatmen zu den Schultern beugen.',
+      'Langsam ablassen, bis die Arme fast gestreckt sind, ohne das Gewicht abzulegen.',
+    ],
+    mistakes: [
+      'Die Oberarme vom Polster heben.',
+      'Den Oberkörper nach hinten lehnen.',
+      'Nur halbe Wiederholungen machen.',
+    ],
+    stresses: [],
+    alternatives: ['scottcurls', 'kabel-curls', 'smart-bizeps'],
+  }),
+  X('kabel-curls', 'Curls am Kabel', {
+    aliases: ['Cable Curls', 'Bizepscurls am Kabelzug', 'Kabelcurls'],
+    type: 'isolation', primary: ['biceps'], secondary: ['forearms'], equipment: ['kabelturm'],
+    steps: [
+      'Die Rolle ganz nach unten stellen und eine gerade Stange oder ein Seil einhängen.',
+      'Aufrecht etwa einen halben Schritt vor dem Zug stehen, den Griff im Untergriff, die Arme gestreckt.',
+      'Den Griff zur Brust beugen; die Oberarme bleiben am Körper.',
+      'Langsam ablassen, bis die Arme fast gestreckt sind.',
+    ],
+    mistakes: [
+      'Mit dem Oberkörper nach hinten lehnen.',
+      'Die Ellenbogen nach vorn schieben.',
+      'Unten das Gewicht ablegen und neu Schwung holen.',
+    ],
+    stresses: [],
+    alternatives: ['sz-curls', 'kh-curls', 'bizepsmaschine'],
+  }),
+  X('konzentrationscurls', 'Konzentrationscurls', {
+    aliases: ['Concentration Curls'],
+    type: 'isolation', primary: ['biceps'], equipment: ['kurzhanteln', 'flachbank'],
+    steps: [
+      'Auf das Ende der Flachbank setzen, die Beine breit, der Oberkörper leicht nach vorn geneigt.',
+      'Die Kurzhantel greifen und den Ellenbogen an die Innenseite des Oberschenkels legen; der Arm hängt gestreckt.',
+      'Die Hantel zur Schulter beugen; der Oberarm bleibt am Bein.',
+      'Oben kurz anspannen, langsam ablassen, nach dem Satz die Seite wechseln.',
+    ],
+    mistakes: [
+      'Den Oberkörper aufrichten und mitziehen.',
+      'Unten nicht ganz strecken.',
+      'Den Ellenbogen vom Bein lösen.',
+    ],
+    stresses: [],
+    alternatives: ['kh-curls', 'scottcurls'],
+  }),
+
+  /* ---------- Unterarme ---------- */
+  X('handgelenkcurls', 'Handgelenkcurls', {
+    aliases: ['Wrist Curls', 'Unterarmcurls'],
+    type: 'isolation', primary: ['forearms'], equipment: [['sz-stange', 'kurzhanteln'], 'flachbank'],
+    steps: [
+      'Auf die Bank setzen und die Unterarme auf die Oberschenkel oder die Bank legen, die Hände ragen über die Kante.',
+      'SZ-Stange oder Kurzhanteln im Untergriff halten; leichtes Gewicht reicht.',
+      'Die Hände langsam nach unten sinken lassen, bis die Unterarme gedehnt sind.',
+      'Die Hände nach oben beugen, so weit es geht; die Unterarme bleiben liegen.',
+    ],
+    mistakes: [
+      'Zu schwer wählen und mit dem ganzen Arm nachhelfen.',
+      'Die Unterarme von Bein oder Bank heben.',
+      'Mit Schwung wippen.',
+    ],
+    stresses: ['Handgelenk'],
+    alternatives: ['farmers-walk', 'hammercurls'],
+  }),
+
+  /* ---------- Rücken ---------- */
+  X('rudermaschine', 'Rudern an der Maschine', {
+    aliases: ['Rudermaschine', 'Seated Row Machine', 'Low Row', 'Rudern mit Brustauflage (Maschine)'],
+    type: 'compound', primary: ['back'], secondary: ['biceps', 'shoulders'], equipment: [['rudermaschine', 'hebel-rudern']],
+    steps: [
+      'Sitz und Brustpolster so einstellen, dass die Griffe etwa auf Brusthöhe liegen und mit gestreckten Armen gerade zu erreichen sind.',
+      'Die Brust ans Polster, die Füße fest, die Griffe fassen.',
+      'Die Ellenbogen beim Ausatmen nach hinten ziehen und die Schulterblätter zusammenführen.',
+      'Langsam nach vorn zurück, bis die Arme gestreckt sind und der Rücken gedehnt ist.',
+    ],
+    mistakes: [
+      'Die Brust vom Polster lösen und mit dem Oberkörper ziehen.',
+      'Die Schultern zu den Ohren ziehen.',
+      'Die Handgelenke abknicken.',
+    ],
+    stresses: [],
+    alternatives: ['rudern-sitzend', 't-bar-rudern', 'smart-ruderzug', 'hohes-rudern'],
+  }),
+  X('t-bar-rudern', 'T-Bar-Rudern', {
+    aliases: ['T-Bar Row', 'T-Hantel-Rudern', 'Landmine-Rudern'],
+    type: 'compound', primary: ['back'], secondary: ['biceps', 'shoulders', 'lower_back'], equipment: [['t-bar-rudern', 'landmine']],
+    steps: [
+      'Das Brustpolster so einstellen, dass die Griffe mit gestreckten Armen gerade zu erreichen sind.',
+      'Auf die Fußplatte stellen, die Knie leicht gebeugt, und die Brust ans Polster legen; Bauch fest, Schultern unten.',
+      'Die Griffe zum unteren Brustkorb ziehen, die Ellenbogen nah am Körper, die Schulterblätter zusammen.',
+      'Langsam ablassen, bis die Arme gestreckt sind; die Brust bleibt am Polster.',
+      'Ohne Maschine geht es an der Landmine: breitbeinig über die Stange, mit geradem Rücken vorneigen, enger Griff unter dem Stangenende. Dann arbeitet der untere Rücken mit.',
+    ],
+    mistakes: [
+      'Die Brust vom Polster lösen und mit dem Oberkörper ziehen.',
+      'Die Schultern zu den Ohren ziehen.',
+      'An der Landmine einen runden Rücken machen.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['langhantelrudern', 'rudermaschine', 'brustgestuetztes-rudern'],
+  }),
+  X('hohes-rudern', 'Hohes Rudern (Maschine)', {
+    aliases: ['High Row', 'Rudern von oben'],
+    type: 'compound', primary: ['back'], secondary: ['biceps', 'shoulders'], equipment: ['hebel-rudern'],
+    steps: [
+      'Sitz so einstellen, dass die Griffe mit gestreckten Armen schräg über dem Kopf zu fassen sind; die Oberschenkel unter das Polster, falls es eines gibt.',
+      'Aufrecht sitzen oder die Brust ans Polster, die Schultern nach unten.',
+      'Die Griffe beim Ausatmen schräg nach unten hinten ziehen, bis die Hände etwa neben der Brust sind.',
+      'Langsam zurück, bis die Arme gestreckt sind.',
+    ],
+    mistakes: [
+      'Die Schultern zu den Ohren ziehen.',
+      'Mit dem Oberkörper nach hinten kippen.',
+      'Nur eine halbe Bewegung machen.',
+    ],
+    stresses: [],
+    alternatives: ['latzug', 'rudermaschine'],
+  }),
+  X('klimmzuege-assistiert', 'Klimmzüge mit Unterstützung', {
+    aliases: ['Assisted Pull-ups', 'Klimmzugmaschine', 'Gegengewichts-Klimmzüge'],
+    type: 'compound', primary: ['back'], secondary: ['biceps'], equipment: ['assist-maschine'], assisted: true,
+    steps: [
+      'Gegengewicht wählen: Mehr Gewicht heißt mehr Unterstützung, die Übung wird leichter.',
+      'Auf die Kniebank knien oder auf die Fußplattform stellen und die Griffe etwas breiter als schulterbreit fassen.',
+      'Die Schultern nach unten ziehen, Bauch fest.',
+      'Beim Ausatmen hochziehen, bis das Kinn über den Griffen ist.',
+      'Langsam ablassen, bis die Arme gestreckt sind.',
+      'Zum Absteigen erst sicher auf die Trittstufen stellen, dann die Kniebank langsam loslassen.',
+    ],
+    mistakes: [
+      'Nur halb herunterlassen.',
+      'Mit Schwung aus den Beinen ziehen.',
+      'Beim Absteigen die Kniebank hochschnellen lassen.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen'],
+    alternatives: ['latzug', 'klimmzuege', 'invertiertes-rudern'],
+  }),
+  X('chin-ups', 'Klimmzüge im Untergriff', {
+    aliases: ['Chin-ups', 'Untergriff-Klimmzüge'],
+    type: 'compound', primary: ['back', 'biceps'], secondary: ['forearms'], equipment: ['klimmzugstange'],
+    steps: [
+      'Die Stange etwa schulterbreit im Untergriff fassen, die Handflächen zeigen zu dir; mit gestreckten Armen hängen.',
+      'Die Schultern nach unten ziehen, Bauch fest, die Beine ruhig.',
+      'Hochziehen, bis das Kinn über der Stange ist; die Ellenbogen gehen nach unten am Körper vorbei.',
+      'Kontrolliert ablassen, bis die Arme gestreckt sind.',
+    ],
+    mistakes: [
+      'Mit den Beinen Schwung holen.',
+      'Nur halb herunterlassen.',
+      'Das Kinn nach vorn recken, statt sich hochzuziehen.',
+    ],
+    stresses: ['Schulter', 'Ellenbogen'],
+    alternatives: ['klimmzuege', 'klimmzuege-assistiert', 'latzug', 'enger-latzug'],
+  }),
+  X('kabel-ueberzuege', 'Überzüge am Kabel', {
+    aliases: ['Straight-Arm Pulldown', 'Lat-Pullover am Kabel', 'Pullover am Kabel'],
+    type: 'isolation', primary: ['back'], equipment: ['kabelturm'],
+    steps: [
+      'Die Rolle ganz nach oben stellen und eine gerade Stange oder ein Seil einhängen.',
+      'Einen Schritt zurückgehen, die Hüfte leicht beugen und den Oberkörper etwas vorneigen; die Arme sind fast gestreckt vor dem Kopf.',
+      'Die Stange mit fast gestreckten Armen in einem Bogen bis zu den Oberschenkeln ziehen.',
+      'Langsam zurückführen, bis die Arme etwa auf Kopfhöhe sind und der Rücken gedehnt ist.',
+    ],
+    mistakes: [
+      'Die Arme beugen, sodass ein Trizepsdrücken daraus wird.',
+      'Mit dem Oberkörper Schwung holen.',
+      'Die Schultern zu den Ohren ziehen.',
+    ],
+    stresses: ['Schulter'],
+    alternatives: ['latzug', 'kh-rudern'],
+  }),
+  X('invertiertes-rudern', 'Rudern mit Körpergewicht', {
+    aliases: ['Inverted Row', 'Australian Pull-ups', 'Rudern im Hang', 'Schlingentrainer-Rudern'],
+    type: 'compound', primary: ['back'], secondary: ['biceps', 'shoulders', 'abs'],
+    equipment: [['multipresse', 'kniebeugenstaender', 'schlingentrainer']],
+    steps: [
+      'Eine Stange in der Multipresse oder im Rack etwa auf Hüfthöhe sicher einhängen oder die Griffe des Schlingentrainers auf diese Höhe einstellen.',
+      'Unter die Stange legen oder in die Schlingen zurücklehnen, schulterbreit greifen, der Körper ist gerade von Kopf bis Ferse.',
+      'Die Brust beim Ausatmen zur Stange ziehen und die Schulterblätter zusammenführen; Bauch und Po bleiben fest.',
+      'Langsam ablassen, bis die Arme gestreckt sind.',
+      'Je aufrechter der Körper, desto leichter.',
+    ],
+    mistakes: [
+      'Die Hüfte hängen lassen.',
+      'Nur mit den Armen ziehen, ohne die Schulterblätter zu bewegen.',
+      'Eine Stange nehmen, die nicht fest eingehängt ist.',
+    ],
+    stresses: [],
+    alternatives: ['klimmzuege-assistiert', 'kh-rudern', 'brustgestuetztes-rudern'],
+  }),
+
+  /* ---------- Unterer Rücken ---------- */
+  X('rueckenstrecker-maschine', 'Rückenstrecker-Maschine', {
+    aliases: ['Lower Back Machine', 'Rückenstrecker sitzend', 'Back Extension Machine'],
+    type: 'isolation', primary: ['lower_back'], secondary: ['glutes'], equipment: ['rueckenstrecker-maschine'],
+    steps: [
+      'Sitz und Fußplatte so einstellen, dass die Hüfte auf Höhe der Drehachse ist und das Polster am oberen Rücken liegt.',
+      'Gurt oder Oberschenkelpolster fest einstellen, die Arme vor der Brust kreuzen oder die Griffe fassen.',
+      'Den Oberkörper gegen das Polster nach hinten aufrichten, bis er etwa senkrecht ist.',
+      'Langsam wieder nach vorn beugen; der Rücken bleibt dabei gerade.',
+    ],
+    mistakes: [
+      'Hinten ins Hohlkreuz überstrecken.',
+      'Mit Schwung arbeiten.',
+      'Mit zu viel Gewicht beginnen.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['rueckenstrecker', 'smart-rueckentrainer', 'hip-thrust'],
+  }),
+
+  /* ---------- Bauch und Rumpf ---------- */
+  X('crunches', 'Crunches', {
+    aliases: ['Crunch', 'Bauchpresse am Boden'],
+    type: 'isolation', primary: ['abs'], equipment: [],
+    steps: [
+      'Auf den Rücken legen, die Knie gebeugt, die Füße flach am Boden.',
+      'Die Hände an die Schläfen legen oder vor der Brust kreuzen; zwischen Kinn und Brust bleibt etwa eine Faust Platz.',
+      'Beim Ausatmen Kopf und Schultern einrollen, bis die Schulterblätter knapp vom Boden abheben.',
+      'Kurz halten, dann langsam zurückrollen.',
+    ],
+    mistakes: [
+      'Mit den Händen am Kopf ziehen.',
+      'Mit Schwung hochkommen.',
+      'Den ganzen Oberkörper aufrichten, statt ihn einzurollen.',
+    ],
+    stresses: ['Nacken'],
+    alternatives: ['bauchmaschine', 'kabel-crunch', 'negativ-crunches'],
+  }),
+  X('negativ-crunches', 'Crunches an der Bauchbank', {
+    aliases: ['Decline Crunches', 'Sit-ups an der Schrägbank', 'Negativ-Sit-ups'],
+    type: 'isolation', primary: ['abs'], equipment: ['bauchbank'],
+    steps: [
+      'Die Neigung zu Beginn flach einstellen; je steiler, desto schwerer.',
+      'Die Füße unter die Rollen haken und mit dem Kopf nach unten auf die Bank legen.',
+      'Die Hände an die Schläfen legen oder vor der Brust kreuzen.',
+      'Den Oberkörper beim Ausatmen einrollen, als würdest du die Rippen zum Becken ziehen.',
+      'Langsam wieder abrollen.',
+    ],
+    mistakes: [
+      'Mit den Händen am Kopf ziehen.',
+      'Mit geradem Rücken aus der Hüfte hochschnellen.',
+      'Unkontrolliert zurückfallen lassen.',
+    ],
+    stresses: ['Nacken', 'Unterer Rücken'],
+    alternatives: ['crunches', 'bauchmaschine', 'kabel-crunch'],
+  }),
+  X('beinheben-stuetz', 'Beinheben im Stütz', {
+    aliases: ["Captain's Chair", 'Knieheben an der Dip-Station', 'Knee Raises', 'Beinheben am Kapitänsstuhl'],
+    type: 'isolation', primary: ['abs'], equipment: ['beinhebestation'],
+    steps: [
+      'Die Unterarme auf die Polster legen, die Griffe fassen, Rücken an die Lehne, die Beine hängen locker.',
+      'Die Schultern nach unten drücken, nicht hochziehen.',
+      'Die Knie beim Ausatmen zur Brust heben und dabei das Becken leicht einrollen.',
+      'Langsam ablassen, ohne zu schwingen.',
+      'Schwerer wird es mit gestreckten Beinen.',
+    ],
+    mistakes: [
+      'Mit Schwung aus den Beinen arbeiten.',
+      'Nur die Beine heben, ohne das Becken einzurollen.',
+      'Den Rücken von der Lehne lösen.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['beinheben-haengend', 'beinheben-liegend', 'kabel-crunch'],
+  }),
+  X('beinheben-liegend', 'Beinheben liegend', {
+    aliases: ['Lying Leg Raises', 'Beinheben am Boden'],
+    type: 'isolation', primary: ['abs'], equipment: [],
+    steps: [
+      'Auf den Rücken legen, die Hände neben dem Po oder flach unter dem Becken, die Beine gestreckt oder leicht gebeugt.',
+      'Den unteren Rücken in den Boden drücken und dort halten.',
+      'Die Beine beim Ausatmen langsam anheben, bis sie etwa senkrecht stehen.',
+      'Langsam absenken, nur so tief, wie der untere Rücken am Boden bleibt.',
+      'Leichter wird es mit gebeugten Knien.',
+    ],
+    mistakes: [
+      'Ins Hohlkreuz gehen, wenn die Beine tief sind.',
+      'Die Beine fallen lassen.',
+      'Mit Schwung arbeiten.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['beinheben-stuetz', 'dead-bug'],
+  }),
+  X('seitstuetz', 'Seitstütz', {
+    aliases: ['Side Plank', 'Seitlicher Unterarmstütz'],
+    type: 'isolation', unit: 'sec', primary: ['abs'], secondary: ['shoulders', 'abductors'], equipment: [],
+    steps: [
+      'Seitlich hinlegen, den Unterarm unter der Schulter aufsetzen, die Beine gestreckt übereinander.',
+      'Die Hüfte anheben, bis der Körper von Kopf bis Fuß eine gerade Linie bildet.',
+      'Bauch und Po fest, ruhig weiteratmen.',
+      'Halten, bis die Zeit um ist, dann die Seite wechseln.',
+      'Leichter wird es mit gebeugten Knien.',
+    ],
+    mistakes: [
+      'Die Hüfte sinken lassen.',
+      'Die Schulter zum Ohr ziehen.',
+      'Den Oberkörper nach vorn oder hinten kippen.',
+    ],
+    stresses: ['Schulter'],
+    alternatives: ['plank', 'pallof-press'],
+  }),
+  X('dead-bug', 'Dead Bug', {
+    aliases: ['Toter Käfer'],
+    type: 'isolation', primary: ['abs'], equipment: [],
+    steps: [
+      'Auf den Rücken legen, die Arme senkrecht nach oben, Hüfte und Knie 90 Grad gebeugt.',
+      'Den unteren Rücken sanft in den Boden drücken.',
+      'Beim Ausatmen langsam einen Arm nach hinten und das gegenüberliegende Bein nach vorn strecken.',
+      'Nur so weit gehen, wie der Rücken am Boden bleibt, dann zurück und die Seite wechseln.',
+    ],
+    mistakes: [
+      'Ins Hohlkreuz gehen.',
+      'Zu schnell arbeiten.',
+      'Die Luft anhalten.',
+    ],
+    stresses: [],
+    alternatives: ['plank', 'beinheben-liegend'],
+  }),
+  X('pallof-press', 'Pallof Press', {
+    aliases: ['Anti-Rotationsdrücken'],
+    type: 'isolation', primary: ['abs'], secondary: ['shoulders'], equipment: [['kabelturm', 'widerstandsband']],
+    steps: [
+      'Die Rolle auf Brusthöhe stellen oder ein Band dort befestigen und seitlich zum Zug stellen.',
+      'Den Griff mit beiden Händen vor der Brust halten, etwa hüftbreit stehen, die Knie leicht gebeugt.',
+      'Die Arme langsam gerade nach vorn strecken, ohne dass sich der Oberkörper zum Zug dreht.',
+      'Kurz halten, ruhig atmen, dann die Hände zurück zur Brust.',
+      'Nach dem Satz die Seite wechseln.',
+    ],
+    mistakes: [
+      'Sich vom Zug mitdrehen lassen.',
+      'So viel Gewicht nehmen, dass die Hüfte ausweicht.',
+      'Die Luft anhalten.',
+    ],
+    stresses: [],
+    alternatives: ['seitstuetz', 'holzhacker'],
+  }),
+  X('holzhacker', 'Holzhacker am Kabel', {
+    aliases: ['Woodchopper', 'Cable Woodchop'],
+    type: 'compound', primary: ['abs'], secondary: ['shoulders'], equipment: ['kabelturm'],
+    steps: [
+      'Die Rolle ganz nach oben stellen und seitlich zum Zug stellen, die Füße etwas breiter als schulterbreit.',
+      'Den Griff mit beiden Händen über der Schulter fassen, die näher am Zug ist; die Arme fast gestreckt.',
+      'Den Griff beim Ausatmen diagonal nach unten zur anderen Hüfte ziehen; Oberkörper, Hüfte und hinterer Fuß drehen mit.',
+      'Langsam zurückführen, nach dem Satz die Seite wechseln.',
+      'Von unten nach oben geht es ebenso: Rolle unten, Zug zur anderen Schulter.',
+    ],
+    mistakes: [
+      'Nur mit den Armen ziehen.',
+      'Den Rücken rund machen.',
+      'Mit zu viel Gewicht und Schwung arbeiten.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['russian-twists', 'pallof-press'],
+  }),
+  X('russian-twists', 'Russian Twists', {
+    aliases: ['Rumpfdrehen sitzend', 'Russian Twist'],
+    type: 'isolation', primary: ['abs'], equipment: [],
+    steps: [
+      'Auf den Boden setzen, die Knie gebeugt, die Fersen am Boden.',
+      'Den Oberkörper mit geradem Rücken etwas nach hinten lehnen, die Hände vor der Brust zusammen.',
+      'Den Oberkörper ruhig nach rechts und links drehen, Hände und Blick folgen.',
+      'Gleichmäßig weiteratmen. Schwerer wird es mit einer Kurzhantel oder einem Medizinball in den Händen.',
+    ],
+    mistakes: [
+      'Den Rücken rund machen.',
+      'Nur die Arme hin und her schwingen.',
+      'Zu schnell und mit Schwung drehen.',
+    ],
+    stresses: ['Unterer Rücken'],
+    alternatives: ['holzhacker', 'pallof-press'],
+  }),
+  X('bauchroller', 'Bauchroller', {
+    aliases: ['Ab Wheel', 'Ab Roller', 'Rollout'],
+    type: 'compound', primary: ['abs'], secondary: ['shoulders', 'back'], equipment: ['bauchroller'],
+    steps: [
+      'Auf eine weiche Unterlage knien und den Roller mit beiden Händen unter den Schultern halten.',
+      'Bauch und Po fest, das Becken leicht einrollen.',
+      'Den Roller langsam nach vorn rollen, so weit, wie der Rücken gerade bleibt.',
+      'Mit dem Bauch zurückziehen, bis die Hände wieder unter den Schultern sind.',
+      'Zu Beginn nur kurze Strecken rollen oder gegen eine Wand rollen, die den Weg begrenzt.',
+    ],
+    mistakes: [
+      'Ins Hohlkreuz durchhängen.',
+      'Zu weit rollen, bevor genug Kraft da ist.',
+      'Den Po zuerst nach hinten schieben, statt mit dem Bauch zu ziehen.',
+    ],
+    stresses: ['Unterer Rücken', 'Schulter'],
+    alternatives: ['plank', 'dead-bug'],
+  }),
+
+  /* ---------- Oberschenkel vorne ---------- */
+  X('multipresse-kniebeugen', 'Kniebeugen an der Multipresse', {
+    aliases: ['Multipresse Kniebeuge', 'Smith Squat'],
+    type: 'compound', primary: ['quads', 'glutes'], secondary: ['adductors', 'hamstrings'], equipment: ['multipresse'],
+    steps: [
+      'Sicherheitsanschläge knapp unter der tiefsten Position einstellen und die Stange auf den oberen Rücken legen, nicht auf den Nacken.',
+      'Die Füße etwa schulterbreit und ein kleines Stück vor der Stange, die Zehen leicht nach außen.',
+      'Die Stange durch Drehen aus den Haken lösen, tief einatmen, Bauch fest.',
+      'Hüfte nach hinten und unten beugen, die Knie folgen den Zehen; so tief gehen, wie der Rücken gerade bleibt.',
+      'Über die ganze Fußsohle nach oben drücken und dabei ausatmen.',
+    ],
+    mistakes: [
+      'Die Füße stehen zu weit hinten, die Fersen heben ab.',
+      'Die Knie fallen nach innen.',
+      'Der untere Rücken rundet sich unten.',
+    ],
+    stresses: ['Knie', 'Unterer Rücken', 'Hüfte'],
+    alternatives: ['kniebeugen', 'hackenschmidt', 'beinpresse', 'hip-thrust'],
+  }),
+  X('frontkniebeugen', 'Frontkniebeugen', {
+    aliases: ['Front Squat', 'Frontkniebeuge'],
+    type: 'compound', primary: ['quads', 'glutes'], secondary: ['abs', 'lower_back', 'adductors'], equipment: ['langhantel', 'kniebeugenstaender'],
+    steps: [
+      'Die Stange im Rack etwa auf Schulterhöhe einhängen, die Sicherheitsablagen knapp unter der tiefsten Position.',
+      'Die Stange vorn auf die Schultern nah am Hals legen und mit den Fingern locker schulterbreit halten, die Ellenbogen weit nach vorn oben; wem das schwerfällt, kreuzt die Arme.',
+      'Ausheben, einen Schritt zurück, die Füße etwa schulterbreit, die Zehen leicht nach außen.',
+      'Tief einatmen, Bauch fest und mit aufrechtem Oberkörper nach unten gehen; die Knie folgen den Zehen.',
+      'Über die ganze Fußsohle nach oben drücken; die Ellenbogen bleiben oben.',
+    ],
+    mistakes: [
+      'Die Ellenbogen sinken, und die Stange rollt nach vorn.',
+      'Der Oberkörper kippt nach vorn.',
+      'Die Fersen heben ab.',
+    ],
+    stresses: ['Knie', 'Unterer Rücken', 'Hüfte', 'Handgelenk'],
+    alternatives: ['kniebeugen', 'goblet-squat', 'hackenschmidt', 'hip-thrust'],
+  }),
+  X('pendel-kniebeuge', 'Kniebeuge an der Hebelmaschine', {
+    aliases: ['Pendulum Squat', 'Pendelkniebeuge', 'V-Squat', 'Kniebeugemaschine'],
+    type: 'compound', primary: ['quads', 'glutes'], secondary: ['adductors'], equipment: ['pendel-kniebeuge'],
+    steps: [
+      'Rücken ans Polster, die Schultern unter die Polster, die Füße etwa hüft- bis schulterbreit auf die Plattform.',
+      'Die Sicherung lösen, Bauch fest.',
+      'Langsam in die Knie gehen, so tief, wie das Becken am Polster bleibt.',
+      'Über die ganze Fußsohle nach oben drücken, die Knie oben nicht ganz durchdrücken.',
+      'Nach jedem Satz oben die Sicherung wieder einlegen, erst dann aussteigen.',
+    ],
+    mistakes: [
+      'Die Fersen heben ab.',
+      'Die Knie fallen nach innen.',
+      'Unten federn und mit Schwung hochkommen.',
+    ],
+    stresses: ['Knie'],
+    alternatives: ['hackenschmidt', 'beinpresse', 'hip-thrust'],
+  }),
+  X('step-ups', 'Step-ups', {
+    aliases: ['Aufsteiger', 'Aufsteigen auf die Bank', 'Step-up'],
+    type: 'compound', primary: ['quads', 'glutes'], secondary: ['hamstrings', 'adductors'], equipment: ['kurzhanteln', ['flachbank', 'plyobox']],
+    steps: [
+      'Die Kurzhanteln neben dem Körper halten und vor eine stabile Bank oder Box stellen, die etwa Kniehöhe hat.',
+      'Einen Fuß ganz auf die Fläche setzen.',
+      'Über das obere Bein hochdrücken, bis du oben stehst; das untere Bein hilft so wenig wie möglich.',
+      'Langsam wieder absteigen, das obere Bein bremst die Bewegung.',
+      'Alle Wiederholungen mit einem Bein, dann die Seite wechseln.',
+    ],
+    mistakes: [
+      'Eine Bank oder Box nehmen, die wackelt oder rutscht.',
+      'Mit dem unteren Bein abspringen.',
+      'Das Knie fällt nach innen.',
+    ],
+    stresses: ['Knie', 'Hüfte'],
+    alternatives: ['ausfallschritte', 'bulgarian-split-squat', 'hip-thrust', 'beinpresse'],
+  }),
+
+  /* ---------- Gesäß und Oberschenkel hinten ---------- */
+  X('kh-rumaenisches-kreuzheben', 'Rumänisches Kreuzheben mit Kurzhanteln', {
+    aliases: ['Kurzhantel-RDL', 'Dumbbell RDL'],
+    type: 'compound', primary: ['hamstrings', 'glutes'], secondary: ['lower_back', 'forearms'], equipment: ['kurzhanteln'],
+    steps: [
+      'Aufrecht stehen, die Kurzhanteln vor den Oberschenkeln, die Füße hüftbreit.',
+      'Die Knie leicht beugen und so halten.',
+      'Die Hüfte nach hinten schieben und die Hanteln nah an den Beinen nach unten führen; der Rücken bleibt gerade.',
+      'Bis zu einer deutlichen Dehnung hinten im Oberschenkel senken, meist etwa bis unter die Knie.',
+      'Die Hüfte nach vorn schieben und beim Ausatmen aufrichten.',
+    ],
+    mistakes: [
+      'Einen runden Rücken machen.',
+      'Die Hanteln vom Körper weg sinken lassen.',
+      'Die Knie so stark beugen, dass eine Kniebeuge daraus wird.',
+    ],
+    stresses: ['Unterer Rücken', 'Hüfte'],
+    alternatives: ['rumaenisches-kreuzheben', 'beinbeuger'],
+  }),
+  X('trapbar-kreuzheben', 'Kreuzheben mit Trap-Bar', {
+    aliases: ['Trap Bar Deadlift', 'Hex-Bar-Kreuzheben', 'Trap-Bar-Kreuzheben'],
+    type: 'compound', primary: ['quads', 'glutes', 'hamstrings'], secondary: ['lower_back', 'traps', 'forearms'], equipment: ['trap-bar'],
+    steps: [
+      'In die Mitte der Trap-Bar stellen, die Füße hüftbreit.',
+      'In die Hocke gehen und die Griffe mittig fassen; der Rücken ist gerade, die Brust raus.',
+      'Tief einatmen, Bauch fest und über die ganze Fußsohle hochdrücken, bis Hüfte und Knie gestreckt sind.',
+      'Oben aufrecht stehen, ohne nach hinten zu lehnen.',
+      'Kontrolliert auf demselben Weg absetzen.',
+    ],
+    mistakes: [
+      'Einen runden Rücken machen.',
+      'Die Hüfte steigt schneller als die Schultern.',
+      'Oben ins Hohlkreuz überstrecken.',
+    ],
+    stresses: ['Knie', 'Unterer Rücken', 'Hüfte'],
+    alternatives: ['kreuzheben', 'beinpresse', 'kh-rumaenisches-kreuzheben', 'hip-thrust'],
+  }),
+  X('hip-thrust-maschine', 'Hip Thrust an der Maschine', {
+    aliases: ['Hip-Thrust-Maschine', 'Glute-Bridge-Maschine'],
+    type: 'compound', primary: ['glutes'], secondary: ['hamstrings'], equipment: ['hip-thrust-maschine'],
+    steps: [
+      'Mit dem oberen Rücken ans Polster, den Gurt oder das Polster über die Hüfte legen.',
+      'Die Füße hüftbreit so aufstellen, dass die Schienbeine oben etwa senkrecht sind.',
+      'Die Hüfte beim Ausatmen nach oben drücken, bis Oberkörper und Oberschenkel eine Linie bilden.',
+      'Oben den Po fest anspannen, dann langsam absenken.',
+    ],
+    mistakes: [
+      'Oben ins Hohlkreuz drücken, statt die Hüfte zu strecken.',
+      'Über die Zehen statt über die Fersen drücken.',
+      'Unten das Gewicht ablegen und mit Schwung starten.',
+    ],
+    stresses: ['Hüfte'],
+    alternatives: ['hip-thrust', 'smart-hip-thrust', 'gesaessmaschine'],
+  }),
+  X('glute-bridge', 'Beckenheben', {
+    aliases: ['Glute Bridge', 'Gesäßbrücke', 'Hüftheben am Boden'],
+    type: 'isolation', primary: ['glutes'], secondary: ['hamstrings'], equipment: [],
+    steps: [
+      'Auf den Rücken legen, die Knie gebeugt, die Füße hüftbreit flach am Boden, die Arme neben dem Körper.',
+      'Die Fersen in den Boden drücken und die Hüfte anheben, bis Oberkörper und Oberschenkel eine Linie bilden.',
+      'Oben den Po fest anspannen und kurz halten.',
+      'Langsam absenken, bis der Po fast den Boden berührt.',
+      'Schwerer wird es mit einer Kurzhantel auf der Hüfte oder auf einem Bein.',
+    ],
+    mistakes: [
+      'Oben ins Hohlkreuz drücken.',
+      'Die Knie nach innen oder außen fallen lassen.',
+      'Über die Zehen statt über die Fersen drücken.',
+    ],
+    stresses: [],
+    alternatives: ['hip-thrust', 'hip-thrust-maschine', 'kabel-kickbacks'],
+  }),
+  X('kabel-kickbacks', 'Kickbacks am Kabel', {
+    aliases: ['Cable Glute Kickback', 'Gesäß-Kickbacks am Kabel', 'Beinrückheben am Kabel'],
+    type: 'isolation', primary: ['glutes'], secondary: ['hamstrings'], equipment: ['kabelturm'],
+    steps: [
+      'Die Rolle ganz nach unten stellen und die Fußschlaufe um das Fußgelenk legen.',
+      'Mit dem Gesicht zum Zug stellen und festhalten, der Oberkörper leicht vorgeneigt, das Standbein leicht gebeugt.',
+      'Das Bein mit der Schlaufe nach hinten oben führen, bis der Po fest angespannt ist; der Rücken bleibt ruhig.',
+      'Langsam zurück, nach dem Satz die Seite wechseln.',
+    ],
+    mistakes: [
+      'Ins Hohlkreuz ausweichen, um das Bein höher zu bringen.',
+      'Mit Schwung arbeiten.',
+      'Den Oberkörper aufrichten und mitdrehen.',
+    ],
+    stresses: [],
+    alternatives: ['gesaessmaschine', 'hip-thrust', 'glute-bridge'],
+  }),
+  X('gesaessmaschine', 'Gesäßmaschine', {
+    aliases: ['Glute-Maschine', 'Glute Kickback Maschine', 'Multi-Hip'],
+    type: 'isolation', primary: ['glutes'], secondary: ['hamstrings'], equipment: ['gesaessmaschine'],
+    steps: [
+      'Die Maschine so einstellen, dass das Polster hinten am Oberschenkel oder an der Fußsohle anliegt; an der Multi-Hip liegt die Drehachse auf Höhe der Hüfte.',
+      'Die Griffe fassen, der Oberkörper bleibt stabil, Bauch fest.',
+      'Das Bein nach hinten drücken, bis die Hüfte gestreckt und der Po fest angespannt ist.',
+      'Langsam zurück, ohne das Gewicht abzulegen, nach dem Satz die Seite wechseln.',
+    ],
+    mistakes: [
+      'Ins Hohlkreuz ausweichen.',
+      'Mit Schwung arbeiten.',
+      'Den Oberkörper mitbewegen.',
+    ],
+    stresses: [],
+    alternatives: ['kabel-kickbacks', 'hip-thrust-maschine'],
+  }),
+  X('kettlebell-swing', 'Kettlebell-Swing', {
+    aliases: ['KB Swing', 'Russian Swing', 'Kettlebell Swing'],
+    type: 'compound', primary: ['glutes', 'hamstrings'], secondary: ['lower_back', 'abs', 'forearms'], equipment: ['kettlebell'],
+    steps: [
+      'Die Füße etwas breiter als hüftbreit, die Kettlebell etwa eine Fußlänge vor dir auf dem Boden.',
+      'Die Hüfte nach hinten schieben, Rücken gerade, die Kettlebell mit beiden Händen greifen und zwischen den Beinen nach hinten schwingen.',
+      'Die Hüfte kraftvoll nach vorn strecken, sodass die Kettlebell bis etwa Brusthöhe schwingt; die Arme ziehen nicht mit.',
+      'Die Kettlebell zurückschwingen lassen und mit der Hüfte nach hinten abfangen, nicht mit dem Rücken.',
+      'Zum Schluss die Kettlebell auslaufen lassen und kontrolliert vor dir absetzen.',
+    ],
+    mistakes: [
+      'In die Hocke gehen, statt die Hüfte nach hinten zu schieben.',
+      'Die Kettlebell mit Armen oder Schultern hochheben.',
+      'Den Rücken rund machen.',
+      'Oben nach hinten lehnen.',
+    ],
+    stresses: ['Unterer Rücken', 'Hüfte'],
+    alternatives: ['kh-rumaenisches-kreuzheben', 'hip-thrust', 'beinbeuger'],
+  }),
+
+  /* ---------- Waden ---------- */
+  X('wadenheben-sitzend', 'Wadenheben sitzend', {
+    aliases: ['Seated Calf Raise', 'Wadenmaschine sitzend'],
+    type: 'isolation', primary: ['calves'], equipment: ['wadenmaschine-sitzend'],
+    steps: [
+      'Hinsetzen, die Fußballen auf die Kante, das Polster fest auf die Oberschenkel knapp über den Knien.',
+      'Das Gewicht etwas anheben und die Sicherung lösen.',
+      'Die Fersen langsam absenken, bis die Waden gedehnt sind.',
+      'So hoch wie möglich auf die Fußballen drücken und oben kurz halten.',
+      'Nach dem Satz die Sicherung wieder einlegen.',
+    ],
+    mistakes: [
+      'Wippen, statt die ganze Bewegung zu machen.',
+      'Unten nicht dehnen.',
+      'Mit den Händen oder dem Oberkörper mitdrücken.',
+    ],
+    stresses: ['Sprunggelenk'],
+    alternatives: ['wadenheben', 'wadendruecken-beinpresse'],
+  }),
+  X('wadenheben-kh', 'Wadenheben einbeinig mit Kurzhantel', {
+    aliases: ['Wadenheben an der Stufe', 'Single-Leg Calf Raise'],
+    type: 'isolation', primary: ['calves'], equipment: ['kurzhanteln'],
+    steps: [
+      'Mit einem Fußballen auf eine Stufe oder eine stabile Hantelscheibe stellen und mit einer Hand festhalten.',
+      'Die Kurzhantel in der anderen Hand halten, das freie Bein anwinkeln.',
+      'Die Ferse langsam absenken, bis die Wade gedehnt ist.',
+      'So hoch wie möglich auf den Fußballen drücken und oben kurz halten.',
+      'Alle Wiederholungen auf einer Seite, dann wechseln. Ohne Hantel geht es auch.',
+    ],
+    mistakes: [
+      'Wippen, statt die ganze Bewegung zu machen.',
+      'Das Knie beugen und mitschieben.',
+      'Auf einer wackligen Kante stehen, ohne sich festzuhalten.',
+    ],
+    stresses: ['Sprunggelenk'],
+    alternatives: ['wadenheben', 'wadendruecken-beinpresse', 'wadenheben-sitzend'],
+  }),
+];
+
+/* Zusätzliche Alternativen für Übungen aus anderen Dateien, damit die neuen Übungen dort auftauchen,
+   ohne data/exercises.js zu ändern: { 'bankdruecken': ['multipresse-bankdruecken'] }. Wird angehängt, doppelte fallen weg.
+   Grundlage: alternativen_ergaenzen in docs/kern-uebungen.json, dazu wenige Rückverweise, damit jede Kern-Übung
+   irgendwo als Alternative auftaucht. */
+export const ALTERNATIVES_ADD = {
+  /* Brust */
+  'bankdruecken': ['multipresse-bankdruecken'],
+  'schraegbankdruecken': ['multipresse-schraegbank', 'schraeg-brustpresse'],
+  'kh-schraegbankdruecken': ['schraeg-brustpresse', 'multipresse-schraegbank'],
+  'butterfly': ['kh-flys'],
+  'kabel-flys': ['kh-flys'],
+  'kabel-flys-unten': ['schraeg-brustpresse'],
+  'dip-maschine': ['dips-assistiert', 'trizepsmaschine'],
+  'barren-dips': ['dips-assistiert', 'enges-bankdruecken'],
+  'liegestuetze': ['liegestuetze-erhoeht'],
+  /* Schultern */
+  'schulterdruecken': ['multipresse-schulterdruecken'],
+  'kh-schulterdruecken': ['frontheben'],
+  'seitheben': ['seitheben-maschine'],
+  'reverse-flys': ['reverse-butterfly'],
+  'face-pulls': ['reverse-butterfly', 'aussenrotation-kabel'],
+  'seitheben-kabel': ['seitheben-maschine'],
+  'smart-butterfly-reverse': ['reverse-butterfly'],
+  /* Arme */
+  'trizepsdruecken-kabel': ['trizepsmaschine', 'trizeps-kickbacks'],
+  'ueberkopf-trizeps-kabel': ['kh-ueberkopf-trizeps', 'sz-french-press'],
+  'smart-trizeps': ['trizepsmaschine'],
+  'langhantel-curls': ['kabel-curls'],
+  'sz-curls': ['scottcurls'],
+  'kh-curls': ['kabel-curls', 'konzentrationscurls'],
+  'hammercurls': ['handgelenkcurls'],
+  'smart-bizeps': ['bizepsmaschine'],
+  /* Rücken */
+  'latzug': ['klimmzuege-assistiert', 'hohes-rudern', 'kabel-ueberzuege'],
+  'enger-latzug': ['chin-ups'],
+  'klimmzuege': ['klimmzuege-assistiert', 'chin-ups'],
+  'rudern-sitzend': ['rudermaschine'],
+  'brustgestuetztes-rudern': ['rudermaschine', 't-bar-rudern'],
+  'langhantelrudern': ['t-bar-rudern'],
+  'kh-rudern': ['invertiertes-rudern'],
+  'smart-ruderzug': ['rudermaschine'],
+  'smart-latzug': ['klimmzuege-assistiert'],
+  'rueckenstrecker': ['rueckenstrecker-maschine'],
+  'smart-rueckentrainer': ['rueckenstrecker-maschine'],
+  /* Bauch und Rumpf */
+  'bauchmaschine': ['crunches'],
+  'kabel-crunch': ['crunches'],
+  'beinheben-haengend': ['beinheben-stuetz', 'beinheben-liegend'],
+  'plank': ['seitstuetz', 'dead-bug', 'bauchroller'],
+  'smart-rotator': ['holzhacker'],
+  /* Beine, Gesäß, Waden */
+  'kniebeugen': ['multipresse-kniebeugen', 'frontkniebeugen'],
+  'hackenschmidt': ['pendel-kniebeuge', 'multipresse-kniebeugen'],
+  'beinpresse': ['multipresse-kniebeugen'],
+  'goblet-squat': ['step-ups', 'frontkniebeugen'],
+  'ausfallschritte': ['step-ups'],
+  'bulgarian-split-squat': ['step-ups'],
+  'rumaenisches-kreuzheben': ['kh-rumaenisches-kreuzheben', 'kettlebell-swing'],
+  'kreuzheben': ['trapbar-kreuzheben'],
+  'hip-thrust': ['hip-thrust-maschine', 'glute-bridge'],
+  'smart-hip-thrust': ['hip-thrust-maschine'],
+  'wadenheben': ['wadenheben-kh'],
+  'wadendruecken-beinpresse': ['wadenheben-sitzend'],
+};

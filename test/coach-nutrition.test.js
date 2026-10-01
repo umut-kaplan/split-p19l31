@@ -25,10 +25,11 @@ test('Kalenderwoche', () => {
   assert.equal(isoWeek(new Date(2027, 0, 1, 12).getTime()), '2026-53');
 });
 
-test('Schrittgröße 100 bis 200 kcal', () => {
+test('Schrittgröße 100 bis 200 kcal, beim Aufbau ab 50', () => {
   assert.equal(stepFor(0.05, 85), 100);
   assert.equal(stepFor(0.15, 85), 150);
   assert.equal(stepFor(1, 85), 200);
+  assert.equal(stepFor(0.05, 85, 'gain'), 50);
 });
 
 test('Zu wenige Daten: kein Vorschlag', () => {
@@ -36,14 +37,14 @@ test('Zu wenige Daten: kein Vorschlag', () => {
 });
 
 test('Abnehmen zu langsam: Ziel senken', () => {
-  const S = state('lose', withRate(-0.2));
+  const S = state('lose', withRate(-0.1));
   const [s] = suggestions(S, NOW);
-  assert.equal(s.id, 'nut-kcal:2026-40');
-  assert.match(s.title, /um 200 kcal senken/);
-  assert.match(s.reason, /0,5–1 % Abnahme pro Woche sinnvoll, du nimmst langsamer ab\.$/);
+  assert.equal(s.id, 'nut:2026-40');
+  assert.match(s.title, /um 150 kcal senken/);
+  assert.match(s.reason, /„Abnehmen“ sind 0,23–0,45 kg Abnahme pro Woche sinnvoll, höchstens 500 kcal Defizit am Tag, du nimmst langsamer ab\.$/);
   assert.equal(s.reason.split('. ').length, 1, 'genau ein Satz');
   s.apply(S);
-  assert.equal(S.nutrition.kcalAdjust, -200);
+  assert.equal(S.nutrition.kcalAdjust, -150);
 });
 
 test('Abnehmen zu schnell: Ziel erhöhen', () => {
@@ -53,22 +54,24 @@ test('Abnehmen zu schnell: Ziel erhöhen', () => {
 });
 
 test('Im Zielbereich: kein Vorschlag', () => {
-  assert.deepEqual(suggestions(state('lose', withRate(-0.7)), NOW), []);
+  assert.deepEqual(suggestions(state('lose', withRate(-0.4)), NOW), []);
   assert.deepEqual(suggestions(state('recomp', withRate(0.1)), NOW), []);
-  assert.deepEqual(suggestions(state('gain', withRate(0.08)), NOW), []);
+  assert.deepEqual(suggestions(state('gain', withRate(0.35)), NOW), []);
 });
 
-test('Aufbau zu schnell und zu langsam', () => {
-  assert.match(suggestions(state('gain', withRate(0.4)), NOW)[0].title, /senken/);
-  const slow = suggestions(state('gain', withRate(0.045)), NOW)[0];
-  assert.equal(slow.id, 'nut-kcal:2026-40');
+test('Aufbau zu schnell und zu langsam (Iraki 2019: 0,25–0,5 % pro Woche)', () => {
+  const fast = suggestions(state('gain', withRate(0.7)), NOW)[0];
+  assert.match(fast.title, /senken/);
+  assert.match(fast.reason, /0,25–0,5 % Zunahme pro Woche sinnvoll, du nimmst schneller zu\.$/);
+  const slow = suggestions(state('gain', withRate(0.15)), NOW)[0];
+  assert.equal(slow.id, 'nut:2026-40');
   assert.match(slow.title, /um 100 kcal erhöhen/);
 });
 
 test('Stagnation beim Abnehmen wird ausdrücklich gemeldet', () => {
   const S = state('lose', withRate(0));
   const [s] = suggestions(S, NOW);
-  assert.equal(s.id, 'nut-stall:2026-40');
+  assert.equal(s.id, 'nut:2026-40');
   assert.match(s.title, /steht seit drei Wochen/);
   s.apply(S);
   assert.equal(S.nutrition.kcalAdjust, -200);
@@ -86,10 +89,10 @@ test('Rekomposition: Taille sinkt bei gleichem Gewicht, keine Kürzung', () => {
 });
 
 test('Von Hand gesetztes Ziel wird direkt angepasst', () => {
-  const S = state('lose', withRate(-0.2));
+  const S = state('lose', withRate(-0.1));
   S.nutrition.overrides = { kcal: 2400 };
   suggestions(S, NOW)[0].apply(S);
-  assert.equal(S.nutrition.overrides.kcal, 2200);
+  assert.equal(S.nutrition.overrides.kcal, 2250);
   assert.equal(S.nutrition.kcalAdjust, 0);
 });
 

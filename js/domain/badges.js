@@ -1,12 +1,12 @@
 /* Abzeichen (Stufe 5). Jedes Abzeichen hat eine Bedingung als Satz und eine reine Prüffunktion.
    Verdient bleibt verdient: S.motivation.badges merkt den Zeitpunkt des ersten Verdienens. */
 import { longestStreak, trainingWeeks, weekStart } from './streaks.js';
-import { exerciseStats, recordKey, RECORD_KINDS } from './prs.js';
+import { exerciseStats, recordKey, RECORD_KINDS, betterAssisted } from './prs.js';
 import { dayTotals } from './nutrition.js';
 import { goalProgress, firstWeight, currentWeight, dayNumber } from './body.js';
 import { waterGoal, targetsFromState } from './energy.js';
 import { ymd } from '../util.js';
-import { tonnage } from './settypes.js';
+import { isAssisted, exerciseTonnage } from './library.js';
 
 const bySession = sessions => [...sessions].sort((a, b) => a.startedAt - b.startedAt);
 const sessionAt = s => s.endedAt || s.startedAt;
@@ -21,14 +21,20 @@ export function firstRecordAt(sessions) {
     for (const x of s.ex || []) {
       if (!x.sets || !x.sets.length) continue;
       const key = recordKey(x);
-      const st = exerciseStats(x.sets, x.unit);
+      const assisted = isAssisted(x);
+      const st = exerciseStats(x.sets, x.unit, assisted);
       const prev = best.get(key);
-      if (prev && RECORD_KINDS.some(k => st[k] > 0 && prev[k] > 0 && st[k] > prev[k])) return sessionAt(s);
-      updates.push([key, st, prev]);
+      /* Gegengewicht: mehr Wiederholungen bei höchstens so viel Unterstützung (domain/prs.js) */
+      const rep = st.reps > 0 ? { value: st.reps, assist: st.assist || 0 } : null;
+      if (prev && (assisted
+        ? prev.rep && rep && rep.value > prev.rep.value && rep.assist <= prev.rep.assist
+        : RECORD_KINDS.some(k => st[k] > 0 && prev[k] > 0 && st[k] > prev[k]))) return sessionAt(s);
+      updates.push([key, st, prev, assisted && rep]);
     }
-    updates.forEach(([key, st, prev]) => {
+    updates.forEach(([key, st, prev, rep]) => {
       const next = { ...(prev || {}) };
       RECORD_KINDS.forEach(k => { if (st[k] > 0 && !(next[k] >= st[k])) next[k] = st[k]; });
+      if (rep && betterAssisted(rep, next.rep)) next.rep = rep;
       best.set(key, next);
     });
   }
@@ -60,10 +66,9 @@ export function nthLoggedDayAt(log, n) {
   return days.length >= n ? dayMs(days[n - 1]) : null;
 }
 
-/* Summe aus Gewicht mal Wiederholungen über alle Einheiten, in kg. Ohne Aufwärmsätze. */
+/* Summe aus Gewicht mal Wiederholungen über alle Einheiten, in kg. Ohne Aufwärmsätze, ohne Gegengewicht. */
 export function totalTonnage(sessions) {
-  return sessions.reduce((a, s) => a + (s.ex || []).reduce((b, x) =>
-    b + (x.unit === 'sec' ? 0 : tonnage(x.sets)), 0), 0);
+  return sessions.reduce((a, s) => a + (s.ex || []).reduce((b, x) => b + exerciseTonnage(x), 0), 0);
 }
 
 /* Längste Folge aufeinanderfolgender Kalendertage mit Wasser ≥ Ziel */

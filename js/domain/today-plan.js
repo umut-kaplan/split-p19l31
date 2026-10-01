@@ -9,7 +9,7 @@
       Alternative ist die leichteste Einheit (wenigste Sätze) unter den erholten Tagen.
    5. Ampel gelb: trainieren wie bei grün, mit dem Hinweis, pro Übung einen Satz weniger zu machen oder RIR 3 zu halten.
    Bei grün und gelb ist die Alternative der nächstbeste andere Tag. */
-import { MUSCLES } from './muscles.js';
+import { MUSCLES, muscleInText } from './muscles.js';
 import { plural } from '../util.js';
 import { workSets } from './settypes.js';
 
@@ -17,8 +17,10 @@ export const REST_HOURS = 48;
 const MAIN_SHARE = 0.2;
 const H = 36e5;
 
+/* Muskeln im Fließtext („unterer Rücken“ klein); am Satzanfang macht cap den ersten Buchstaben groß */
+const cap = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
 const labelList = keys => {
-  const l = keys.map(k => MUSCLES[k] || k);
+  const l = keys.map(muscleInText);
   return l.length <= 1 ? l.join('') : `${l.slice(0, -1).join(', ')} und ${l[l.length - 1]}`;
 };
 
@@ -106,7 +108,7 @@ export function suggestToday({ plan, sessions, resolve, level = 'green', nextId,
       kind: 'done', dayId: trainedToday.dayId, title: `Heute schon erledigt: ${trainedToday.name}`,
       reason: 'Gönn deinen Muskeln jetzt Pause, Essen und Schlaf.',
       hint: null,
-      alt: nxt ? { kind: 'train', dayId: nxt.id, title: `Nächstes Mal: ${nxt.name}`, reason: `${freshText(nxt)}.` } : null,
+      alt: nxt ? { kind: 'train', dayId: nxt.id, title: `Nächstes Mal: ${nxt.name}`, reason: `${cap(freshText(nxt))}.` } : null,
       muscles,
     };
   }
@@ -134,15 +136,15 @@ export function suggestToday({ plan, sessions, resolve, level = 'green', nextId,
     const tired = c.rest.filter(r => r.h < REST_HOURS).sort((a, b) => a.h - b.h)[0];
     if (best !== cand && info[best].minRest > c.minRest) {
       pick = best;
-      reason = `Eigentlich wäre ${c.name} dran, aber ${MUSCLES[tired.m]} hast du vor ${ago(tired.h)} trainiert. ${info[best].name} passt besser: ${freshText(info[best])}.`;
+      reason = `Eigentlich wäre ${c.name} dran, aber ${muscleInText(tired.m)} hast du vor ${ago(tired.h)} trainiert. ${info[best].name} passt besser: ${cap(freshText(info[best]))}.`;
     } else {
-      reason = `${c.name} ist dran. ${MUSCLES[tired.m]} hattest du vor ${ago(tired.h)}, darum heute etwas lockerer.`;
+      reason = `${c.name} ist dran. ${cap(muscleInText(tired.m))} hattest du vor ${ago(tired.h)}, darum heute etwas lockerer.`;
     }
   }
   const altId = byRest.find(id => id !== pick) || (pick !== cand ? cand : null);
   const alt = altId ? {
     kind: 'train', dayId: altId, title: `Oder ${info[altId].name}`,
-    reason: info[altId].fresh ? `${freshText(info[altId])}.` : `${labelList(info[altId].main)} ${info[altId].main.length === 1 ? 'ist' : 'sind'} noch nicht ganz erholt (${restText(info[altId].minRest)}).`,
+    reason: info[altId].fresh ? `${cap(freshText(info[altId]))}.` : `${cap(labelList(info[altId].main))} ${info[altId].main.length === 1 ? 'ist' : 'sind'} noch nicht ganz erholt (${restText(info[altId].minRest)}).`,
   } : null;
   const hint = level === 'yellow'
     ? 'Die Ampel steht auf Gelb: Mach pro Übung einen Satz weniger oder lass 3 Wiederholungen in Reserve (RIR 3).'

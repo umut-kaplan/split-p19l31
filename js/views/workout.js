@@ -8,27 +8,37 @@ import { toast } from '../ui/toast.js';
 import { confirmSheet, openSheet, closeSheet } from '../ui/sheet.js';
 import { startRest, unlockAudio, wake, release } from '../timer.js';
 import { infoButton } from './library.js';
-import { personalRecords, setRecords, sessionRecords, RECORD_LABEL, formatRecord, bestSummary } from '../domain/prs.js';
+import { personalRecords, setRecords, sessionRecords, RECORD_LABEL, formatRecord, bestSummary, assistText } from '../domain/prs.js';
 import { overviewOf, progressOf, foldSummary, setsSummary } from '../domain/session-flow.js';
 import { checkWeight, referenceFor } from '../domain/weight-check.js';
 import { markShown } from './live-bar.js';
 import * as nav from './workout-nav.js';
 import { compareRow, COMPARE_SHORT } from '../ui/navlinks.js';
-import { findExercise, limitationHits } from '../domain/library.js';
-import { setType, nextType, isWarmup, isTop, workSets, topSets, tonnage, setLabels, setName, typePrefix } from '../domain/settypes.js';
+import { findExercise, limitationHits, isAssisted, exerciseTonnage } from '../domain/library.js';
+import { setType, nextType, isWarmup, isTop, workSets, topSets, setLabels, setName, typePrefix, methodSuffix } from '../domain/settypes.js';
 import { groupsOf, groupAt, restAfter } from '../domain/superset.js';
+import { shortExercises } from '../domain/plan-stats.js';
 import * as notes from './exercise-notes.js';
 import * as warmup from './warmup.js';
 import * as rating from './session-rating.js';
 import * as plates from './plates.js';
+import { isAutoLoad, savedSet, lastMethod, setCardMethod, setSetMethod } from '../domain/smart-sets.js';
+import { autoHint, methodChip, methodTag, methodSheetBody, AUTO_MISSING } from './smart-sets.js';
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
 export const modules = [notes, warmup, rating, plates, nav];
 
 const keyOf = x => x.exId + '|' + x.name;
+const libOf = x => findExercise(x.name, S.exercisesCustom);
+/* Smart-Zirkel (4.7): Das Gerät stellt das Gewicht ein */
+const autoOf = x => isAutoLoad(x, libOf(x));
 /* Angenommener Deload-Vorschlag für diese Übung, siehe coach/training.js */
 const overrideFor = x => (S.trainingOverrides && S.trainingOverrides[keyOf(x)]) || null;
-const recordText = recs => recs.map(r => `${RECORD_LABEL[r.kind]} ${formatRecord(r.kind, r.value)}`).join(', ');
+/* Gegengewicht (4.7): Ein Rekord nennt die Unterstützung mit, „Wiederholungen 8 Wdh. bei 20 kg Unterstützung“ */
+const recordValue = r => (r.assist != null ? assistText(r) : formatRecord(r.kind, r.value));
+const recordText = recs => recs.map(r => `${RECORD_LABEL[r.kind]} ${recordValue(r)}`).join(', ');
+/* Übung mit Gegengewicht: die kg sind Unterstützung (domain/library.js, isAssisted) */
+const assistedOf = (x, lib = libOf(x)) => isAssisted(lib || x);
 /* Bestwerte der früheren Einheiten, einmal pro Stand gerechnet (jede Übungskarte und jeder Haken fragt danach) */
 let recCache = { list: null, n: -1, map: null };
 const priorRecords = () => {
@@ -36,12 +46,16 @@ const priorRecords = () => {
   return recCache.map;
 };
 
-/* „80 × 8“, mit Satztyp davor: „A 40 × 10“, „D 60 × 12“ */
+/* „80 × 8“, mit Satztyp davor: „A 40 × 10“, „D 60 × 12“; am Smart-Zirkel mit Methode: „90 × 10 (Negativ)“ */
 const fmtSet = (s, unit) => {
   const r = s.r + (unit === 'sec' ? ' s' : '');
-  return typePrefix(s) + (s.w ? `${fmt(s.w)} × ${r}` : r);
+  return typePrefix(s) + (s.w ? `${fmt(s.w)} × ${r}` : r) + methodSuffix(s);
 };
 export { fmtSet };
+
+/* Kleines „Kurz“ an einer Einheit, die als Kurzversion lief (Verlauf, Zusammenfassung) */
+export const shortBadge = s => (s && s.short
+  ? '<span class="short-badge" aria-label="Kurzversion">Kurz</span>' : '');
 
 /* ---------- Einheit anlegen ---------- */
 function mkEx(e, v) {
@@ -52,7 +66,14 @@ function mkEx(e, v) {
   };
   /* Supersatz: mit der nächsten Übung verbunden (siehe domain/superset.js) */
   if (e.ss === true) x.ss = true;
+  if (e.autoLoad) x.autoLoad = e.autoLoad;
   x.log = Array.from({ length: e.sets }, () => ({ w: '', r: '', rir: 2, done: false }));
+  /* Smart-Zirkel: Die Methode vom letzten Mal gilt wieder für alle Sätze, wenn alle sie hatten */
+  if (autoOf(x)) {
+    const L = lastLog(S.sessions, x.exId, x.name);
+    const m = L && lastMethod(L.sets);
+    if (m) x.m = m;
+  }
   prefill(x);
   return x;
 }
@@ -61,7 +82,7 @@ function mkEx(e, v) {
    Aufwärmsätze behalten ihre eigenen Vorschläge. Normale Sätze und Sätze bis Versagen werden der Reihe nach
    mit denen vom letzten Mal verglichen, Dropsätze mit den Dropsätzen; Aufwärmsätze verschieben dabei nichts. */
 function prefill(x) {
-  const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name);
+  const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name, findExercise(x.name, S.exercisesCustom));
   const L = lastLog(S.sessions, x.exId, x.name);
   const prevTop = L ? topSets(L.sets) : [];
   const prevDrop = L ? L.sets.filter(s => setType(s) === 'd') : [];
@@ -72,7 +93,8 @@ function prefill(x) {
     if (isWarmup(s)) return;
     const p = setType(s) === 'd' ? prevDrop[kd++] : prevTop[kt++];
     if (s.done) return;
-    s.pw = x.deload != null ? fmt(x.deload) : sug.weight != null ? fmt(sug.weight) : '0';
+    /* Smart-Zirkel: kein Gewicht vorschlagen, ein Strich fordert zum Eintragen auf */
+    s.pw = x.deload != null ? fmt(x.deload) : sug.weight != null ? fmt(sug.weight) : sug.kind === 'auto' ? '–' : '0';
     /* Beim Deload zählt das obere Ende des Bereichs, nicht die verfehlten Wiederholungen vom letzten Mal */
     s.pr = String(x.deload != null ? x.repMax
       : sug.kind === 'up' && x.unit !== 'sec' ? x.repMin
@@ -80,12 +102,14 @@ function prefill(x) {
   });
 }
 
-export function startWorkout(dayId) {
+/* opts.short (4.7): Kurzversion, die ersten vier Übungen mit je zwei Sätzen (domain/plan-stats.js) */
+export function startWorkout(dayId, opts = {}) {
   const d = dayOf(dayId);
   S.active = {
     planId: activePlan().id, dayId, name: d.name, color: d.color, startedAt: Date.now(), timer: null,
-    ex: d.exercises.map(e => mkEx(e, 0)),
+    ex: (opts.short ? shortExercises(d.exercises) : d.exercises).map(e => mkEx(e, 0)),
   };
+  if (opts.short) S.active.short = true;
   V.pick = null;
   V.tab = 'training';
   V.trainSub = 'start';
@@ -140,17 +164,23 @@ function foldedCard(x, i, p) {
 }
 
 /* Bestwert der Übung wie unter Verlauf · Rekorde, für dieselbe Übung im Plan */
-function bestLine(x) {
-  const b = bestSummary(priorRecords().get(keyOf(x)));
-  if (!b) return '';
-  return `<p class="best"><span class="best-k">Bestwert</span> ${b.items.map(it =>
+/* Am Smart-Zirkel nur Sätze mit anderer Methode: statt leerer Fläche der Grund, warum kein Bestwert da ist */
+function bestLine(x, auto = false) {
+  const rec = priorRecords().get(keyOf(x));
+  const b = bestSummary(rec);
+  if (!b) return auto && rec && rec.count ? `<p class="best best-none"><span class="best-k">Bestwert</span> nur aus regulären Sätzen</p>` : '';
+  /* Smart-Zirkel: Bestwerte kommen nur aus Sätzen mit „Regulär“ (domain/prs.js) */
+  return `<p class="best"><span class="best-k">Bestwert${auto ? ' Regulär' : ''}</span> ${b.items.map(it =>
     `${it.label ? esc(it.label) + ' ' : ''}<b class="num">${esc(it.text)}</b>`).join(' · ')} <small class="num">am ${esc(dShort(b.date))}</small></p>`;
 }
 
 function exCard(x, i) {
   const p = progressOf(x);
   if (p.complete && !nav.isOpen(i)) return foldedCard(x, i, p);
-  const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name);
+  const lib = libOf(x);
+  const auto = isAutoLoad(x, lib);
+  const assisted = assistedOf(x, lib);
+  const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name, lib);
   const L = lastLog(S.sessions, x.exId, x.name);
   /* Satzzähler x/y ohne Aufwärmsätze */
   const work = workSets(x.log);
@@ -159,12 +189,13 @@ function exCard(x, i) {
   const g = groupAt(S.active.ex, i);
   const direct = g.length > 1 && i !== g[g.length - 1];
   const labels = setLabels(x.log);
-  const hits = limitationHits(findExercise(x.name, S.exercisesCustom), (S.profile.limitations && S.profile.limitations.tags) || []);
+  const hits = limitationHits(lib, (S.profile.limitations && S.profile.limitations.tags) || []);
   /* Langhantel oder SZ-Stange: Scheiben-Symbol neben dem Gewichtsfeld */
   const bar = plates.barInfo(x);
   const hint = x.deload != null
     ? `<div class="hint deload"><strong>Deload: ${esc(fmt(x.deload))} kg</strong><span>Vorschlag angenommen: diese Einheit etwa 10&nbsp;% leichter und ${x.repMax} Wdh. pro Satz, danach geht es wieder aufwärts.</span></div>`
-    : `<div class="hint ${sug.kind}"><strong>${esc(sug.text)}</strong><span>${esc(sug.sub)}</span></div>`;
+    : sug.kind === 'auto' ? autoHint()
+      : `<div class="hint ${sug.kind}"><strong>${esc(sug.text)}</strong><span>${esc(sug.sub)}</span></div>`;
   return `<section class="ex ${complete ? 'complete' : ''}" id="ex${i}">
     <div class="ex-title"><h2>${esc(x.name)}</h2>${complete
       ? `<button class="ex-count ex-unfold num" data-act="exfold" data-i="${i}" aria-expanded="true" aria-label="${esc(x.name)} zuklappen">${doneN}/${work.length}${ICON.up}</button>`
@@ -179,24 +210,26 @@ function exCard(x, i) {
       ${direct ? '<span>Danach ohne Pause weiter</span>' : `<span>Pause <b class="num">${mmss(x.rest)}</b></span>`}
     </div>
     ${L ? `<p class="last">Letztes Mal am ${esc(dShort(L.date))}: <span class="num">${esc(setsSummary(L.sets, x.unit))}</span></p>` : ''}
-    ${bestLine(x)}
+    ${bestLine(x, auto)}
     ${hits.length ? `<p class="ex-warn">Belastet ${esc(hits.join(' und '))}, das du als Einschränkung eingetragen hast. Bei Beschwerden leichter gehen oder unter „Anleitung“ eine Alternative wählen.</p>` : ''}
     ${hint}
-    <div class="wu-slot" id="wu${i}">${warmup.warmupLine(x, i)}</div>
+    ${auto ? methodChip(x, i) : ''}
+    <div class="wu-slot" id="wu${i}">${auto || assisted ? '' : warmup.warmupLine(x, i)}</div>
     <div class="sets ${bar ? 'with-plates' : ''}">
-      <div class="set-h"><span>Satz</span><span>kg</span>${bar ? '<span></span>' : ''}<span>${unitL(x.unit)}</span><span>RIR</span><span></span></div>
+      <div class="set-h"><span>Satz</span>${assisted ? '<span class="set-h-assist">kg Unter&shy;stützung</span>' : '<span>kg</span>'}${bar ? '<span></span>' : ''}<span>${unitL(x.unit)}</span><span>RIR</span><span></span></div>
       ${x.log.map((s, j) => {
         const t = setType(s);
         const name = setName(x.log, j);
         return `
       <div class="set ${t ? `st-${t}` : ''} ${s.done ? 'done' : ''} ${s.done && s.rec ? 'pr' : ''} ${V.prFlash === `${i}:${j}` ? 'pr-new' : ''}">
         <button class="set-n num" data-act="settype" data-i="${i}" data-j="${j}" aria-label="${esc(name)}, tippen wechselt den Satztyp">${labels[j]}</button>
-        <input class="num" inputmode="decimal" enterkeyhint="next" data-in="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" placeholder="${esc(s.pw || '0')}" aria-label="${esc(name)} Gewicht in kg">
+        <input class="num" inputmode="decimal" enterkeyhint="next" data-in="w" data-i="${i}" data-j="${j}" value="${esc(s.w)}" placeholder="${esc(s.pw || '0')}" aria-label="${esc(name)} ${assisted ? 'Unterstützung' : 'Gewicht'} in kg">
         ${bar ? plates.plateButton(i, j) : ''}
         <input class="num" inputmode="numeric" enterkeyhint="done" data-in="r" data-i="${i}" data-j="${j}" value="${esc(s.r)}" placeholder="${esc(s.pr)}" aria-label="${esc(name)} ${unitL(x.unit)}">
         <button class="rir num" data-act="rir" data-i="${i}" data-j="${j}" aria-label="RIR ${s.rir}, tippen zum Ändern">${s.rir}</button>
         <button class="check" data-act="check" data-i="${i}" data-j="${j}" aria-pressed="${s.done}" aria-label="${esc(name)} abhaken">${ICON.check}</button>
         ${s.done && s.rec ? `<span class="pr-badge">Neuer Rekord: ${esc(recordText(s.rec))}</span>` : ''}
+        ${auto ? methodTag(x, s) : ''}
       </div>`;
       }).join('')}
     </div>
@@ -213,8 +246,9 @@ function exCard(x, i) {
 function recordsFor(x, j) {
   const s = x.log[j];
   if (!isTop(s)) return null;
-  const before = x.log.filter((b, k) => b.done && k !== j).map(b => ({ w: toNum(b.w) || 0, r: toNum(b.r), t: setType(b) }));
-  const recs = setRecords(priorRecords().get(keyOf(x)), before, { w: toNum(s.w) || 0, r: toNum(s.r) }, x.unit);
+  /* Mit der geltenden Methode: Am Smart-Zirkel zählt nur „Regulär“ */
+  const before = x.log.filter((b, k) => b.done && k !== j).map(b => savedSet(x, b));
+  const recs = setRecords(priorRecords().get(keyOf(x)), before, savedSet(x, s), x.unit);
   return recs.length ? recs : null;
 }
 
@@ -251,7 +285,7 @@ function toggleSet(i, j) {
   const w = s.w === '' ? toNum(s.pw) : toNum(s.w);
   const r = s.r === '' ? toNum(s.pr) : toNum(s.r);
   if (!isFinite(r) || r <= 0) { toast(`Bitte ${unitL(x.unit)} eintragen`); return; }
-  if (!isFinite(w) || w < 0) { toast('Gewicht als Zahl eintragen, z. B. 42,5'); return; }
+  if (!isFinite(w) || w < 0) { toast(s.w === '' && autoOf(x) ? AUTO_MISSING : 'Gewicht als Zahl eintragen, z. B. 42,5'); return; }
   /* Nur selbst eingetragene Gewichte prüfen; einmal bestätigt, fragt die App für diesen Wert nicht noch einmal */
   if (s.w !== '' && s.okW !== s.w) {
     const c = checkWeight(w, referenceFor({ prior: priorRecords().get(keyOf(x)) || null, last: lastLog(S.sessions, x.exId, x.name), log: x.log, j }));
@@ -293,11 +327,8 @@ function finishWorkout() {
   const ex = a.ex.map(x => ({
     exId: x.exId, name: x.name, unit: x.unit,
     target: { sets: x.sets, repMin: x.repMin, repMax: x.repMax },
-    /* t nur bei Aufwärm-, Drop- und Versagenssätzen; normale Sätze bleiben wie bisher { w, r, rir } */
-    sets: x.log.filter(s => s.done).map(s => {
-      const t = setType(s);
-      return t ? { w: toNum(s.w) || 0, r: toNum(s.r), rir: s.rir, t } : { w: toNum(s.w) || 0, r: toNum(s.r), rir: s.rir };
-    }),
+    /* t und m (Methode am Smart-Zirkel) nur, wenn gesetzt; normale Sätze bleiben wie bisher { w, r, rir } */
+    sets: x.log.filter(s => s.done).map(s => savedSet(x, s)),
   })).filter(x => x.sets.length);
   if (!ex.some(x => workSets(x.sets).length)) {
     confirmSheet(ex.length ? 'Nur Aufwärmsätze abgehakt' : 'Noch kein Satz abgehakt',
@@ -314,16 +345,19 @@ function finishWorkout() {
     id: uid(), planId: a.planId, dayId: a.dayId, name: a.name, color: a.color,
     startedAt: a.startedAt, endedAt: Date.now(), ex,
   };
+  /* Als Kurzversion gestartet (4.7): Verlauf und Zusammenfassung zeigen ein kleines „Kurz“ */
+  if (a.short) session.short = true;
   S.sessions.push(session);
   S.active = null;
   const saved = save(); release();
   V.summary = {
     sessionId: session.id,
-    name: a.name, color: a.color,
+    name: a.name, color: a.color, short: !!a.short,
     minutes: Math.max(1, Math.round((session.endedAt - session.startedAt) / 60000)),
     /* Ohne Aufwärmsätze; Dropsätze zählen mit */
     sets: ex.reduce((n, x) => n + workSets(x.sets).length, 0),
-    volume: Math.round(ex.filter(x => x.unit !== 'sec').reduce((n, x) => n + tonnage(x.sets), 0)),
+    /* Ohne Übungen auf Zeit und mit Gegengewicht, siehe exerciseTonnage */
+    volume: Math.round(ex.reduce((n, x) => n + exerciseTonnage(x), 0)),
     prs,
   };
   V.sheet = null;
@@ -342,6 +376,7 @@ export function vSummary() {
   return `<div class="summary day-${s.color}">
     <div class="plate-btn roll">${plateSVG(s.color, 'Geschafft', s.name + ' erledigt')}</div>
     <h1>${esc(s.name)} erledigt</h1>
+    ${s.short ? `<p class="sum-short">${shortBadge(s)}</p>` : ''}
     <div class="stats">
       <div><b>${s.minutes}</b><span>${plural(s.minutes, 'Minute', 'Minuten')}</span></div>
       <div><b>${s.sets}</b><span>${plural(s.sets, 'Satz', 'Sätze')}</span></div>
@@ -349,7 +384,7 @@ export function vSummary() {
     </div>
     ${s.prs.length ? `<div class="card prs"><h2 style="font-size:18px">Neue Rekorde</h2><ul class="rules">
       ${s.prs.map(p => `<li>${esc(p.name)}: ${p.items.map(it =>
-        `${esc(RECORD_LABEL[it.kind])} <b class="num">${esc(formatRecord(it.kind, it.value))}</b>`).join(', ')}</li>`).join('')}</ul>
+        `${esc(RECORD_LABEL[it.kind])} <b class="num">${esc(recordValue(it))}</b>`).join(', ')}</li>`).join('')}</ul>
       <p class="small-print" style="margin-top:8px">1RM geschätzt nach Epley aus Sätzen mit bis zu 12 Wiederholungen.</p></div>` : ''}
     ${rating.ratingBlock(s.sessionId)}
     <button class="btn primary" data-act="closesummary">Fertig</button>
@@ -378,6 +413,19 @@ export const actions = {
     save(); render();
   },
   check: el => toggleSet(+el.dataset.i, +el.dataset.j),
+  /* Smart-Zirkel: Methode für alle Sätze oder je Satz (views/smart-sets.js) */
+  smethod: el => {
+    const i = +el.dataset.i;
+    const x = S.active && S.active.ex[i];
+    if (!x) return;
+    openSheet({ title: 'Methode', text: x.name, body: methodSheetBody(x, i), actions: [{ label: 'Fertig', kind: 'primary', fn: closeSheet }] });
+  },
+  smethodall: el => {
+    const x = S.active && S.active.ex[+el.dataset.i];
+    if (!x) return;
+    setCardMethod(x, el.dataset.v);
+    save(); closeSheet();
+  },
   addset: el => {
     const x = S.active.ex[+el.dataset.i];
     const work = workSets(x.log);
@@ -401,6 +449,17 @@ export const actions = {
 export const inputs = {
   w: (el, type) => setField(el, 'w', type),
   r: (el, type) => setField(el, 'r', type),
+  /* Methode eines einzelnen Satzes; das Sheet bleibt offen, die Karte zeichnet sich beim Schließen neu */
+  smset: (el, type) => {
+    if (type !== 'change') return;
+    const i = +el.dataset.i, j = +el.dataset.j;
+    const x = S.active && S.active.ex[i];
+    if (!x || !x.log[j]) return;
+    setSetMethod(x, j, el.value);
+    if (x.log[j].done) x.log[j].rec = recordsFor(x, j);
+    save();
+    if (V.sheet) V.sheet.body = methodSheetBody(x, i);
+  },
 };
 function setField(el, k, type) {
   if (type === 'change' && k === 'w') { refreshRamps(); return; }
@@ -426,7 +485,7 @@ function refreshRamps() {
   if (!a) return;
   a.ex.forEach((x, i) => {
     const slot = document.getElementById('wu' + i);
-    if (!slot) return;
+    if (!slot || autoOf(x)) return;
     const cur = slot.firstElementChild ? slot.firstElementChild.dataset.ramp || '' : '';
     if (cur === warmup.rampKey(x, i)) return;
     const below = slot.nextElementSibling;

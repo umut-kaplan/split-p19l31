@@ -65,3 +65,41 @@ test('normalize ergänzt fehlende Felder', () => {
   assert.deepEqual(n.profile.limitations, { text: '', tags: [] });
   assert.equal(n.activePlanId, 'split');
 });
+
+test('4.7: Geräte im Profil und an eigenen Übungen ziehen auf die neue Liste um, alles andere bleibt', () => {
+  const s = defaultState();
+  s.profile.equipment = ['Langhantel', 'Kurzhanteln', 'Hantelbank'];
+  s.exercisesCustom = [
+    { id: 'c1', name: 'Kabelrudern einarmig', custom: true, equipment: ['Kabelzug'], muscles: { primary: ['back'], secondary: [] }, steps: ['A.'] },
+    { id: 'c2', name: 'Maschinenrudern', custom: true, equipment: ['Maschinen'], muscles: { primary: ['back'], secondary: [] } },
+    { id: 'c3', name: 'Ohne Geräte', custom: true },
+  ];
+  const n = normalize(JSON.parse(JSON.stringify(s)));
+  assert.deepEqual(n.profile.equipment, ['langhantel', 'kurzhanteln', 'flachbank', 'schraegbank', 'bankdrueckstation', 'schraegbankstation', 'kniebeugenstaender']);
+  assert.deepEqual(n.exercisesCustom[0], { ...s.exercisesCustom[0], equipment: ['kabelturm'] });
+  assert.equal(n.exercisesCustom[1].equipment.length, 1);
+  assert.ok(n.exercisesCustom[1].equipment[0].includes('beinstrecker'));
+  assert.deepEqual(n.exercisesCustom[2], s.exercisesCustom[2]);
+  /* Zweimal laden ändert nichts mehr */
+  assert.deepEqual(normalize(JSON.parse(JSON.stringify(n))), n);
+});
+
+test('4.7: Leere Geräteauswahl bleibt leer (alles erlaubt), Unsinn fällt weg', () => {
+  const s = defaultState();
+  assert.deepEqual(normalize(s).profile.equipment, []);
+  s.profile.equipment = 'Langhantel';
+  assert.deepEqual(normalize(s).profile.equipment, []);
+  s.profile.equipment = ['smart-zirkel', 'Quatsch', 'kurzhanteln'];
+  assert.deepEqual(normalize(s).profile.equipment, ['kurzhanteln', 'smart-zirkel']);
+});
+
+test('4.7: Kurzhantel-Steigerung in den Einstellungen, Standard 2 kg, unbekannte Werte fallen zurück', () => {
+  const s = defaultState();
+  assert.equal(s.settings.dumbbellInc, 2);
+  delete s.settings.dumbbellInc;
+  assert.equal(normalize(s).settings.dumbbellInc, 2, 'Stand ohne Einstellung');
+  [1, 2, 2.5].forEach(v => { s.settings.dumbbellInc = v; assert.equal(normalize(s).settings.dumbbellInc, v); });
+  ['2', 3, null, 0].forEach(v => { s.settings.dumbbellInc = v; assert.equal(normalize(s).settings.dumbbellInc, 2, String(v)); });
+  const b = fromBackup(JSON.parse(JSON.stringify(toBackup({ ...defaultState(), settings: { ...defaultState().settings, dumbbellInc: 2.5 } }))));
+  assert.equal(b.settings.dumbbellInc, 2.5, 'übersteht das Backup');
+});

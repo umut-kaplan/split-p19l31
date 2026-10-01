@@ -184,3 +184,17 @@ test('Keine doppelten Vorschläge, auch wenn eine Übung zweimal im Plan steht',
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(ids.map(i => i.split(':')[0]).sort(), ['deload', 'limit']);
 });
+
+test('Frisch übernommener Plan (createdAt): Volumenvorschläge erst nach einer vollen Woche mit ihm', () => {
+  const S = state();
+  S.sessions = ['2026-09-08', '2026-09-15', '2026-09-22'].map(d => session(d, sets(4, 80, 7), sets(3, 60, 10)));
+  /* Übernommen am Mittwoch der Vorwoche (23.09.): die Vorwoche war nicht ganz mit dem Plan */
+  S.plans[0].createdAt = new Date('2026-09-23T10:00').getTime();
+  assert.deepEqual(kinds(suggestions(S, NOW)), []);
+  /* Eine Woche später (Montag 05.10. ist durch, Woche ab 28.09. lief ganz mit dem Plan): wieder Vorschläge */
+  S.sessions.push(session('2026-09-29', sets(4, 80, 7), sets(3, 60, 10)));
+  assert.deepEqual(kinds(suggestions(S, new Date('2026-10-07T12:00').getTime())), ['volume']);
+  /* Übernommen genau zu Wochenbeginn: die Woche zählt schon voll */
+  S.plans[0].createdAt = new Date('2026-09-21T00:00').getTime();
+  assert.deepEqual(kinds(suggestions(S, NOW)), ['volume']);
+});

@@ -7,7 +7,8 @@ import { sessionRecords } from './prs.js';
 import { movingAverage } from './body.js';
 import { dayTotals } from './nutrition.js';
 import { MUSCLES } from './muscles.js';
-import { workSets, tonnage } from './settypes.js';
+import { workSets } from './settypes.js';
+import { exerciseTonnage } from './library.js';
 
 const localDay = t => {
   const d = new Date(t);
@@ -98,12 +99,12 @@ export function weeklyReport(S, start, ctx = {}) {
   const vol = weekMuscleSets(S.sessions || [], start, resolve);
   const muscles = Object.keys(vol.sets)
     .filter(m => vol.sets[m] > 0)
-    .map(m => ({ key: m, label: MUSCLES[m] || m, sets: vol.sets[m], rating: volumeRating(vol.sets[m]) }))
+    .map(m => ({ key: m, label: MUSCLES[m] || m, sets: vol.sets[m], rating: volumeRating(vol.sets[m], m) }))
     .sort((a, b) => b.sets - a.sets);
   /* Harte Sätze und bewegtes Gewicht ohne Aufwärmsätze, Dropsätze zählen mit */
   const setsTotal = sessions.reduce((a, s) => a + (s.ex || []).reduce((b, x) => b + workSets(x.sets).length, 0), 0);
-  const moved = sessions.reduce((a, s) => a + (s.ex || []).reduce((b, x) =>
-    b + (x.unit === 'sec' ? 0 : tonnage(x.sets)), 0), 0);
+  /* Ohne Übungen auf Zeit und mit Gegengewicht (domain/library.js, exerciseTonnage) */
+  const moved = sessions.reduce((a, s) => a + (s.ex || []).reduce((b, x) => b + exerciseTonnage(x), 0), 0);
   const minutes = sessions.reduce((a, s) => a + (s.endedAt && s.endedAt > s.startedAt ? Math.min(180, (s.endedAt - s.startedAt) / 6e4) : 0), 0);
   const weight = weekWeight(S.body && S.body.weights, days);
   const nutrition = weekNutrition((S.nutrition && S.nutrition.log) || {}, days);

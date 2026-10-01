@@ -50,3 +50,23 @@ test('Zurück-Knopf und Zeilen sind überall gleich gebaut', () => {
   /* In der laufenden Einheit die kurze Fassung, einzeilig ohne Erklärung */
   assert.match(compareRow('', 'Mit Partner vergleichen'), /<b>Mit Partner vergleichen<\/b><\/span>/);
 });
+
+test('Übung ohne passende Geräte steht im Plan mit „fehlt: …“ (Abschluss 4.7)', () => {
+  /* Eintrag im Plan-Editor zu einem Namen */
+  const item = (html, name) => html.split('<li class="pe ').find(x => x.includes(`<b>${name}</b>`)) || '';
+  /* Leere Auswahl: alles erlaubt, kein Hinweis */
+  V.planDay = 'pull';
+  assert.doesNotMatch(vPlan(), /pe-miss/);
+  S.profile.equipment = ['kurzhanteln', 'widerstandsband'];
+  S.plans[0].days.pull.exercises.push({ id: 'hammer', names: ['Hammercurls'], sets: 2, repMin: 10, repMax: 15, rest: 60, inc: 2, unit: 'reps' });
+  const html = vPlan();
+  /* Latzug oder Klimmzüge: keine der beiden Varianten geht */
+  assert.match(item(html, 'Latzug oder Klimmzüge'), /<span class="pe-miss">fehlt: Latzugstation<\/span>/);
+  assert.match(item(html, 'Rudern sitzend'), /<span class="pe-miss">fehlt: Ruderzug sitzend<\/span>/);
+  /* Was mit den Geräten geht, bleibt ohne Hinweis */
+  assert.ok(item(html, 'Hammercurls'));
+  assert.doesNotMatch(item(html, 'Hammercurls'), /pe-miss/);
+  /* Eine Variante genügt */
+  S.profile.equipment = ['kurzhanteln', 'widerstandsband', 'klimmzugstange'];
+  assert.doesNotMatch(item(vPlan(), 'Latzug oder Klimmzüge'), /pe-miss/);
+});

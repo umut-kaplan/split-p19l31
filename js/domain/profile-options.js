@@ -1,9 +1,6 @@
 export const SEX = { m: 'Männlich', f: 'Weiblich' };
 
-export const EQUIPMENT = [
-  'Langhantel', 'Kurzhanteln', 'SZ-Stange', 'Hantelbank', 'Kabelzug',
-  'Maschinen', 'Beinpresse', 'Klimmzugstange', 'Dip-Station',
-];
+/* Geräte: seit 4.7 in data/equipment.js und domain/equipment.js */
 
 /* Schlagworte für Einschränkungen. Stufe 2 ordnet ihnen Übungen zu, die sie belasten. */
 export const LIMIT_TAGS = [

@@ -4,11 +4,11 @@ import { render } from '../render.js';
 import { lineChart } from '../ui/chart.js';
 import { toast } from '../ui/toast.js';
 import { confirmSheet, closeSheet } from '../ui/sheet.js';
-import { fmtSet } from './workout.js';
-import { personalRecords, exerciseSeries, RECORD_LABEL, formatRecord } from '../domain/prs.js';
+import { fmtSet, shortBadge } from './workout.js';
+import { personalRecords, exerciseSeries, RECORD_LABEL, formatRecord, assistText } from '../domain/prs.js';
 import { muscleWeeks, volumeRating } from '../domain/volume.js';
 import { findExercise } from '../domain/library.js';
-import { MUSCLES, WEEKLY_SET_TARGET } from '../domain/muscles.js';
+import { MUSCLES, weeklyTarget, weeklyTargetText } from '../domain/muscles.js';
 import { ratingSummary, ratingBadge } from './session-rating.js';
 import { workSets } from '../domain/settypes.js';
 
@@ -48,7 +48,7 @@ function vList() {
   if (!sessions.length) return '<p class="empty" style="margin-top:16px">Nach dem ersten Training stehen hier deine Einheiten.</p>';
   return `<ul class="sess" style="margin-top:14px">${sessions.map(s => `
     <li class="day-${s.color}"><details>
-      <summary><span class="dot"></span><span><b>${esc(s.name)}</b> ${ratingBadge(s)}<br><small>${esc(dMid(s.startedAt))}</small></span>
+      <summary><span class="dot"></span><span><b>${esc(s.name)}</b> ${shortBadge(s)}${ratingBadge(s)}<br><small>${esc(dMid(s.startedAt))}</small></span>
         <small class="num">${minutes(s)} Min.</small></summary>
       <div class="body">${sessionBody(s)}</div>
     </details></li>`).join('')}</ul>`;
@@ -88,7 +88,7 @@ function vCalendar() {
     </section>
     ${sel ? (selSessions.length ? selSessions.map(s => `
       <section class="card cal-detail day-${esc(s.color)}">
-        <div class="cal-detail-h"><span class="dot"></span><div><h2>${esc(s.name)} ${ratingBadge(s)}</h2>
+        <div class="cal-detail-h"><span class="dot"></span><div><h2>${esc(s.name)} ${shortBadge(s)}${ratingBadge(s)}</h2>
           <p class="small-print">${esc(dLong(s.startedAt))}, ${clock(s.startedAt)} Uhr, ${minutes(s)} Min.</p></div></div>
         ${sessionBody(s)}
       </section>`).join('')
@@ -129,6 +129,7 @@ const METRIC_NOTE = {
   e1rm: 'Geschätztes Maximalgewicht für eine Wiederholung nach Epley, aus Sätzen mit bis zu 12 Wiederholungen.',
   volume: 'Gewicht mal Wiederholungen, alle Sätze eines Trainings zusammen, ohne Aufwärmsätze.',
   reps: 'Meiste Wiederholungen in einem Satz ohne Zusatzgewicht.',
+  assisted: 'Meiste Wiederholungen in einem Satz. Die kg dieser Übung sind Unterstützung: Weniger Unterstützung ist auch Fortschritt, sie steht nicht in der Kurve.',
   time: 'Längste Zeit in einem Satz.',
 };
 
@@ -175,12 +176,16 @@ function chart(series, metric, name) {
   const [num, unit] = (() => { const t = f(last); const i = t.lastIndexOf(' '); return [t.slice(0, i), t.slice(i + 1)]; })();
   const head = `<div class="chart-head"><div class="big num">${esc(num)}<small>${esc(unit)}</small></div>
     <div class="delta">${pts.length > 1 ? `seit ${esc(dShort(pts[0].t))}: <b class="num">${diff >= 0 ? '+' : '−'}${esc(f(Math.abs(diff)))}</b><br>` : ''}Bestwert <span class="num">${esc(f(best))}</span></div></div>`;
-  const note = `<p class="small-print hist-note">${esc(METRIC_NOTE[metric])}</p>`;
+  /* Gegengewicht (4.7): Die Kurve zeigt Wiederholungen, die Unterstützung steht nicht darin */
+  const assisted = metric === 'reps' && series.some(p => p.assist != null);
+  const note = `<p class="small-print hist-note">${esc(assisted ? METRIC_NOTE.assisted : METRIC_NOTE[metric])}</p>`;
   if (pts.length < 2) return head + '<p class="empty" style="padding:0 4px 6px">Ab dem zweiten Training wird hier eine Kurve daraus.</p>' + note;
   return head + lineChart(pts, `${METRIC_LABEL[metric]} ${name}`) + note;
 }
 
 /* ---------- Rekorde ---------- */
+/* Ohne Bestwert: am Smart-Zirkel liegt das an den Methoden, Rekorde zählen nur aus „Regulär“ */
+const noBest = r => ((findExercise(r.name, S.exercisesCustom) || {}).autoLoad ? 'Bestwert nur aus regulären Sätzen' : 'Noch kein Bestwert');
 function vRecords() {
   const recs = [...personalRecords(S.sessions).values()];
   if (!recs.length) return '<p class="empty" style="margin-top:16px">Nach dem ersten Training stehen hier deine Bestwerte.</p>';
@@ -190,13 +195,13 @@ function vRecords() {
   const rank = r => { const i = order.indexOf(r.key); return i < 0 ? 1e6 : i; };
   recs.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'de'));
   const cell = (r, k) => (r[k] ? `<span class="rec-cell"><small>${RECORD_LABEL[k]}</small>
-      <b class="num">${esc(formatRecord(k, r[k].value))}</b><small class="num">${esc(dShort(r[k].date))}</small></span>` : '');
+      <b class="num">${esc(k === 'reps' && r.assisted ? assistText(r[k]) : formatRecord(k, r[k].value))}</b><small class="num">${esc(dShort(r[k].date))}</small></span>` : '');
   return `<ul class="rec-list">${recs.map(r => {
     const kinds = r.unit === 'sec' ? ['time'] : ['weight', 'e1rm', 'volume', 'reps'];
     const cells = kinds.map(k => cell(r, k)).join('');
     return `<li><button class="rec" data-act="histrec" data-k="${esc(r.key)}" aria-label="${esc(r.name)}, Verlauf zeigen">
       <span class="rec-name"><b>${esc(r.name)}</b><small>${r.count} ${r.count === 1 ? 'Training' : 'Trainings'}</small></span>
-      <span class="rec-grid">${cells || '<small class="muted">Noch kein Bestwert</small>'}</span></button></li>`;
+      <span class="rec-grid">${cells || `<small class="muted">${noBest(r)}</small>`}</span></button></li>`;
   }).join('')}</ul>
   <p class="small-print hist-note">1RM ist das geschätzte Maximalgewicht für eine Wiederholung nach Epley, gerechnet aus Sätzen mit bis zu 12 Wiederholungen. Volumen ist Gewicht mal Wiederholungen eines Trainings. Aufwärmsätze zählen nie, Dropsätze nur beim Volumen.</p>`;
 }
@@ -204,7 +209,6 @@ function vRecords() {
 /* ---------- Muskeln: Sätze pro Woche ---------- */
 const SCALE = 25;
 function vMuscles() {
-  const [lo, hi] = WEEKLY_SET_TARGET;
   const resolve = n => findExercise(n, S.exercisesCustom);
   const weeks = muscleWeeks(S.sessions, Date.now(), 6, resolve);
   const back = Math.max(0, Math.min(weeks.length - 1, V.histWeekBack || 0));
@@ -218,33 +222,36 @@ function vMuscles() {
   })));
   const shown = Object.keys(MUSCLES).filter(m => planMuscles.has(m) || weeks.some(x => (x.sets[m] || 0) > 0));
   const weekLabel = thisWeek ? 'diese Woche' : `in der Woche ab ${dShort(w.start)}`;
-  const rateText = { low: 'unter dem Ziel', ok: 'im Zielbereich', high: 'über dem Ziel' };
+  const rateText = { low: 'unter dem Ziel', ok: 'im Zielbereich', high: 'über dem Ziel', none: 'ohne Zielbereich' };
   const rows = shown.map(m => {
     const v = w.sets[m] || 0;
-    const r = volumeRating(v);
+    const r = volumeRating(v, m);
+    const t = weeklyTarget(m);
     const spark = weeks.map((x, i) => {
       const val = x.sets[m] || 0;
-      return `<i class="${volumeRating(val)} ${i === weeks.length - 1 - back ? 'cur' : ''}" style="height:${Math.max(6, Math.min(100, val / SCALE * 100)).toFixed(0)}%"></i>`;
+      return `<i class="${volumeRating(val, m)} ${i === weeks.length - 1 - back ? 'cur' : ''}" style="height:${Math.max(6, Math.min(100, val / SCALE * 100)).toFixed(0)}%"></i>`;
     }).join('');
     return `<li class="vol-row ${r}" aria-label="${esc(MUSCLES[m])}: ${esc(fmt1(v))} ${v === 1 ? 'Satz' : 'Sätze'} ${esc(weekLabel)}, ${rateText[r]}">
       <div class="vol-top"><span>${esc(MUSCLES[m])}</span><span><b class="num">${esc(fmt1(v))}</b> ${v === 1 ? 'Satz' : 'Sätze'}</span></div>
       <div class="vol-line">
-        <div class="vol-bar" aria-hidden="true"><span class="vol-zone" style="left:${lo / SCALE * 100}%;width:${(hi - lo) / SCALE * 100}%"></span><i style="width:${Math.min(100, v / SCALE * 100).toFixed(1)}%"></i></div>
+        <div class="vol-bar" aria-hidden="true">${t ? `<span class="vol-zone" style="left:${t[0] / SCALE * 100}%;width:${(t[1] - t[0]) / SCALE * 100}%"></span>` : ''}<i style="width:${Math.min(100, v / SCALE * 100).toFixed(1)}%"></i></div>
         <span class="vol-spark" aria-hidden="true" title="Letzte ${weeks.length} Wochen">${spark}</span>
       </div>
     </li>`;
   }).join('');
-  const inRange = shown.filter(m => volumeRating(w.sets[m] || 0) === 'ok').length;
+  const inRange = shown.filter(m => volumeRating(w.sets[m] || 0, m) === 'ok').length;
+  /* Gruppen ohne Zielbereich zählen bei „x von y im Ziel“ nicht mit */
+  const rated = shown.filter(m => weeklyTarget(m)).length;
   return `<section class="card vol">
       <div class="cal-nav">
         <button class="icon" data-act="histweek" data-d="1" aria-label="Woche davor" ${back >= weeks.length - 1 ? 'disabled' : ''}>${LEFT}</button>
         <div><h2>${thisWeek ? 'Diese Woche' : `Woche ab ${esc(dShort(w.start))}`}</h2>
-          <p class="small-print">${w.total ? `${fmt(w.total)} ${plural(fmt(w.total), 'Satz', 'Sätze')}, ${inRange} von ${shown.length} ${plural(shown.length, 'Muskelgruppe', 'Muskelgruppen')} im Ziel`
+          <p class="small-print">${w.total ? `${fmt(w.total)} ${plural(fmt(w.total), 'Satz', 'Sätze')}, ${inRange} von ${rated} ${plural(rated, 'Muskelgruppe', 'Muskelgruppen')} im Ziel`
             : thisWeek ? 'Noch kein Training diese Woche. Mit dem Pfeil links siehst du die Vorwoche.' : 'Kein Training in dieser Woche'}</p></div>
         <button class="icon" data-act="histweek" data-d="-1" aria-label="Woche danach" ${thisWeek ? 'disabled' : ''}>${RIGHT}</button>
       </div>
       ${shown.length ? `<ul class="vol-list">${rows}</ul>` : '<p class="empty">Sobald Übungen aus der Bibliothek im Plan stehen, zeigt die App hier die Sätze pro Muskelgruppe.</p>'}
-      <p class="small-print vol-legend"><span class="vol-sw"></span>Zielbereich ${lo} bis ${hi} Sätze pro Woche. Hauptsächlich beanspruchte Muskeln zählen einen Satz voll, mitbeanspruchte einen halben, Aufwärmsätze gar nicht. Rechts die letzten ${weeks.length} Wochen.</p>
+      <p class="small-print vol-legend"><span class="vol-sw"></span>${esc(weeklyTargetText())} Hauptsächlich beanspruchte Muskeln zählen einen Satz voll, mitbeanspruchte einen halben, Aufwärmsätze gar nicht. Rechts die letzten ${weeks.length} Wochen.</p>
       ${w.unknown.length ? `<p class="small-print vol-unknown">Nicht zugeordnet: ${esc(w.unknown.join(', '))}. Diese Übungen kennt die Bibliothek nicht, sie zählen nicht mit.</p>` : ''}
     </section>`;
 }

@@ -8,6 +8,7 @@
                                       Keine Anzahl: der Rechner nimmt jede Scheibe so oft wie nötig.
      barFor:    { 'exId|Name': id }   im Scheibenrechner gewählte Stange pro Übung (Schlüssel wie bei Notizen und Rekorden)
    Ältere Stände hatten { barKg, szKg, available: [Zahlen] }; plateSettings macht daraus die neue Form. */
+import { requirementTerms } from './equipment.js';
 
 /* Schnellauswahl beim Hinzufügen, schwerste zuerst */
 export const PLATE_CATALOG = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5];
@@ -46,7 +47,16 @@ export const compColor = kg => COMP[kg] || 'silver';
 export const STD_BARS = [{ id: 'barbell', name: 'Langhantel', kg: 20 }, { id: 'sz', name: 'SZ-Stange', kg: 10 }];
 export const isStdBar = id => STD_BARS.some(b => b.id === id);
 /* Gerät aus der Bibliothek, das eine Standardstange verlangt */
-const EQUIPMENT = { barbell: 'Langhantel', sz: 'SZ-Stange' };
+/* Geräte-ids der Stangen (data/equipment.js) */
+const BAR_KIND = { 'sz-stange': 'sz', 'langhantel': 'barbell' };
+/* Welche Stange verlangt die Übung? Zuerst die festen Geräte; eine „eines davon“-Gruppe nur, wenn alle darin
+   Stangen sind (SZ-Stange oder Langhantel), sonst kann es auch mit Kurzhanteln gehen. */
+function barKind(req) {
+  const terms = requirementTerms(req);
+  const pick = ids => (ids.includes('sz-stange') ? 'sz' : ids.includes('langhantel') ? 'barbell' : null);
+  return pick(terms.filter(t => !Array.isArray(t)))
+    || pick(terms.filter(t => Array.isArray(t) && t.every(id => BAR_KIND[id])).flat());
+}
 
 export const DEFAULT_PLATES = Object.freeze({
   bars: STD_BARS.map(b => ({ ...b })),
@@ -138,8 +148,7 @@ export function chosenBarId(barFor, key) {
    Liefert { id, kind, label, kg, chosen } oder null. kind ist das Gerät: 'barbell' oder 'sz'. */
 export function barFor(exercise, settings, key = null) {
   if (!exercise || exercise.unit === 'sec') return null;
-  const eq = exercise.equipment || [];
-  const kind = eq.includes(EQUIPMENT.sz) ? 'sz' : eq.includes(EQUIPMENT.barbell) ? 'barbell' : null;
+  const kind = barKind(exercise.equipment);
   if (!kind) return null;
   const s = plateSettings(settings);
   const picked = s.bars.find(b => b.id === chosenBarId(s.barFor, key));

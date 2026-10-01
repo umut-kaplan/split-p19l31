@@ -13,13 +13,15 @@ import { suggestionCards } from '../ui/suggestion.js';
 import { pendingSuggestions } from '../coach/index.js';
 import { shiftTrainLine } from './shift-today.js';
 import { ICON } from '../ui/icons.js';
+import { dayMinutes } from '../domain/plan-stats.js';
+import * as shortStart from './short-start.js';
 
 /* Vier Reiter; „Wissen“ steht als Umschalter oben im Reiter „Übungen“ */
 const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen']];
 const LIB_MODES = [['list', 'Übungen'], ['knowledge', 'Wissen']];
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [library, compare, knowledge];
+export const modules = [library, compare, knowledge, shortStart];
 
 /* Reiterleiste; im laufenden Training steht sie unter der Kopfleiste der Einheit */
 const subTabs = sub => `<div class="seg wide" role="tablist">${SUBS.map(([k, l]) =>
@@ -49,15 +51,15 @@ function vExercises() {
     ${mode === 'knowledge' ? knowledge.vKnowledge() : library.vLibrary()}`;
 }
 
+/* Sätze und geschätzte Minuten; im Supersatz zählt statt der Pause der Wechsel (domain/plan-stats.js, 4.7) */
 export function dayFacts(d) {
   const sets = d.exercises.reduce((a, e) => a + e.sets, 0);
-  const min = Math.round(d.exercises.reduce((a, e) => a + e.sets * (e.rest + 45), 0) / 60 + 10);
-  return { sets, min };
+  return { sets, min: dayMinutes(d.exercises) };
 }
 
 function vStart() {
   const plan = activePlan();
-  const next = nextDay(plan.order, S.sessions, plan.id);
+  const next = nextDay(plan.order, S.sessions, plan.id, plan.days);
   /* Offene Trainingsvorschläge (Deload, Volumen, Einschränkungen) aus coach/training.js, erst zwei, dann auf Wunsch alle */
   const open = pendingSuggestions(S, Date.now(), 'training').length;
   const sug = suggestionCards('training', V.histSugAll ? 99 : 2);
@@ -81,7 +83,8 @@ function vStart() {
       <button class="icon day-edit" data-act="planeditday" data-day="${id}" aria-label="${esc(d.name)} bearbeiten">${ICON.edit}</button>
       ${empty
         ? `<button class="btn" data-act="planeditday" data-day="${id}">Übungen eintragen</button>`
-        : `<button class="btn ${id === next ? 'primary' : ''}" data-act="start" data-day="${id}">${esc(d.name)} starten</button>`}
+        : `<button class="btn ${id === next ? 'primary' : ''}" data-act="start" data-day="${id}">${esc(d.name)} starten</button>
+          ${shortStart.shortStartButton(id, d)}`}
     </section>`;
   }).join('')}</div>`;
 }

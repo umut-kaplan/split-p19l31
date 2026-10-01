@@ -70,7 +70,7 @@ test('Übersicht zeigt Zurück, alle Zeilen und unten die Versionszeile, aber ke
 
 test('Jede Unterseite hat „Zurück“, ihren Titel und ihren Inhalt', () => {
   const expect = {
-    studio: /data-act="gymplateedit"[\s\S]*data-act="ptoggle"/,
+    studio: /data-act="gearpreset"[\s\S]*data-act="gearsmart"[\s\S]*data-act="geartoggle"[\s\S]*data-act="geardbinc"[\s\S]*data-act="gymplateedit"/,
     training: /data-act="wakelock"/,
     backup: /data-act="export"[\s\S]*data-act="import"[\s\S]*data-act="bkremind"/,
     csv: /data-act="exportcsv"/,

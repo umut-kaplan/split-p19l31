@@ -19,6 +19,9 @@ export const GOALS = {
   lose: { adj: -0.20, label: 'Abnehmen', hint: 'Defizit, Muskeln halten' },
   recomp: { adj: 0, label: 'Beides', hint: 'Ungefähr Erhaltung, Fett runter und Muskeln rauf' },
 };
+/* Höchstes Defizit am Tag beim Abnehmen (4.7): Darüber gab es in Studien kaum noch Zuwachs an Magermasse
+   (Murphy & Koehler 2022). Gilt für das Startziel; die wöchentlichen Vorschläge halten sich an dasselbe Tempo. */
+export const MAX_DEFICIT = 500;
 
 /* Krafttraining mit MET 5, pro Einheit höchstens 2 Stunden */
 export const MET_STRENGTH = 5;
@@ -96,7 +99,9 @@ export function calorieGoal(p, ctx = {}) {
   const burn = burnAverage(a.burn, today);
   const tdee = daily + tr.kcalPerDay + cardio.kcalPerDay + steps.kcalPerDay;
   const goal = GOALS[p.goal] || GOALS.recomp;
-  const goalKcal = tdee * (1 + goal.adj);
+  /* Defizit 20 %, höchstens 500 kcal am Tag */
+  const capped = goal.adj < 0 && -goal.adj * tdee > MAX_DEFICIT;
+  const goalKcal = capped ? tdee - MAX_DEFICIT : tdee * (1 + goal.adj);
   const adjust = ctx.kcalAdjust || 0;
   const kcal = Math.round((goalKcal + adjust) / 10) * 10;
   /* Verbrauch: Training, dann Cardio und Schritte; der letzte Satz nennt die Summe */
@@ -111,7 +116,10 @@ export function calorieGoal(p, ctx = {}) {
     bmrLine,
     `Mal ${act.factor.toLocaleString('de-DE')} für deinen Alltag „${act.label}“${p.activity ? '' : ' (Standardwert, im Profil änderbar)'}: ${fmt0(daily)} kcal.`,
     ...usage,
-    goal.adj
+    /* Gedeckelt (4.7): erst, was die Prozent wären, dann warum es weniger ist */
+    capped
+      ? `Minus ${fmt0(MAX_DEFICIT)} kcal für das Ziel „${goal.label}“: ${fmt0(goalKcal)} kcal. ${fmt0(Math.abs(goal.adj * 100))} % wären ${fmt0(-goal.adj * tdee)} kcal, die App zieht aber höchstens ${fmt0(MAX_DEFICIT)} kcal am Tag ab: Ein größeres Defizit bremst in Studien den Muskelaufbau.`
+      : goal.adj
       ? `${goal.adj > 0 ? 'Plus' : 'Minus'} ${fmt0(Math.abs(goal.adj * 100))} % für das Ziel „${goal.label}“: ${fmt0(goalKcal)} kcal.`
       : `Für das Ziel „${goal.label}“ kein Zu- oder Abschlag.${p.goal ? '' : ' Ohne Ziel im Profil rechnet die App so.'}`,
   ];

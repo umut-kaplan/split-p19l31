@@ -81,3 +81,13 @@ test('Einstellungen werden bereinigt', () => {
   assert.equal(plateSettings({ barKg: 15 }).bars[0].kg, 15);
   assert.deepEqual(plateSettings({ available: [] }).available, STD);
 });
+
+test('4.7: Stange aus der Geräte-Anforderung mit ids, „eines davon“ nur, wenn alles Stangen sind', () => {
+  const s = plateSettings(null);
+  assert.equal(barFor({ equipment: ['langhantel', ['kniebeugenstaender', 'multipresse']] }, s).kind, 'barbell');
+  assert.equal(barFor({ equipment: ['sz-stange', 'scottbank'] }, s).kind, 'sz');
+  assert.equal(barFor({ equipment: [['sz-stange', 'langhantel']] }, s).kind, 'sz');
+  assert.equal(barFor({ equipment: [['kurzhanteln', 'langhantel']] }, s), null);
+  assert.equal(barFor({ equipment: ['multipresse'] }, s), null);
+  assert.equal(barFor({ equipment: ['smart-zirkel'] }, s), null);
+});

@@ -22,7 +22,7 @@ test('Montag mit allen Karten: Wochenbericht und Backup zuerst', () => {
 test('Die Reihenfolge ist fest und vollständig', () => {
   const all = [...HINT_ORDER].reverse().map(kind => ({ kind }));
   assert.deepEqual(kinds(pickHints(all, 99).shown), HINT_ORDER);
-  assert.deepEqual(HINT_ORDER.slice(0, 4), ['disclaimer', 'report', 'ampel', 'backup']);
+  assert.deepEqual(HINT_ORDER.filter(k => k !== 'gear').slice(0, 4), ['disclaimer', 'report', 'ampel', 'backup']);
 });
 
 test('Mehrere Vorschläge bleiben in ihrer Reihenfolge, Unbekanntes kommt zuletzt', () => {
@@ -44,4 +44,10 @@ test('Ampel braucht nur eine Karte, wenn sie etwas anderes rät als die Scheibe'
   assert.equal(ampelIsHint({ kind: 'rest', dayId: null }, 'pull', { shiftRest: true }), false, 'Pause laut Schichtplan steht schon in der Schichtzeile');
   assert.equal(ampelIsHint({ kind: 'done', dayId: 'pull' }, 'legs'), false, 'heute schon trainiert');
   assert.equal(ampelIsHint(null, 'pull'), false);
+});
+
+test('Geräte prüfen (4.7): einmal nach dem Update, darum oben, auch vor Wochenbericht und Backup', () => {
+  const r = pickHints([{ kind: 'checkin' }, { kind: 'backup' }, { kind: 'report' }, { kind: 'gear' }]);
+  assert.deepEqual(kinds(r.shown), ['gear', 'report']);
+  assert.equal(HINT_ORDER[1], 'gear');
 });

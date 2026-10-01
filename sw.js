@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v4.6';
+const CACHE = 'split-v4.7';
 
 const CORE = [
   './',
@@ -298,7 +298,33 @@ const WORKOUT = [
   'js/views/live-bar.js',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...SHIFTMODELS, ...PLATES2, ...BIRTH, ...KNOWLEDGE, ...NAVIGATION, ...WORKOUT];
+/* 4.7: Geräteliste mit Schnellauswahl, Geräte-Anforderung der Übungen, Smart-Zirkel */
+const GEAR = [
+  'js/data/equipment.js',
+  'js/domain/equipment.js',
+  'js/data/exercise-schema.js',
+  'js/data/exercises-kern.js',
+  'js/data/exercises-smart.js',
+];
+
+/* 4.7, je ein eigener Abschnitt pro Arbeitspaket, damit sich die Änderungen nicht überschneiden
+   (docs/geraete-und-uebungen.md): Bilder neuer Kern-Übungen, Oberfläche Geräte/Filter/Smart-Zirkel, Plan-Vorlagen und Coach */
+const GEAR_KERN = [
+];
+const GEAR_UI = [
+  'css/gear.css',
+  'js/domain/smart-sets.js',
+  'js/views/gear.js',
+  'js/views/smart-sets.js',
+];
+const GEAR_PLANS = [
+  'js/domain/plan-stats.js',
+  'js/domain/plan-update.js',
+  'js/views/plan-update.js',
+  'js/views/short-start.js',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...SHIFTMODELS, ...PLATES2, ...BIRTH, ...KNOWLEDGE, ...NAVIGATION, ...WORKOUT, ...GEAR, ...GEAR_KERN, ...GEAR_UI, ...GEAR_PLANS];
 
 self.addEventListener('install', ev => {
   /* Am Browser-Cache vorbei laden, sonst landen kurz vor einem Update geladene alte Dateien im neuen Cache */

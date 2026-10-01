@@ -1,0 +1,1708 @@
+{
+ "stand": "2026-10-01",
+ "quelle": "Recherche „Übungen und Geräte“ vom 30.09.2026 (uebungen-kandidaten.json), Stufe Kern",
+ "hinweis": "Arbeitsliste für data/exercises-kern.js. Ohne die 50 Übungen bis 4.6, ohne die 18 Smart-Zirkel-Übungen (data/exercises-smart.js) und ohne schraegbank-curls, seitheben-kabel (Recherche: kabel-seitheben) und rueckenstrecker (Recherche: hyperextensions), die schon angelegt sind. Alternativen zeigen nur auf ids, die es gibt oder die hier stehen; Markennamen in Aliasen sind gestrichen. Anleitung (steps, mistakes, stresses) fehlt noch.",
+ "format": "equipment: Liste von Termen, jeder muss erfüllt sein; ein Term ist eine Geräte-id oder eine Liste von ids, von denen eine genügt; [] = Körpergewicht. alternatives: ids, die es gibt oder die hier stehen. Für steps (3 bis 6), mistakes (2 bis 4), stresses und die Regel „für jede Belastung eine Alternative ohne sie“ siehe test/exercises-data.test.js.",
+ "anzahl": 55,
+ "uebungen": [
+  {
+   "id": "multipresse-bankdruecken",
+   "name": "Bankdrücken an der Multipresse",
+   "aliases": [
+    "Multipresse Bankdrücken",
+    "Smith Machine Bench Press"
+   ],
+   "bereich": "Brust",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "chest"
+    ],
+    "secondary": [
+     "triceps",
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    "multipresse",
+    "flachbank"
+   ],
+   "alternatives": [
+    "bankdruecken",
+    "brustpresse",
+    "kh-bankdruecken"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "multipresse-schraegbank",
+   "name": "Schrägbankdrücken an der Multipresse",
+   "aliases": [
+    "Multipresse schräg",
+    "Smith Incline Press"
+   ],
+   "bereich": "Brust",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "chest"
+    ],
+    "secondary": [
+     "shoulders",
+     "triceps"
+    ]
+   },
+   "equipment": [
+    "multipresse",
+    "schraegbank"
+   ],
+   "alternatives": [
+    "schraegbankdruecken",
+    "kh-schraegbankdruecken",
+    "schraeg-brustpresse"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "schraeg-brustpresse",
+   "name": "Schräge Brustpresse (Maschine)",
+   "aliases": [
+    "Incline Chest Press",
+    "Schrägbank-Brustpresse",
+    "Hebel-Schrägbankdrücken"
+   ],
+   "bereich": "Brust",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "chest"
+    ],
+    "secondary": [
+     "shoulders",
+     "triceps"
+    ]
+   },
+   "equipment": [
+    "schraeg-brustpresse"
+   ],
+   "alternatives": [
+    "kh-schraegbankdruecken",
+    "multipresse-schraegbank",
+    "brustpresse"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "kh-flys",
+   "name": "Kurzhantel-Flys",
+   "aliases": [
+    "Fliegende",
+    "Flys Kurzhantel",
+    "Dumbbell Flyes"
+   ],
+   "bereich": "Brust",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "chest"
+    ],
+    "secondary": [
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    "kurzhanteln",
+    "flachbank"
+   ],
+   "alternatives": [
+    "butterfly",
+    "kabel-flys"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "liegestuetze-erhoeht",
+   "name": "Liegestütze erhöht",
+   "aliases": [
+    "Incline Push-ups",
+    "Liegestütze an der Bank"
+   ],
+   "bereich": "Brust",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "chest"
+    ],
+    "secondary": [
+     "triceps",
+     "shoulders",
+     "abs"
+    ]
+   },
+   "equipment": [],
+   "alternatives": [
+    "liegestuetze",
+    "brustpresse",
+    "kh-bankdruecken"
+   ],
+   "hinweis": "Hände auf Bank, Tisch oder Stange; leichter als Liegestütze"
+  },
+  {
+   "id": "dips-assistiert",
+   "name": "Dips mit Unterstützung",
+   "aliases": [
+    "Assisted Dips",
+    "Dips an der Gegengewichtsmaschine"
+   ],
+   "bereich": "Brust",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "chest",
+     "triceps"
+    ],
+    "secondary": [
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    "assist-maschine"
+   ],
+   "alternatives": [
+    "dip-maschine",
+    "barren-dips",
+    "trizepsmaschine"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "seitheben-maschine",
+   "name": "Seitheben an der Maschine",
+   "aliases": [
+    "Seithebemaschine",
+    "Lateral Raise Machine"
+   ],
+   "bereich": "Schultern",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "shoulders"
+    ],
+    "secondary": [
+     "traps"
+    ]
+   },
+   "equipment": [
+    "seitheben-maschine"
+   ],
+   "alternatives": [
+    "seitheben",
+    "seitheben-kabel"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "reverse-butterfly",
+   "name": "Reverse Butterfly (Maschine)",
+   "aliases": [
+    "Reverse Butterfly",
+    "Butterfly reverse",
+    "Rear Delt Machine"
+   ],
+   "bereich": "Schultern",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "shoulders"
+    ],
+    "secondary": [
+     "back",
+     "traps"
+    ]
+   },
+   "equipment": [
+    "butterfly"
+   ],
+   "alternatives": [
+    "reverse-flys",
+    "face-pulls",
+    "smart-butterfly-reverse"
+   ],
+   "hinweis": "Alias „Reverse Butterfly“ steht noch bei reverse-flys und wandert über ALIAS_MOVES (data/exercises.js) von selbst hierher; im Eintrag darf er schon stehen"
+  },
+  {
+   "id": "multipresse-schulterdruecken",
+   "name": "Schulterdrücken an der Multipresse",
+   "aliases": [
+    "Smith Shoulder Press",
+    "Multipresse Schulterdrücken"
+   ],
+   "bereich": "Schultern",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "shoulders"
+    ],
+    "secondary": [
+     "triceps"
+    ]
+   },
+   "equipment": [
+    "multipresse",
+    "schraegbank"
+   ],
+   "alternatives": [
+    "kh-schulterdruecken",
+    "schulterpresse-maschine",
+    "schulterdruecken"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "frontheben",
+   "name": "Frontheben",
+   "aliases": [
+    "Front Raises",
+    "Frontheben Kurzhantel",
+    "Frontheben mit Scheibe"
+   ],
+   "bereich": "Schultern",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "shoulders"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "kurzhanteln"
+   ],
+   "alternatives": [
+    "kh-schulterdruecken"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "aufrechtes-rudern",
+   "name": "Aufrechtes Rudern",
+   "aliases": [
+    "Upright Row",
+    "Kinnziehen"
+   ],
+   "bereich": "Schultern",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "shoulders"
+    ],
+    "secondary": [
+     "traps",
+     "biceps"
+    ]
+   },
+   "equipment": [
+    [
+     "sz-stange",
+     "kabelturm"
+    ]
+   ],
+   "alternatives": [
+    "seitheben",
+    "seitheben-kabel",
+    "kh-shrugs"
+   ],
+   "hinweis": "weiter Griff, nur bis Brusthöhe; belastet die Schulter"
+  },
+  {
+   "id": "aussenrotation-kabel",
+   "name": "Außenrotation am Kabel",
+   "aliases": [
+    "External Rotation",
+    "Rotatorenmanschette am Kabel"
+   ],
+   "bereich": "Schultern",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "shoulders"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    [
+     "kabelturm",
+     "widerstandsband"
+    ]
+   ],
+   "alternatives": [
+    "face-pulls"
+   ],
+   "hinweis": "Schulterpflege, leichte Gewichte"
+  },
+  {
+   "id": "kh-shrugs",
+   "name": "Schulterheben mit Kurzhanteln",
+   "aliases": [
+    "Shrugs",
+    "Kurzhantel-Shrugs",
+    "Nackenheben"
+   ],
+   "bereich": "Nacken/Trapez",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "traps"
+    ],
+    "secondary": [
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "kurzhanteln"
+   ],
+   "alternatives": [
+    "farmers-walk",
+    "aufrechtes-rudern"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "farmers-walk",
+   "name": "Farmer's Walk",
+   "aliases": [
+    "Farmers Carry",
+    "Bauerngang"
+   ],
+   "bereich": "Nacken/Trapez",
+   "type": "compound",
+   "unit": "sec",
+   "muscles": {
+    "primary": [
+     "traps",
+     "forearms"
+    ],
+    "secondary": [
+     "abs",
+     "glutes"
+    ]
+   },
+   "equipment": [
+    [
+     "kurzhanteln",
+     "kettlebell",
+     "trap-bar"
+    ]
+   ],
+   "alternatives": [
+    "kh-shrugs"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "sz-french-press",
+   "name": "French Press mit SZ-Stange",
+   "aliases": [
+    "Stirndrücken",
+    "Skull Crusher",
+    "French Press liegend"
+   ],
+   "bereich": "Trizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "triceps"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "sz-stange",
+    "flachbank"
+   ],
+   "alternatives": [
+    "ueberkopf-trizeps-kabel",
+    "trizepsmaschine"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "enges-bankdruecken",
+   "name": "Enges Bankdrücken",
+   "aliases": [
+    "Bankdrücken eng",
+    "Close Grip Bench Press"
+   ],
+   "bereich": "Trizeps",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "triceps",
+     "chest"
+    ],
+    "secondary": [
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    "langhantel",
+    "bankdrueckstation"
+   ],
+   "alternatives": [
+    "barren-dips",
+    "dips-assistiert",
+    "sz-french-press"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "trizepsmaschine",
+   "name": "Trizepsmaschine",
+   "aliases": [
+    "Trizepsstrecker Maschine",
+    "Triceps Extension Machine",
+    "Trizeps-Dip-Maschine"
+   ],
+   "bereich": "Trizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "triceps"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "trizepsmaschine"
+   ],
+   "alternatives": [
+    "trizepsdruecken-kabel",
+    "smart-trizeps"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "kh-ueberkopf-trizeps",
+   "name": "Trizepsdrücken über Kopf mit Kurzhantel",
+   "aliases": [
+    "Overhead Triceps Extension",
+    "Trizeps über Kopf"
+   ],
+   "bereich": "Trizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "triceps"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "kurzhanteln"
+   ],
+   "alternatives": [
+    "ueberkopf-trizeps-kabel",
+    "sz-french-press"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "trizeps-kickbacks",
+   "name": "Trizeps-Kickbacks",
+   "aliases": [
+    "Kickbacks Kurzhantel",
+    "Triceps Kickback"
+   ],
+   "bereich": "Trizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "triceps"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "kurzhanteln"
+   ],
+   "alternatives": [
+    "trizepsdruecken-kabel"
+   ],
+   "hinweis": "Geht auch ohne Bank, vorgebeugt mit der Hand auf dem Oberschenkel (Prüfung 4.7, M3)"
+  },
+  {
+   "id": "scottcurls",
+   "name": "Scottcurls",
+   "aliases": [
+    "Preacher Curls",
+    "Scott-Curls SZ",
+    "Larry Scott Curls"
+   ],
+   "bereich": "Bizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "biceps"
+    ],
+    "secondary": [
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "sz-stange",
+    "scottbank"
+   ],
+   "alternatives": [
+    "bizepsmaschine",
+    "sz-curls"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "bizepsmaschine",
+   "name": "Bizepsmaschine",
+   "aliases": [
+    "Bizepscurl-Maschine",
+    "Biceps Curl Machine"
+   ],
+   "bereich": "Bizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "biceps"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "bizepsmaschine"
+   ],
+   "alternatives": [
+    "scottcurls",
+    "kabel-curls",
+    "smart-bizeps"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "kabel-curls",
+   "name": "Curls am Kabel",
+   "aliases": [
+    "Cable Curls",
+    "Bizepscurls am Kabelzug"
+   ],
+   "bereich": "Bizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "biceps"
+    ],
+    "secondary": [
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "kabelturm"
+   ],
+   "alternatives": [
+    "sz-curls",
+    "kh-curls"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "konzentrationscurls",
+   "name": "Konzentrationscurls",
+   "aliases": [
+    "Concentration Curls"
+   ],
+   "bereich": "Bizeps",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "biceps"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "kurzhanteln",
+    "flachbank"
+   ],
+   "alternatives": [
+    "kh-curls"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "handgelenkcurls",
+   "name": "Handgelenkcurls",
+   "aliases": [
+    "Wrist Curls",
+    "Unterarmcurls"
+   ],
+   "bereich": "Unterarme",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "forearms"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    [
+     "sz-stange",
+     "kurzhanteln"
+    ],
+    "flachbank"
+   ],
+   "alternatives": [
+    "farmers-walk"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "rudermaschine",
+   "name": "Rudern an der Maschine",
+   "aliases": [
+    "Rudermaschine",
+    "Seated Row Machine",
+    "Low Row",
+    "Rudern mit Brustauflage (Maschine)"
+   ],
+   "bereich": "Rücken",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back"
+    ],
+    "secondary": [
+     "biceps",
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    [
+     "rudermaschine",
+     "hebel-rudern"
+    ]
+   ],
+   "alternatives": [
+    "rudern-sitzend",
+    "t-bar-rudern",
+    "smart-ruderzug"
+   ],
+   "hinweis": "Alias „Rudern an der Brustauflage“ kommt über ALIAS_MOVES von brustgestuetztes-rudern dazu"
+  },
+  {
+   "id": "t-bar-rudern",
+   "name": "T-Bar-Rudern",
+   "aliases": [
+    "T-Bar Row",
+    "T-Hantel-Rudern",
+    "Landmine-Rudern"
+   ],
+   "bereich": "Rücken",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back"
+    ],
+    "secondary": [
+     "biceps",
+     "shoulders",
+     "lower_back"
+    ]
+   },
+   "equipment": [
+    [
+     "t-bar-rudern",
+     "landmine"
+    ]
+   ],
+   "alternatives": [
+    "langhantelrudern",
+    "rudermaschine",
+    "brustgestuetztes-rudern"
+   ],
+   "hinweis": "mit Landmine ohne Brustauflage, dann Langhantel nötig"
+  },
+  {
+   "id": "hohes-rudern",
+   "name": "Hohes Rudern (Maschine)",
+   "aliases": [
+    "High Row",
+    "Rudern von oben"
+   ],
+   "bereich": "Rücken",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back"
+    ],
+    "secondary": [
+     "biceps",
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    "hebel-rudern"
+   ],
+   "alternatives": [
+    "latzug",
+    "rudermaschine"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "klimmzuege-assistiert",
+   "name": "Klimmzüge mit Unterstützung",
+   "aliases": [
+    "Assisted Pull-ups",
+    "Klimmzugmaschine",
+    "Gegengewichts-Klimmzüge"
+   ],
+   "bereich": "Rücken",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back"
+    ],
+    "secondary": [
+     "biceps"
+    ]
+   },
+   "equipment": [
+    "assist-maschine"
+   ],
+   "alternatives": [
+    "latzug",
+    "klimmzuege",
+    "invertiertes-rudern"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "chin-ups",
+   "name": "Klimmzüge im Untergriff",
+   "aliases": [
+    "Chin-ups",
+    "Untergriff-Klimmzüge"
+   ],
+   "bereich": "Rücken",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back",
+     "biceps"
+    ],
+    "secondary": [
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "klimmzugstange"
+   ],
+   "alternatives": [
+    "klimmzuege",
+    "klimmzuege-assistiert"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "kabel-ueberzuege",
+   "name": "Überzüge am Kabel",
+   "aliases": [
+    "Straight-Arm Pulldown",
+    "Lat-Pullover am Kabel",
+    "Pullover am Kabel"
+   ],
+   "bereich": "Rücken",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "kabelturm"
+   ],
+   "alternatives": [
+    "latzug"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "invertiertes-rudern",
+   "name": "Rudern mit Körpergewicht",
+   "aliases": [
+    "Inverted Row",
+    "Australian Pull-ups",
+    "Rudern im Hang"
+   ],
+   "bereich": "Rücken",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "back"
+    ],
+    "secondary": [
+     "biceps",
+     "shoulders",
+     "abs"
+    ]
+   },
+   "equipment": [
+    [
+     "multipresse",
+     "kniebeugenstaender",
+     "schlingentrainer"
+    ]
+   ],
+   "alternatives": [
+    "klimmzuege-assistiert",
+    "kh-rudern",
+    "brustgestuetztes-rudern"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "rueckenstrecker-maschine",
+   "name": "Rückenstrecker-Maschine",
+   "aliases": [
+    "Lower Back Machine",
+    "Rückenstrecker sitzend"
+   ],
+   "bereich": "Unterer Rücken",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "lower_back"
+    ],
+    "secondary": [
+     "glutes"
+    ]
+   },
+   "equipment": [
+    "rueckenstrecker-maschine"
+   ],
+   "alternatives": [
+    "rueckenstrecker",
+    "smart-rueckentrainer"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "crunches",
+   "name": "Crunches",
+   "aliases": [
+    "Crunch",
+    "Bauchpresse am Boden"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": []
+   },
+   "equipment": [],
+   "alternatives": [
+    "bauchmaschine",
+    "kabel-crunch",
+    "negativ-crunches"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "negativ-crunches",
+   "name": "Crunches an der Bauchbank",
+   "aliases": [
+    "Decline Crunches",
+    "Sit-ups an der Schrägbank",
+    "Negativ-Sit-ups"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "bauchbank"
+   ],
+   "alternatives": [
+    "crunches",
+    "bauchmaschine"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "beinheben-stuetz",
+   "name": "Beinheben im Stütz",
+   "aliases": [
+    "Captain's Chair",
+    "Knieheben an der Dip-Station",
+    "Knee Raises"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "beinhebestation"
+   ],
+   "alternatives": [
+    "beinheben-haengend",
+    "beinheben-liegend"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "beinheben-liegend",
+   "name": "Beinheben liegend",
+   "aliases": [
+    "Lying Leg Raises",
+    "Beinheben am Boden"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": []
+   },
+   "equipment": [],
+   "alternatives": [
+    "beinheben-stuetz",
+    "dead-bug"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "seitstuetz",
+   "name": "Seitstütz",
+   "aliases": [
+    "Side Plank",
+    "Seitlicher Unterarmstütz"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "sec",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": [
+     "shoulders",
+     "abductors"
+    ]
+   },
+   "equipment": [],
+   "alternatives": [
+    "plank",
+    "pallof-press"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "dead-bug",
+   "name": "Dead Bug",
+   "aliases": [
+    "Toter Käfer"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": []
+   },
+   "equipment": [],
+   "alternatives": [
+    "plank",
+    "beinheben-liegend"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "pallof-press",
+   "name": "Pallof Press",
+   "aliases": [
+    "Anti-Rotationsdrücken"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": [
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    [
+     "kabelturm",
+     "widerstandsband"
+    ]
+   ],
+   "alternatives": [
+    "seitstuetz",
+    "holzhacker"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "holzhacker",
+   "name": "Holzhacker am Kabel",
+   "aliases": [
+    "Woodchopper",
+    "Cable Woodchop"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": [
+     "shoulders"
+    ]
+   },
+   "equipment": [
+    "kabelturm"
+   ],
+   "alternatives": [
+    "russian-twists",
+    "pallof-press"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "russian-twists",
+   "name": "Russian Twists",
+   "aliases": [
+    "Rumpfdrehen sitzend"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": []
+   },
+   "equipment": [],
+   "alternatives": [
+    "holzhacker",
+    "pallof-press"
+   ],
+   "hinweis": "optional mit Kurzhantel oder Medizinball"
+  },
+  {
+   "id": "bauchroller",
+   "name": "Bauchroller",
+   "aliases": [
+    "Ab Wheel",
+    "Ab Roller",
+    "Rollout"
+   ],
+   "bereich": "Bauch/Rumpf",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "abs"
+    ],
+    "secondary": [
+     "shoulders",
+     "back"
+    ]
+   },
+   "equipment": [
+    "bauchroller"
+   ],
+   "alternatives": [
+    "plank",
+    "dead-bug"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "multipresse-kniebeugen",
+   "name": "Kniebeugen an der Multipresse",
+   "aliases": [
+    "Multipresse Kniebeuge",
+    "Smith Squat"
+   ],
+   "bereich": "Oberschenkel vorne",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "quads",
+     "glutes"
+    ],
+    "secondary": [
+     "adductors",
+     "hamstrings"
+    ]
+   },
+   "equipment": [
+    "multipresse"
+   ],
+   "alternatives": [
+    "kniebeugen",
+    "hackenschmidt",
+    "beinpresse"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "frontkniebeugen",
+   "name": "Frontkniebeugen",
+   "aliases": [
+    "Front Squat",
+    "Frontkniebeuge"
+   ],
+   "bereich": "Oberschenkel vorne",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "quads",
+     "glutes"
+    ],
+    "secondary": [
+     "abs",
+     "lower_back",
+     "adductors"
+    ]
+   },
+   "equipment": [
+    "langhantel",
+    "kniebeugenstaender"
+   ],
+   "alternatives": [
+    "kniebeugen",
+    "goblet-squat",
+    "hackenschmidt"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "pendel-kniebeuge",
+   "name": "Kniebeuge an der Hebelmaschine",
+   "aliases": [
+    "Pendulum Squat",
+    "Pendelkniebeuge",
+    "V-Squat",
+    "Kniebeugemaschine"
+   ],
+   "bereich": "Oberschenkel vorne",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "quads",
+     "glutes"
+    ],
+    "secondary": [
+     "adductors"
+    ]
+   },
+   "equipment": [
+    "pendel-kniebeuge"
+   ],
+   "alternatives": [
+    "hackenschmidt",
+    "beinpresse"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "step-ups",
+   "name": "Step-ups",
+   "aliases": [
+    "Aufsteiger",
+    "Aufsteigen auf die Bank",
+    "Step-up"
+   ],
+   "bereich": "Oberschenkel vorne",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "quads",
+     "glutes"
+    ],
+    "secondary": [
+     "hamstrings",
+     "adductors"
+    ]
+   },
+   "equipment": [
+    "kurzhanteln",
+    [
+     "flachbank",
+     "plyobox"
+    ]
+   ],
+   "alternatives": [
+    "ausfallschritte",
+    "bulgarian-split-squat"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "kh-rumaenisches-kreuzheben",
+   "name": "Rumänisches Kreuzheben mit Kurzhanteln",
+   "aliases": [
+    "Kurzhantel-RDL",
+    "Dumbbell RDL"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "hamstrings",
+     "glutes"
+    ],
+    "secondary": [
+     "lower_back",
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "kurzhanteln"
+   ],
+   "alternatives": [
+    "rumaenisches-kreuzheben",
+    "beinbeuger"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "trapbar-kreuzheben",
+   "name": "Kreuzheben mit Trap-Bar",
+   "aliases": [
+    "Trap Bar Deadlift",
+    "Hex-Bar-Kreuzheben"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "quads",
+     "glutes",
+     "hamstrings"
+    ],
+    "secondary": [
+     "lower_back",
+     "traps",
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "trap-bar"
+   ],
+   "alternatives": [
+    "kreuzheben",
+    "beinpresse",
+    "kh-rumaenisches-kreuzheben"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "hip-thrust-maschine",
+   "name": "Hip Thrust an der Maschine",
+   "aliases": [
+    "Hip-Thrust-Maschine",
+    "Glute-Bridge-Maschine"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "glutes"
+    ],
+    "secondary": [
+     "hamstrings"
+    ]
+   },
+   "equipment": [
+    "hip-thrust-maschine"
+   ],
+   "alternatives": [
+    "hip-thrust",
+    "smart-hip-thrust",
+    "gesaessmaschine"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "glute-bridge",
+   "name": "Beckenheben",
+   "aliases": [
+    "Glute Bridge",
+    "Gesäßbrücke",
+    "Hüftheben am Boden"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "glutes"
+    ],
+    "secondary": [
+     "hamstrings"
+    ]
+   },
+   "equipment": [],
+   "alternatives": [
+    "hip-thrust"
+   ],
+   "hinweis": "optional mit Kurzhantel"
+  },
+  {
+   "id": "kabel-kickbacks",
+   "name": "Kickbacks am Kabel",
+   "aliases": [
+    "Cable Glute Kickback",
+    "Gesäß-Kickbacks am Kabel",
+    "Beinrückheben am Kabel"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "glutes"
+    ],
+    "secondary": [
+     "hamstrings"
+    ]
+   },
+   "equipment": [
+    "kabelturm"
+   ],
+   "alternatives": [
+    "gesaessmaschine",
+    "hip-thrust"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "gesaessmaschine",
+   "name": "Gesäßmaschine",
+   "aliases": [
+    "Glute-Maschine",
+    "Glute Kickback Maschine",
+    "Multi-Hip"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "glutes"
+    ],
+    "secondary": [
+     "hamstrings"
+    ]
+   },
+   "equipment": [
+    "gesaessmaschine"
+   ],
+   "alternatives": [
+    "kabel-kickbacks",
+    "hip-thrust-maschine"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "kettlebell-swing",
+   "name": "Kettlebell-Swing",
+   "aliases": [
+    "KB Swing",
+    "Russian Swing"
+   ],
+   "bereich": "Gesäß und Oberschenkel hinten",
+   "type": "compound",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "glutes",
+     "hamstrings"
+    ],
+    "secondary": [
+     "lower_back",
+     "abs",
+     "forearms"
+    ]
+   },
+   "equipment": [
+    "kettlebell"
+   ],
+   "alternatives": [
+    "kh-rumaenisches-kreuzheben",
+    "hip-thrust"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "wadenheben-sitzend",
+   "name": "Wadenheben sitzend",
+   "aliases": [
+    "Seated Calf Raise",
+    "Wadenmaschine sitzend"
+   ],
+   "bereich": "Waden",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "calves"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "wadenmaschine-sitzend"
+   ],
+   "alternatives": [
+    "wadenheben",
+    "wadendruecken-beinpresse"
+   ],
+   "hinweis": ""
+  },
+  {
+   "id": "wadenheben-kh",
+   "name": "Wadenheben einbeinig mit Kurzhantel",
+   "aliases": [
+    "Wadenheben an der Stufe",
+    "Single-Leg Calf Raise"
+   ],
+   "bereich": "Waden",
+   "type": "isolation",
+   "unit": "reps",
+   "muscles": {
+    "primary": [
+     "calves"
+    ],
+    "secondary": []
+   },
+   "equipment": [
+    "kurzhanteln"
+   ],
+   "alternatives": [
+    "wadenheben"
+   ],
+   "hinweis": "auch ohne Gewicht an einer Stufe"
+  }
+ ],
+ "alternativen_ergaenzen": {
+  "bankdruecken": [
+   "multipresse-bankdruecken"
+  ],
+  "schraegbankdruecken": [
+   "multipresse-schraegbank",
+   "schraeg-brustpresse"
+  ],
+  "kh-schraegbankdruecken": [
+   "schraeg-brustpresse",
+   "multipresse-schraegbank"
+  ],
+  "butterfly": [
+   "kh-flys"
+  ],
+  "kabel-flys": [
+   "kh-flys"
+  ],
+  "kabel-flys-unten": [
+   "schraeg-brustpresse"
+  ],
+  "dip-maschine": [
+   "dips-assistiert",
+   "trizepsmaschine"
+  ],
+  "barren-dips": [
+   "dips-assistiert",
+   "enges-bankdruecken"
+  ],
+  "liegestuetze": [
+   "liegestuetze-erhoeht"
+  ],
+  "schulterdruecken": [
+   "multipresse-schulterdruecken"
+  ],
+  "seitheben": [
+   "seitheben-maschine"
+  ],
+  "reverse-flys": [
+   "reverse-butterfly"
+  ],
+  "face-pulls": [
+   "reverse-butterfly"
+  ],
+  "seitheben-kabel": [
+   "seitheben-maschine"
+  ],
+  "trizepsdruecken-kabel": [
+   "trizepsmaschine"
+  ],
+  "ueberkopf-trizeps-kabel": [
+   "kh-ueberkopf-trizeps",
+   "sz-french-press"
+  ],
+  "langhantel-curls": [
+   "kabel-curls"
+  ],
+  "sz-curls": [
+   "scottcurls"
+  ],
+  "kh-curls": [
+   "kabel-curls"
+  ],
+  "latzug": [
+   "klimmzuege-assistiert"
+  ],
+  "klimmzuege": [
+   "klimmzuege-assistiert",
+   "chin-ups"
+  ],
+  "rudern-sitzend": [
+   "rudermaschine"
+  ],
+  "brustgestuetztes-rudern": [
+   "rudermaschine",
+   "t-bar-rudern"
+  ],
+  "langhantelrudern": [
+   "t-bar-rudern"
+  ],
+  "rueckenstrecker": [
+   "rueckenstrecker-maschine"
+  ],
+  "bauchmaschine": [
+   "crunches"
+  ],
+  "kabel-crunch": [
+   "crunches"
+  ],
+  "beinheben-haengend": [
+   "beinheben-stuetz",
+   "beinheben-liegend"
+  ],
+  "plank": [
+   "seitstuetz",
+   "dead-bug",
+   "bauchroller"
+  ],
+  "kniebeugen": [
+   "multipresse-kniebeugen"
+  ],
+  "hackenschmidt": [
+   "pendel-kniebeuge",
+   "multipresse-kniebeugen"
+  ],
+  "beinpresse": [
+   "multipresse-kniebeugen"
+  ],
+  "goblet-squat": [
+   "step-ups"
+  ],
+  "ausfallschritte": [
+   "step-ups"
+  ],
+  "bulgarian-split-squat": [
+   "step-ups"
+  ],
+  "rumaenisches-kreuzheben": [
+   "kh-rumaenisches-kreuzheben"
+  ],
+  "kreuzheben": [
+   "trapbar-kreuzheben"
+  ],
+  "hip-thrust": [
+   "hip-thrust-maschine",
+   "glute-bridge"
+  ],
+  "wadenheben": [
+   "wadenheben-kh"
+  ],
+  "wadendruecken-beinpresse": [
+   "wadenheben-sitzend"
+  ],
+  "smart-ruderzug": [
+   "rudermaschine"
+  ],
+  "smart-latzug": [
+   "klimmzuege-assistiert"
+  ],
+  "smart-bizeps": [
+   "bizepsmaschine"
+  ],
+  "smart-trizeps": [
+   "trizepsmaschine"
+  ],
+  "smart-rueckentrainer": [
+   "rueckenstrecker-maschine"
+  ],
+  "smart-rotator": [
+   "holzhacker"
+  ],
+  "smart-butterfly-reverse": [
+   "reverse-butterfly"
+  ],
+  "smart-hip-thrust": [
+   "hip-thrust-maschine"
+  ]
+ }
+}

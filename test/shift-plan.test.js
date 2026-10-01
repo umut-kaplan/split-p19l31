@@ -6,13 +6,17 @@ import { defaultShifts, TEMPLATE_28, localMs, toMin, dayNum, mondayOf } from '..
 import { defaultState } from '../js/store/migrate.js';
 import { dayProfile } from '../js/domain/today-plan.js';
 import { findExercise } from '../js/domain/library.js';
-import { planFromTemplate } from '../js/plans.js';
+import { planFromTemplate, LEGACY_SPLIT } from '../js/plans.js';
 import { PLAN_TEMPLATES } from '../js/data/plan-templates.js';
 
 const H = 36e5;
+/* Die Planer-Tests rechnen mit dem 3er-Split bis 4.6 als fester Vorlage, damit Uhrzeiten und Dauern stabil bleiben,
+   wenn sich der mitgelieferte Plan ändert (4.7). */
+const legacy = () => JSON.parse(JSON.stringify(LEGACY_SPLIT));
 /* Zustand mit Muster ab `start`; sessions als [Plantag, Datum, Uhrzeit] */
 function state({ pattern = null, start = '2026-10-05', perWeek = 3, sessions = [], prefer = null, order = null } = {}) {
   const s = defaultState();
+  s.plans = [legacy()];
   s.profile.daysPerWeek = perWeek;
   s.shifts = defaultShifts();
   if (pattern) s.shifts.pattern = { start, days: [...pattern], template: null };
@@ -49,7 +53,7 @@ test('Ohne Schichtplan plant die App nichts', () => {
 });
 
 test('Dauer einer Einheit wie auf der Trainingsseite, auf 5 Minuten aufgerundet', () => {
-  const { days } = defaultState().plans[0];
+  const { days } = legacy();
   assert.equal(sessionMinutes(days.push), 75);
   assert.equal(sessionMinutes(days.pull), 65);
   assert.equal(sessionMinutes(days.legs), 80);

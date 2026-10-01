@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { suggestToday, lastTrained, restText, REST_HOURS } from '../js/domain/today-plan.js';
-import { defaultPlan } from '../js/plans.js';
+import { LEGACY_SPLIT } from '../js/plans.js';
 import { findExercise } from '../js/domain/library.js';
 
-const plan = defaultPlan();
+/* Fester Plan: der 3er-Split bis 4.6, damit die Sätze je Tag stabil bleiben */
+const plan = JSON.parse(JSON.stringify(LEGACY_SPLIT));
 const resolve = n => findExercise(n);
 const NOW = new Date('2026-09-28T17:00').getTime();
 const H = 36e5;

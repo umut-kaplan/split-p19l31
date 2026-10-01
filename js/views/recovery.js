@@ -16,7 +16,7 @@ const resolve = n => findExercise(n, S.exercisesCustom);
 
 /* Welche Einheit zeigt die Hantelscheibe oben gerade? Gleiche Regel wie auf der Startseite. */
 function heroDayId(plan) {
-  return V.pick && plan.days[V.pick] ? V.pick : plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id);
+  return V.pick && plan.days[V.pick] ? V.pick : plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id, plan.days);
 }
 
 /* ---------- Ampel und Tagesvorschlag ---------- */
@@ -29,7 +29,7 @@ function ampel() {
   /* Mit Schichtplan ist die geplante Einheit der Kandidat; an Tagen ohne Plan rät die Karte zur Pause */
   const base = suggestToday({
     plan, sessions: S.sessions, resolve, level: rec.level,
-    nextId: plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id),
+    nextId: plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id, plan.days),
     trainedToday: done ? { dayId: done.dayId, name: done.name } : null,
   });
   const sug = withShiftPlan(base);

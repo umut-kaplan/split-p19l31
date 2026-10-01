@@ -1,12 +1,13 @@
 import { S, V, save, activePlan } from '../state.js';
 import { esc, fmtIn, toNum, mmss, unitL, exName } from '../util.js';
 import { render } from '../render.js';
-import { defaultPlan, emptyPlan, planFromTemplate, newDay } from '../plans.js';
+import { defaultPlanFor, emptyPlan, templatePlan, newDay, swapText, uniqueSwaps } from '../plans.js';
 import { PLAN_TEMPLATES, PLAN_COLORS, COLOR_NAMES } from '../data/plan-templates.js';
 import {
   allExercises, findExercise, searchExercises, matchesQuery, limitationHits, safeAlternatives, exerciseIdFor, defaultsFor,
 } from '../domain/library.js';
 import { MUSCLES } from '../domain/muscles.js';
+import { splitByEquipment, doable, missingText } from '../domain/equipment.js';
 import { plateSVG } from '../ui/plate.js';
 import { ICON } from '../ui/icons.js';
 import { toast } from '../ui/toast.js';
@@ -14,8 +15,14 @@ import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import { exImage } from './library.js';
 import { backLink } from '../ui/navlinks.js';
 import { groupsOf, swapKeepLinks, removeKeepLinks, tidyLinks, setLink } from '../domain/superset.js';
+import * as planUpdate from './plan-update.js';
+
+/* Untermodul „Überarbeiteter 3er-Split verfügbar“, dessen actions app.js einsammelt */
+export const modules = [planUpdate];
 
 const custom = () => S.exercisesCustom || [];
+/* Für Pläne aus Vorlagen: Geräte und Kurzhantel-Steigerung aus Profil und Einstellungen */
+const ctx = () => ({ plans: S.plans, custom: custom(), equipment: S.profile.equipment || [], settings: S.settings, tags: tags() });
 const tags = () => (S.profile.limitations && S.profile.limitations.tags) || [];
 
 const curDay = () => {
@@ -43,6 +50,16 @@ function limitInfo(e) {
   return null;
 }
 
+/* Geht ein Plan-Eintrag mit den eigenen Geräten nicht (keine Variante), was fehlt: „Latzugstation“. Sonst ''.
+   So steht eine Übung, für die es beim Anlegen keinen Ersatz gab, mit „fehlt: …“ im Plan (plans.js, adaptPlan). */
+function missingFor(e) {
+  const eq = S.profile.equipment || [];
+  if (!eq.length) return '';
+  const libs = e.names.map(n => findExercise(n, custom()));
+  if (libs.some(l => !l) || libs.some(doable(eq))) return '';
+  return missingText(libs[0], eq);
+}
+
 /* Schalter zwischen zwei Übungen: „Mit nächster Übung als Supersatz“ */
 function ssLink(d, i) {
   const on = d.exercises[i].ss === true;
@@ -57,6 +74,7 @@ export function vPlan() {
   const d = curDay();
   const total = plan.order.reduce((n, id) => n + plan.days[id].exercises.length, 0);
   return `<div class="plan day-${d.color}">
+    ${planUpdate.offerCard()}
     <section class="card plan-head">
       <h2>${esc(plan.name)}</h2>
       <p class="muted">${plan.order.length} ${plan.order.length === 1 ? 'Tag' : 'Tage'}, ${total} Übungen. ${S.plans.length > 1 ? `Einer von ${S.plans.length} Plänen, dieser ist aktiv.` : 'Dein aktiver Plan.'}</p>
@@ -100,12 +118,14 @@ function dayEditor(plan, d) {
     ${d.exercises.length ? `<ul class="pe-list">
       ${d.exercises.map((e, i) => {
         const lim = limitInfo(e);
+        const miss = missingFor(e);
         const g = groups.find(x => x.includes(i));
         const ss = g.length > 1 ? 'pe-ss' : '';
         return `
       <li class="pe ${lim ? 'pe-limit' : ''} ${ss}">
         <div><b>${esc(exName(e))}</b>
           <span class="num">${e.sets} × ${e.repMin}–${e.repMax} ${unitL(e.unit)}, Pause ${mmss(e.rest)}</span>
+          ${miss ? `<span class="pe-miss">fehlt: ${esc(miss)}</span>` : ''}
           ${lim ? `<span class="plan-warn">Belastet ${esc(lim.hits.join(', '))}.${lim.alts.length ? ` Schonender: ${esc(lim.alts.slice(0, 3).map(a => a.name).join(', '))}.` : ''}</span>` : ''}</div>
         <div class="pe-tools">
           <button class="icon" data-act="mv" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="${esc(exName(e))} nach oben">${ICON.up}</button>
@@ -189,23 +209,33 @@ function editExercise(i) {
 }
 
 /* ---------- Übung aus der Bibliothek wählen ---------- */
-function pickExercise() {
-  const t = tags();
-  const list = searchExercises(allExercises(custom()));
-  const body = `<label class="field plan-pick-search"><span class="vh">Übung suchen</span>
-      <input type="search" data-in="planpickq" placeholder="Übung suchen" autocomplete="off" enterkeyhint="search"></label>
-    <ul class="lib-list plan-pick">${list.map(e => {
-      const hits = limitationHits(e, t);
-      const prim = (e.muscles && e.muscles.primary || []).map(m => MUSCLES[m]).filter(Boolean).join(', ');
-      return `<li data-pickid="${esc(e.id)}"><button class="lib-item" data-act="planpick" data-id="${esc(e.id)}">
+/* 4.7: Übungen, die mit den eigenen Geräten gehen, stehen oben; die übrigen darunter mit „fehlt: …“.
+   Leere Geräteauswahl: alle oben, ohne Trennung. */
+function pickItem(e, t, miss = '') {
+  const hits = limitationHits(e, t);
+  const prim = (e.muscles && e.muscles.primary || []).map(m => MUSCLES[m]).filter(Boolean).join(', ');
+  return `<li data-pickid="${esc(e.id)}"><button class="lib-item" data-act="planpick" data-id="${esc(e.id)}">
         ${exImage(e, 'lib-thumb')}
         <span class="lib-txt"><b>${esc(e.name)}</b><span>${esc(prim)}</span>
+          ${miss ? `<span class="lib-miss">fehlt: ${esc(miss)}</span>` : ''}
           ${hits.length ? `<span class="lib-warn">Belastet ${esc(hits.join(', '))}</span>` : ''}</span></button></li>`;
-    }).join('')}</ul>
+}
+
+export function pickerBody() {
+  const t = tags();
+  const { fit, rest } = splitByEquipment(searchExercises(allExercises(custom())), S.profile.equipment);
+  return `<label class="field plan-pick-search"><span class="vh">Übung suchen</span>
+      <input type="search" data-in="planpickq" placeholder="Übung suchen" autocomplete="off" enterkeyhint="search"></label>
+    <ul class="lib-list plan-pick">${fit.map(e => pickItem(e, t)).join('')}</ul>
+    ${rest.length ? `<p class="pick-sep" ${fit.length ? '' : 'hidden'}>Brauchen andere Geräte</p>
+    <ul class="lib-list plan-pick pick-rest">${rest.map(r => pickItem(r.e, t, r.missing)).join('')}</ul>` : ''}
     <p class="empty plan-pick-none" hidden>Nichts gefunden. Trag die Übung mit eigenem Namen ein.</p>`;
+}
+
+function pickExercise() {
   openSheet({
     title: 'Übung hinzufügen',
-    body,
+    body: pickerBody(),
     actions: [
       { label: 'Eigenen Namen eintragen', kind: '', fn: () => editExercise(null) },
       { label: 'Abbrechen', kind: 'ghost', fn: closeSheet },
@@ -220,7 +250,7 @@ function addFromLibrary(id) {
   const exId = exerciseIdFor(lib.name, S.plans, custom());
   if (d.exercises.some(x => x.id === exId || x.names.includes(lib.name))) { toast('Diese Übung steht schon in diesem Tag.'); return; }
   tidyLinks(d.exercises);
-  d.exercises.push({ id: exId, names: [lib.name], ...defaultsFor(lib) });
+  d.exercises.push({ id: exId, names: [lib.name], ...defaultsFor(lib, S.settings) });
   save(); closeSheet(); toast(`${lib.name} hinzugefügt`);
 }
 
@@ -244,23 +274,32 @@ function switchSheet() {
   });
 }
 
+/* Vorlagenauswahl (4.7): alle sechs Vorlagen, fehlende Geräte ersetzt die App beim Anlegen */
 function newPlanSheet() {
   openSheet({
-    title: 'Neuer Plan',
-    text: 'Wähle eine Vorlage. Der neue Plan wird gleich aktiv und lässt sich danach frei anpassen.',
+    title: 'Neuer Plan aus Vorlage',
+    text: 'Wähle eine Vorlage. Der neue Plan wird gleich aktiv und lässt sich danach frei anpassen. Fehlt dir ein Gerät, setzt die App eine Übung für dieselben Muskeln ein, sonst steht im Plan, was fehlt.',
     body: `<div class="choices">${PLAN_TEMPLATES.map(t => `
-      <button class="choice" data-act="plantpl" data-id="${t.id}"><b>${esc(t.name)}</b><span>${esc(t.hint)}</span></button>`).join('')}
+      <button class="choice" data-act="plantpl" data-id="${t.id}"><b>${esc(t.name)}</b><span>${esc(t.hint)}</span>
+        <span>Gedacht für ${t.perWeek} Einheiten pro Woche</span></button>`).join('')}
       <button class="choice" data-act="planempty"><b>Leerer Plan</b><span>Ein Tag ohne Übungen. Du stellst alles selbst zusammen.</span></button></div>`,
     actions: [{ label: 'Abbrechen', kind: 'ghost', fn: closeSheet }],
   });
 }
 
-function addPlan(p) {
+function addPlan(p, swaps = []) {
   p.name = uniquePlanName(p.name);
   S.plans.push(p);
   usePlan(p.id);
   closeSheet();
-  toast(`„${p.name}“ angelegt und aktiv`);
+  if (!swaps.length) { toast(`„${p.name}“ angelegt und aktiv`); return; }
+  /* Ersetzte Übungen nennen, damit niemand im Studio vor einem fehlenden Gerät steht */
+  openSheet({
+    title: `„${p.name}“ ist aktiv`,
+    text: 'Für deine Geräte hat die App diese Übungen ersetzt. Unter Plan kannst du jede ändern.',
+    body: `<ul class="rules">${uniqueSwaps(swaps).map(x => `<li>${esc(swapText(x))}</li>`).join('')}</ul>`,
+    actions: [{ label: 'Verstanden', kind: 'primary', fn: closeSheet }],
+  });
 }
 
 function renameSheet() {
@@ -322,8 +361,8 @@ function removeDay() {
 }
 
 export function resetPlan() {
-  confirmSheet('Plan zurücksetzen?', 'Der 3er-Split wird wieder so wie am Anfang und ist danach aktiv. Dein Verlauf bleibt erhalten.', 'Plan zurücksetzen', () => {
-    const fresh = defaultPlan();
+  confirmSheet('Plan zurücksetzen?', 'Der 3er-Split wird wieder so, wie die App ihn mitbringt, und ist danach aktiv. Dein Verlauf bleibt erhalten.', 'Plan zurücksetzen', () => {
+    const fresh = defaultPlanFor(ctx()).plan;
     const i = S.plans.findIndex(p => p.id === fresh.id);
     if (i >= 0) S.plans[i] = fresh; else S.plans.unshift(fresh);
     usePlan(fresh.id);
@@ -365,7 +404,9 @@ export const actions = {
   plannew: newPlanSheet,
   plantpl: el => {
     const tpl = PLAN_TEMPLATES.find(t => t.id === el.dataset.id);
-    if (tpl) addPlan(planFromTemplate(tpl, S.plans, custom()));
+    if (!tpl) return;
+    const { plan, swaps } = templatePlan(tpl, ctx());
+    addPlan(plan, swaps);
   },
   planempty: () => addPlan(emptyPlan('Eigener Plan')),
   planrename: renameSheet,
@@ -380,11 +421,16 @@ export const inputs = {
   daymuscles: (el, type) => { curDay().muscles = el.value.trim(); save(); if (type === 'change') render(); },
   planpickq: el => {
     let n = 0;
+    let fit = 0;
+    let rest = 0;
     document.querySelectorAll('.plan-pick li[data-pickid]').forEach(li => {
       const hit = matchesQuery(findExercise(li.dataset.pickid, custom()) || { name: '' }, el.value);
       li.hidden = !hit;
-      if (hit) n++;
+      if (hit) { n++; if (li.closest('.pick-rest')) rest++; else fit++; }
     });
+    /* Die Trennzeile nur, wenn über und unter ihr etwas steht */
+    const sep = document.querySelector('.pick-sep');
+    if (sep) sep.hidden = !(fit && rest);
     const none = document.querySelector('.plan-pick-none');
     if (none) none.hidden = n > 0;
   },

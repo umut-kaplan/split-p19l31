@@ -3,6 +3,10 @@
 /* ========== Bibliothek und Pläne ========== */
 .lib { margin-top: 16px; display: grid; gap: 12px; }
 .lib-search input { -webkit-appearance: none; appearance: none; }
+/* Hinweis „Gleiche Namen“ (4.7): eigene Übungen, die wie eine Übung der Bibliothek heißen */
+.lib-clash { margin: 0; }
+.lib-clash h2 { font-size: 18px; }
+.lib-clash .chips { flex-wrap: wrap; margin: 0 0 10px; }
 .lib-muscles { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px; scrollbar-width: none; }
 .lib-muscles::-webkit-scrollbar { display: none; }
 .lib-muscles .chip { flex: none; }
@@ -63,6 +67,15 @@
 .plan { margin-top: 16px; }
 .plan-head h2 { font-family: var(--round); font-size: 24px; font-weight: 800; }
 .plan-head .muted { margin-top: 4px; }
+/* 4.7: Hinweis „Überarbeiteter 3er-Split verfügbar“ (views/plan-update.js) */
+.plan-offer { margin-bottom: 14px; }
+.plan-offer h2 { font-size: 18px; }
+.plan-offer .muted { margin-top: 4px; }
+.plan-offer-days { margin: 10px 0 0; padding-left: 20px; color: var(--steel); font-size: 14.5px; }
+.plan-offer-days li + li { margin-top: 6px; }
+.plan-offer-days b { color: var(--chalk); }
+.plan-offer-x { display: block; font-size: 13.5px; }
+.plan-offer .small-print { margin-top: 8px; }
 .plan .day-tabs { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
 .plan .day-tabs button { min-width: 0; }
 .plan-dayname {
@@ -153,6 +166,9 @@
 .vol-spark i.cur.ok { background: var(--green); }
 .vol-spark i.cur.high { background: var(--yellow); }
 .vol-spark i.cur.low { background: var(--steel); }
+/* Ohne Zielbereich (Nacken/Trapez, unterer Rücken): neutral, keine Ampel */
+.vol-spark i.none { background: rgba(162, 169, 178, .35); }
+.vol-spark i.cur.none { background: var(--steel); }
 .vol-legend { margin-top: 14px; }
 .vol-sw { display: inline-block; width: 18px; height: 8px; margin-right: 6px; border-radius: 4px; background: rgba(47, 168, 90, .35); vertical-align: middle; }
 .vol-unknown { margin-top: 8px; color: var(--steel); }

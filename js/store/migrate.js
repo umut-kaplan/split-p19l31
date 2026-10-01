@@ -5,6 +5,8 @@ import { cleanLink } from '../domain/superset.js';
 import { defaultShifts, normalizeShifts } from '../domain/shifts.js';
 import { plateSettings } from '../domain/plates.js';
 import { cleanBirthDate } from '../domain/birthdate.js';
+import { migrateProfileEquipment, migrateExerciseEquipment, hasLegacyEquipment } from '../domain/equipment.js';
+import { cleanDumbbellInc, DEFAULT_DUMBBELL_INC } from '../domain/library.js';
 
 export const SCHEMA = 2;
 export const APP_ID = 'fit';
@@ -20,7 +22,7 @@ export function defaultProfile() {
     goal: null,         // 'gain' | 'lose' | 'recomp'
     activity: null,     // Schlüssel aus ACTIVITY in domain/energy.js
     daysPerWeek: 3,
-    equipment: [],
+    equipment: [],      // Geräte-ids aus data/equipment.js, leer = alles erlaubt (domain/equipment.js)
     limitations: { text: '', tags: [] },
     targetWeightKg: null,
   };
@@ -39,6 +41,8 @@ export function defaultState() {
       compareWeight: true,
       /* Bildschirm während eines Trainings anlassen (Screen Wake Lock, js/wake-lock.js) */
       wakeLock: true,
+      /* Steigerung neuer Kurzhantel-Übungen im Plan: 1, 2 oder 2,5 kg (domain/library.js, defaultsFor) */
+      dumbbellInc: DEFAULT_DUMBBELL_INC,
       plates: plateSettings(null),
     },
     /* Dauerhafte Notizen pro Übung: { 'exId|Name': 'Sitz Stufe 4' }. Trainings tragen optional rating: { rpe, note }. */
@@ -114,6 +118,11 @@ function normalizeCompare(c) {
   return { code: c.code, scannedAt: Number.isFinite(c.scannedAt) ? c.scannedAt : null };
 }
 
+/* Eigene Übungen: Geräte bis 4.6 ('Kurzhanteln', 'Maschinen') werden zur Geräte-Anforderung aus ids (4.7).
+   Alles andere bleibt, wie es ist; Einträge ohne Objekt-Form bleiben stehen. */
+const cleanCustom = list => (Array.isArray(list) ? list.map(e =>
+  (e && typeof e === 'object' && Array.isArray(e.equipment) ? { ...e, equipment: migrateExerciseEquipment(e.equipment) } : e)) : []);
+
 /* Ältere Stände kennen den Schalter nicht: dann an, wie für neue */
 const cleanWakeLock = st => !(st && st.wakeLock === false);
 
@@ -128,11 +137,21 @@ export function normalize(s) {
     ...d,
     ...s,
     schema: SCHEMA,
-    profile: { ...d.profile, ...p, birthDate: cleanBirthDate(p.birthDate), limitations: { ...d.profile.limitations, ...(p.limitations || {}) } },
-    settings: { ...d.settings, ...(s.settings || {}), plates: plateSettings(s.settings && s.settings.plates), wakeLock: cleanWakeLock(s.settings) },
+    profile: {
+      ...d.profile, ...p, birthDate: cleanBirthDate(p.birthDate),
+      /* 4.7: die neun Kategorien bis 4.6 werden zu Geräte-ids; leer bleibt leer */
+      equipment: migrateProfileEquipment(p.equipment),
+      limitations: { ...d.profile.limitations, ...(p.limitations || {}) },
+    },
+    settings: {
+      ...d.settings, ...(s.settings || {}), plates: plateSettings(s.settings && s.settings.plates), wakeLock: cleanWakeLock(s.settings),
+      dumbbellInc: cleanDumbbellInc(s.settings && s.settings.dumbbellInc),
+      /* 4.7: Geräte aus den Kategorien bis 4.6 umgezogen, „Heute“ bittet einmal ums Prüfen (views/gear.js) */
+      ...(hasLegacyEquipment(p.equipment) ? { gearCheck: true } : {}),
+    },
     body: { ...d.body, ...(s.body || {}) },
     nutrition: { ...d.nutrition, ...(s.nutrition || {}) },
-    exercisesCustom: Array.isArray(s.exercisesCustom) ? s.exercisesCustom : [],
+    exercisesCustom: cleanCustom(s.exercisesCustom),
     activity: { ...d.activity, ...(s.activity || {}) },
     checkins: { ...(s.checkins || {}) },
     exerciseNotes: { ...(s.exerciseNotes || {}) },

@@ -3,6 +3,7 @@ import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { S, V, replaceState } from '../js/state.js';
 import { defaultState } from '../js/store/migrate.js';
+import { LEGACY_SPLIT } from '../js/plans.js';
 import { defaultShifts, TEMPLATE_28 } from '../js/domain/shifts.js';
 import { actions as typeActions } from '../js/views/shift-types.js';
 import { nextTwoWeeks } from '../js/views/shift-today.js';
@@ -16,8 +17,10 @@ globalThis.document = {
 /* Montag, 05.10.2026, 06:00 */
 mock.timers.enable({ apis: ['Date', 'setTimeout'], now: new Date('2026-10-05T06:00:00').getTime() });
 
+/* Fester Plan: der 3er-Split bis 4.6, damit die Wochen der Texte stabil bleiben */
 function fresh(edit) {
   const s = defaultState();
+  s.plans = [JSON.parse(JSON.stringify(LEGACY_SPLIT))];
   s.shifts = defaultShifts();
   edit(s);
   replaceState(s);

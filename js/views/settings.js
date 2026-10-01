@@ -10,7 +10,7 @@ import { exportData, exportCsv, importData, clearImages } from '../store/backup.
 import { release } from '../timer.js';
 import { toast } from '../ui/toast.js';
 import { confirmSheet } from '../ui/sheet.js';
-import { fEquipment } from './profile-fields.js';
+import { fEquipment, dumbbellSection } from './gear.js';
 import * as healthImport from './health-import.js';
 import * as backupReminder from './backup-reminder.js';
 import * as plateSettings from './plate-settings.js';
@@ -37,7 +37,7 @@ export const gearButton = () =>
 
 /* Zeile am Ende des Profils, damit die Einstellungen auch ohne das Zahnrad zu finden sind */
 export const settingsLink = () => `<section class="p-section">
-  <button class="set-link" data-act="setopen"><span><b>Einstellungen</b><small>Stangen und Scheiben, Geräte, Bildschirm im Training, Backup, Schichtplan, Apple Health, Was ist neu</small></span>${ICON.chevron}</button>
+  <button class="set-link" data-act="setopen"><span><b>Einstellungen</b><small>Geräte, Stangen und Scheiben, Bildschirm im Training, Backup, Schichtplan, Apple Health, Was ist neu</small></span>${ICON.chevron}</button>
 </section>`;
 
 /* ---------- Übersicht ---------- */
@@ -51,7 +51,7 @@ export function settingsRows(env = {}) {
   /* Erklärungen höchstens 30 Zeichen, damit sie auch bei 320 px Breite in eine Zeile passen */
   return [
     ['Training', [
-      { page: 'studio', title: 'Studio', hint: 'Stangen, Scheiben, Geräte' },
+      { page: 'studio', title: 'Studio', hint: 'Geräte, Kurzhanteln, Scheiben' },
       { page: 'training', title: 'Training', hint: wakeOn(S.settings) ? 'Bildschirm bleibt an' : 'Bildschirm geht wie sonst aus' },
     ]],
     ['Daten', [
@@ -165,8 +165,11 @@ const trainingPage = () => {
   </section>`;
 };
 
-const studioPage = () => `${plateSettings.plateSettingsSection()}
-  <section class="p-section"><h2>Geräte</h2>${fEquipment(S.profile)}</section>`;
+/* Studio (4.7): zuerst die Geräte (Schnellauswahl, Smart-Zirkel, Gruppen), dann Kurzhantel-Steigerung, Stangen und Scheiben */
+const studioPage = () => `<section class="p-section gear-sec"><h2>Geräte</h2>
+    <p class="muted" style="margin-bottom:12px">Danach richten sich Bibliothek, Übungsauswahl im Plan und Vorschläge.</p>${fEquipment(S.profile)}</section>
+  ${dumbbellSection()}
+  ${plateSettings.plateSettingsSection()}`;
 
 /* Unterseiten: Titel und Inhalt */
 export const PAGES = {

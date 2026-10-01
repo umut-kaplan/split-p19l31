@@ -1,6 +1,6 @@
 /* Trainingsvolumen pro Muskelgruppe und Woche (Montag bis Sonntag). Reine Funktionen.
    Ein Satz zählt für jeden primär beanspruchten Muskel voll, für mitbeanspruchte zur Hälfte. */
-import { SECONDARY_WEIGHT, WEEKLY_SET_TARGET } from './muscles.js';
+import { SECONDARY_WEIGHT, weeklyTarget } from './muscles.js';
 import { weekStart } from './streaks.js';
 import { workSets } from './settypes.js';
 
@@ -56,8 +56,11 @@ export function muscleWeeks(sessions, now, n, resolve) {
   return out;
 }
 
-/* Einordnung gegen den Zielbereich */
-export function volumeRating(v) {
-  const [lo, hi] = WEEKLY_SET_TARGET;
+/* Einordnung gegen den Zielbereich des Muskels (domain/muscles.js); ohne Muskel der Standardbereich */
+export function volumeRating(v, muscle = null) {
+  const t = weeklyTarget(muscle);
+  /* Nacken/Trapez und unterer Rücken: ohne Zielbereich, keine Ampel (domain/muscles.js) */
+  if (!t) return 'none';
+  const [lo, hi] = t;
   return v < lo ? 'low' : v > hi ? 'high' : 'ok';
 }

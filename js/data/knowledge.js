@@ -174,7 +174,7 @@ export const KNOWLEDGE = [
     id: 'saetze-pro-woche', group: 'training', evidence: 'belegt',
     title: 'Wie viele Sätze pro Woche?',
     teaser: 'Split zielt auf 10 bis 20 Sätze pro Muskel und Woche.',
-    text: 'Mehr Sätze pro Muskel und Woche bringen im Mittel mehr Wachstum, der Zugewinn wird aber kleiner, je mehr es schon sind. Split zielt auf 10 bis 20 Sätze pro Muskel, Übungen, die ihn nur mittrainieren, zählen halb. Um den Stand in anstrengenden Wochen zu halten, reichen in Studien schon deutlich weniger Sätze.',
+    text: 'Mehr Sätze pro Muskel und Woche bringen im Mittel mehr Wachstum, der Zugewinn wird aber kleiner, je mehr es schon sind. Split zielt auf 10 bis 20 Sätze pro Muskel, Übungen, die ihn nur mittrainieren, zählen halb. Kleine Muskelgruppen wie Waden und Bauch brauchen weniger, Split zielt dort auf 4 bis 10; Nacken und unterer Rücken arbeiten bei Grundübungen mit und haben kein eigenes Ziel. Um den Stand in anstrengenden Wochen zu halten, reichen in Studien schon deutlich weniger Sätze.',
     sources: [SRC.pelland, SRC.spiering],
   },
   {
