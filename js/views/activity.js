@@ -1,7 +1,7 @@
 /* Aktivität (Stufe 6): Schritte, Ruhepuls, Schlaf, Cardio, Kalorienverbrauch von Hand eintragen.
    Importierte Werte (source 'apple-health') stehen in denselben Listen und werden nie stillschweigend überschrieben. */
 import { S, V, save } from '../state.js';
-import { esc, fmt0, fmt1, toNum, ymd, dShort, dMid, uid } from '../util.js';
+import { esc, fmt0, fmt1, toNum, ymd, dShort, dMid, uid, plural } from '../util.js';
 import { render } from '../render.js';
 import { currentWeight } from '../domain/body.js';
 import { ACTIVITY, DEFAULT_ACTIVITY } from '../domain/energy.js';
@@ -21,7 +21,7 @@ const longDay = d => dMid(d + 'T12:00');
 const KINDS = {
   steps: {
     title: 'Schritte', field: 'steps', unit: 'Schritte', mode: 'numeric', ph: 'z. B. 8500',
-    min: 0, max: 100000, round: 0, show: v => fmt0(v), say: v => `${fmt0(v)} Schritte`,
+    min: 0, max: 100000, round: 0, show: v => fmt0(v), say: v => `${fmt0(v)} ${plural(fmt0(v), 'Schritt', 'Schritte')}`,
     hint: 'Pro Tag, zum Beispiel aus der Health-App. Heute zählt fürs Kalorienziel erst ab morgen, der Tag läuft noch.',
     error: 'Schritte als ganze Zahl eintragen, z. B. 8500',
   },
@@ -279,7 +279,7 @@ export const actions = {
   actcdel: el => {
     const c = A().cardio.find(x => x.id === el.dataset.id);
     if (!c) return;
-    confirmSheet('Cardio löschen?', `${(CARDIO[c.type] || CARDIO.other).label} vom ${day(c.date)} mit ${fmt0(c.minutes)} Minuten wird gelöscht.`, 'Löschen', () => {
+    confirmSheet('Cardio löschen?', `${(CARDIO[c.type] || CARDIO.other).label} vom ${day(c.date)} mit ${fmt0(c.minutes)} ${plural(fmt0(c.minutes), 'Minute', 'Minuten')} wird gelöscht.`, 'Löschen', () => {
       S.activity.cardio = S.activity.cardio.filter(x => x.id !== c.id);
       save(); closeSheet(); toast('Cardio gelöscht');
     });

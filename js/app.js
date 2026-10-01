@@ -21,6 +21,10 @@ import * as whatsnew from './views/whatsnew.js';
 import * as shifts from './views/shifts.js';
 import * as storage from './views/storage.js';
 import * as knowledge from './views/knowledge.js';
+import * as compare from './views/compare.js';
+import * as navigation from './views/navigation.js';
+import { startView } from './domain/session-flow.js';
+import { scrollToCurrent } from './views/workout-nav.js';
 
 const TABS = [
   ['today', 'Heute', ICON.today, today],
@@ -31,7 +35,7 @@ const TABS = [
 ];
 
 /* knowledge steht hier und nicht nur unter training, weil „Warum?“-Knöpfe auf jeder Seite die Karten öffnen */
-const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew, shifts, storage, knowledge];
+const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew, shifts, storage, knowledge, navigation];
 /* Ein Modul kann Untermodule in `export const modules = [...]` nennen. Deren actions und inputs zählen mit. */
 const flatten = list => list.flatMap(m => [m, ...flatten(m.modules || [])]);
 const all = [...new Set(flatten(modules))];
@@ -39,16 +43,8 @@ const ACT = Object.assign({}, ...all.map(m => m.actions || {}));
 const INPUT = Object.assign({}, ...all.map(m => m.inputs || {}));
 
 ACT.tab = el => {
-  V.tab = el.dataset.tab;
-  /* Ein Tipp auf die Navigation schließt Unterseiten wie „Erfolge“ oder den ganzen Wochenbericht */
-  V.motView = null;
-  V.repView = null;
-  V.cmpView = null;
-  V.shiftView = null;
-  V.setView = null;
-  if (el.dataset.sub && V.tab === 'training') V.trainSub = el.dataset.sub;
-  if (el.dataset.day && V.tab === 'training') V.planDay = el.dataset.day;
-  if (V.tab === 'today') V.roll = true;
+  /* Ein Tipp auf die Navigation führt immer zur Startseite des Bereichs und schließt alle Unterseiten (nav.js) */
+  navigation.goTab(el.dataset.tab, { sub: el.dataset.sub, day: el.dataset.day });
   render();
   window.scrollTo(0, 0);
 };
@@ -68,7 +64,15 @@ function vNav() {
 }
 
 const app = document.getElementById('app');
+/* Nach jedem Zeichnen bekommt jede neu geöffnete Unterseite einen Verlaufseintrag (views/navigation.js) */
 function render() {
+  const y = window.scrollY;
+  draw();
+  /* Fokus ins geöffnete Sheet, nach dem Schließen zurück auf den Auslöser (ui/sheet.js) */
+  sheet.syncFocus();
+  navigation.syncHistory(y);
+}
+function draw() {
   drawn = slot();
   if (V.recover) {
     app.innerHTML = `<main>${storage.recoverView()}</main>${sheet.vSheet('red')}`;
@@ -81,7 +85,8 @@ function render() {
   let view;
   if (V.summary) view = workout.vSummary();
   else if (V.shiftView) view = shifts.view();
-  else view = (TABS.find(t => t[0] === V.tab) || TABS[0])[3].view();
+  /* Vergleichen liegt über jedem Bereich, auch während eines Trainings; geöffnet aus Training, Erfolge und Wochenbericht */
+  else view = compare.subview() || (TABS.find(t => t[0] === V.tab) || TABS[0])[3].view();
   app.innerHTML = `<main>${storage.storageBanner()}${view}</main>${V.summary ? '' : timer.vTimer() + vNav()}${sheet.vSheet(tone())}`;
   timer.tick();
 }
@@ -150,8 +155,11 @@ setInterval(() => { if (document.visibilityState === 'visible') refreshIfStale(f
 /* ---------- Start ---------- */
 load();
 initImport();
+/* Läuft ein Training, öffnet die App nach einem Neustart direkt die Einheit bei der nächsten offenen Übung statt „Heute“ (4.6) */
+Object.assign(V, startView(S));
+navigation.startHistory();
 render();
-requestAnimationFrame(() => window.scrollTo(0, 0));
+requestAnimationFrame(() => (S.active && V.tab === 'training' ? scrollToCurrent() : window.scrollTo(0, 0)));
 whatsnew.showIfNew();
 if (S.active) timer.wake();
 requestPersist();

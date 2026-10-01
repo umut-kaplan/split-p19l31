@@ -132,6 +132,38 @@ test('Einschränkung: Übung gegen schonende Alternative tauschen', () => {
   assert.deepEqual(pendingSuggestions(S, NOW, 'training'), []);
 });
 
+test('Zwei belastende Varianten eines Eintrags: ein Vorschlag, der beide tauscht (#65)', () => {
+  const S = state();
+  S.exercisesCustom.push({ id: 'tst-press2', name: 'Testdrücken eng', custom: true, type: 'compound', unit: 'reps', muscles: { primary: ['chest'], secondary: [] }, equipment: [], stresses: ['Schulter'], alternatives: ['tst-machine'] });
+  S.plans[0].days.a.exercises[0].names = ['Testdrücken', 'Testdrücken eng'];
+  S.profile.limitations.tags = ['Schulter'];
+  const list = suggestions(S, NOW);
+  assert.equal(list.length, 1);
+  const l = list[0];
+  assert.equal(l.id, 'limit:p1|Testdrücken+Testdrücken eng:Schulter');
+  assert.equal(l.title, 'Testdrücken und Testdrücken eng tauschen?');
+  assert.match(l.reason, /Testdrücken und Testdrücken eng belasten deinen eingetragenen Bereich Schulter, Testmaschine trainiert/);
+  decide(S, l, 'accepted', NOW);
+  assert.deepEqual(S.plans[0].days.a.exercises[0].names, ['Testmaschine']);
+  assert.deepEqual(pendingSuggestions(S, NOW, 'training'), []);
+});
+
+test('Nach einem älteren Tausch bleibt die belastende Variante nicht stillschweigend stehen (#65)', () => {
+  const S = state();
+  S.exercisesCustom.push({ id: 'tst-press2', name: 'Testdrücken eng', custom: true, type: 'compound', unit: 'reps', muscles: { primary: ['chest'], secondary: [] }, equipment: [], stresses: ['Schulter'], alternatives: ['tst-machine'] });
+  /* So sah der Eintrag nach dem Tausch in 4.5 aus: die schonende Variante vorn, die belastende dahinter */
+  S.plans[0].days.a.exercises[0].names = ['Testmaschine', 'Testdrücken eng'];
+  S.profile.limitations.tags = ['Schulter'];
+  const list = suggestions(S, NOW);
+  assert.equal(list.length, 1);
+  const l = list[0];
+  assert.equal(l.title, 'Testdrücken eng streichen?');
+  assert.equal(l.acceptLabel, 'Testdrücken eng streichen');
+  assert.match(l.reason, /Testmaschine steht schon als Variante in dieser Übung und schont ihn\./);
+  decide(S, l, 'accepted', NOW);
+  assert.deepEqual(S.plans[0].days.a.exercises[0].names, ['Testmaschine']);
+});
+
 test('Keine Alternative ohne Belastung: kein Vorschlag', () => {
   const S = state();
   S.exercisesCustom[1].stresses = ['Schulter'];

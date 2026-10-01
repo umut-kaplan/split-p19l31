@@ -12,6 +12,7 @@ import { ICON } from '../ui/icons.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import { exImage } from './library.js';
+import { backLink } from '../ui/navlinks.js';
 import { groupsOf, swapKeepLinks, removeKeepLinks, tidyLinks, setLink } from '../domain/superset.js';
 
 const custom = () => S.exercisesCustom || [];
@@ -50,10 +51,10 @@ function ssLink(d, i) {
       aria-label="${esc(on ? `${pair} sind ein Supersatz. Tippen löst die Verbindung.` : `${pair} als Supersatz verbinden`)}">${on ? 'Supersatz' : 'Mit nächster Übung als Supersatz'}</button></li>`;
 }
 
+/* Reiter „Plan“: Plankopf, Tag-Reiter und der Editor des gewählten Tags */
 export function vPlan() {
   const plan = activePlan();
   const d = curDay();
-  const groups = groupsOf(d.exercises);
   const total = plan.order.reduce((n, id) => n + plan.days[id].exercises.length, 0);
   return `<div class="plan day-${d.color}">
     <section class="card plan-head">
@@ -73,14 +74,29 @@ export function vPlan() {
       <button class="plan-addday" data-act="planaddday" aria-label="Tag hinzufügen">
         ${plateSVG('steel', '', '', { ghost: true })}<span>Tag dazu</span></button>
     </div>
-    <div class="fields" style="margin-top:16px">
-      <label class="field">Name des Tages<input data-in="dayname" value="${esc(d.name)}" maxlength="20"></label>
-      <label class="field">Muskelgruppen<input data-in="daymuscles" value="${esc(d.muscles)}" maxlength="60"></label>
-      <div><p class="label">Farbe der Scheibe</p>
-        <div class="plan-colors" role="group" aria-label="Farbe">${PLAN_COLORS.map(c => `
-          <button class="plan-color ${d.color === c ? 'on' : ''}" aria-pressed="${d.color === c}" aria-label="${COLOR_NAMES[c]}" data-act="plancolor" data-v="${c}">
-            ${plateSVG(c, '', '', { small: true })}</button>`).join('')}</div></div>
-    </div>
+    ${dayEditor(plan, d)}
+    ${S.plans.length > 1 ? `<div class="stack"><button class="btn danger" data-act="plandelete">Plan „${esc(plan.name)}“ löschen</button></div>` : ''}
+  </div>`;
+}
+
+/* Unterseite „Tag bearbeiten“, geöffnet über den Stift an einer Tageskarte unter Training · Einheit.
+   Zuerst die Übungen, damit „Sätze ändern“ zwei Tipps entfernt ist: Stift am Tag, Stift an der Übung. */
+export function daySubview() {
+  if (!V.planEdit) return null;
+  const plan = activePlan();
+  const d = curDay();
+  return `<div class="plan plan-dayedit day-${d.color}">
+    ${backLink()}
+    <h1 class="page-title">${esc(d.name)}</h1>
+    <p class="page-sub">Tag im Plan „${esc(plan.name)}“. Änderungen gelten ab dem nächsten Training.</p>
+    ${dayEditor(plan, d)}
+  </div>`;
+}
+
+/* Ein Tag: „Übung hinzufügen“ über der Liste, darunter Name, Muskelgruppen, Farbe und Entfernen */
+function dayEditor(plan, d) {
+  const groups = groupsOf(d.exercises);
+  return `<div class="stack pe-add"><button class="btn primary" data-act="addex">Übung hinzufügen</button></div>
     ${d.exercises.length ? `<ul class="pe-list">
       ${d.exercises.map((e, i) => {
         const lim = limitInfo(e);
@@ -98,12 +114,16 @@ export function vPlan() {
         </div>
       </li>${i < d.exercises.length - 1 ? ssLink(d, i) : ''}`; }).join('')}
     </ul>` : '<p class="empty" style="margin-top:18px">Dieser Tag hat noch keine Übungen.</p>'}
-    <div class="stack">
-      <button class="btn primary" data-act="addex">Übung hinzufügen</button>
-      ${plan.order.length > 1 ? `<button class="btn ghost" data-act="planrmday">${esc(d.name)} entfernen</button>` : ''}
-      ${S.plans.length > 1 ? `<button class="btn danger" data-act="plandelete">Plan „${esc(plan.name)}“ löschen</button>` : ''}
+    <h2 class="pe-day-h">Tag</h2>
+    <div class="fields">
+      <label class="field">Name des Tages<input data-in="dayname" value="${esc(d.name)}" maxlength="20"></label>
+      <label class="field">Muskelgruppen<input data-in="daymuscles" value="${esc(d.muscles)}" maxlength="60"></label>
+      <div><p class="label">Farbe der Scheibe</p>
+        <div class="plan-colors" role="group" aria-label="Farbe">${PLAN_COLORS.map(c => `
+          <button class="plan-color ${d.color === c ? 'on' : ''}" aria-pressed="${d.color === c}" aria-label="${COLOR_NAMES[c]}" data-act="plancolor" data-v="${c}">
+            ${plateSVG(c, '', '', { small: true })}</button>`).join('')}</div></div>
     </div>
-  </div>`;
+    ${plan.order.length > 1 ? `<div class="stack"><button class="btn ghost" data-act="planrmday">${esc(d.name)} entfernen</button></div>` : ''}`;
 }
 
 /* ---------- Übung bearbeiten ---------- */
@@ -291,11 +311,13 @@ function removeDay() {
     plan.order = plan.order.filter(o => o !== d.id);
     delete plan.days[d.id];
     V.planDay = plan.order[0];
+    /* Die Unterseite des Tags gibt es dann nicht mehr */
+    V.planEdit = null;
     if (V.pick === d.id) V.pick = null;
     save();
   };
   confirmSheet(`${d.name} entfernen?`, d.exercises.length
-    ? `Der Tag mit ${d.exercises.length} Übungen verschwindet aus dem Plan. Dein Verlauf bleibt.`
+    ? `Der Tag mit ${d.exercises.length} ${d.exercises.length === 1 ? 'Übung' : 'Übungen'} verschwindet aus dem Plan. Dein Verlauf bleibt.`
     : 'Der leere Tag verschwindet aus dem Plan.', 'Tag entfernen', () => { go(); closeSheet(); toast('Tag entfernt'); });
 }
 
@@ -311,6 +333,14 @@ export function resetPlan() {
 
 export const actions = {
   planday: el => { V.planDay = el.dataset.day; render(); },
+  /* Stift an einer Tageskarte: genau diesen Tag als Unterseite öffnen */
+  planeditday: el => {
+    if (!activePlan().days[el.dataset.day]) return;
+    V.planDay = el.dataset.day;
+    V.planEdit = true;
+    render();
+    window.scrollTo(0, 0);
+  },
   /* Verschieben: Supersatz-Verbindungen bleiben an ihrem Platz, so lässt sich die Reihenfolge im Supersatz tauschen */
   mv: el => {
     const list = curDay().exercises, i = +el.dataset.i, j = i + +el.dataset.d;

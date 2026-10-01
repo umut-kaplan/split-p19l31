@@ -24,7 +24,7 @@ export function lastLog(sessions, exId, name, pick = workSets) {
    Gezählt werden normale Sätze und Sätze bis Versagen; Aufwärm- und Dropsätze nicht. */
 export function suggest(sessions, e, name) {
   const L = lastLog(sessions, e.id, name, topSets);
-  if (!L) return { kind: 'new', weight: null, text: 'Erstes Mal', sub: 'Wähle ein Gewicht, bei dem noch 1–2 Wiederholungen im Tank bleiben.' };
+  if (!L) return { kind: 'new', weight: null, text: 'Erstes Mal', sub: 'Wähle ein Gewicht, bei dem noch 1–2 Wiederholungen in Reserve bleiben.' };
   const sets = topSets(L.sets);
   const w = Math.max(...sets.map(s => s.w || 0));
   const allTop = sets.length >= e.sets

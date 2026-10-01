@@ -1,0 +1,126 @@
+/* Laufende Einheit (4.6): Übersicht und Fortschritt pro Übung, Aktionsleiste über der Navigation, eingeklappte Übungen,
+   Bestwert in der Karte und im Anleitungs-Sheet, Mini-Leiste auf allen anderen Seiten.
+   Farben und Bausteine aus tokens.css, base.css und components.css. */
+
+/* Höhen von Aktionsleiste, Pausentimer und Mini-Leiste; die Tab-Leiste (--tabs-h) steht in base.css.
+   Hinweise (base.css, .toast) stehen darüber. */
+:root { --dock-h: 73px; --timer-h: 92px; --live-h: 68px; }
+
+/* ---------- Kopfleiste ---------- */
+.wo-ov {
+  flex: none; display: flex; align-items: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--floor); color: var(--chalk);
+  font-weight: 750; font-size: 16px;
+}
+.wo-ov svg { width: 20px; height: 20px; color: var(--steel); }
+/* Sichtbar beschriftet: oben klein „Übersicht“, darunter erledigt/alle */
+.wo-ov-l { display: grid; line-height: 1.15; text-align: left; }
+.wo-ov-l span { color: var(--steel); font-size: 12px; font-weight: 650; }
+.wo-ov-l b { font-size: 16px; font-weight: 750; }
+.wo-ov:active { filter: brightness(1.15); }
+/* Ein Abschnitt pro Übung, gefüllt nach abgehakten Sätzen; die nächste offene Übung ist umrandet */
+.wo-prog { display: flex; gap: 3px; margin-top: 10px; }
+.wo-prog i { flex: 1; min-width: 0; height: 6px; border-radius: 3px; background: var(--deck2); overflow: hidden; }
+.wo-prog b { display: block; height: 100%; background: var(--c); transition: width .35s ease; }
+.wo-prog i.next { box-shadow: inset 0 0 0 1px var(--c); }
+
+/* Unten Platz für Aktionsleiste und, solange er steht, den Pausentimer: Das Ende der Seite bleibt über beiden zu sehen */
+.wo { padding-bottom: 40px; }
+body:has(#timer) .wo { padding-bottom: calc(40px + var(--timer-h)); }
+.wo-subs { margin-top: 14px; }
+/* Vergleichen oben in der Einheit: eine Zeile ohne Erklärung, damit der erste Satz nicht weit nach unten rutscht */
+.wo-cmp { margin-top: 10px; }
+.wo-cmp .cmp-go { min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
+.wo-help { margin-top: 4px; }
+
+/* ---------- Aktionsleiste über der Navigation ---------- */
+.wo-dock {
+  position: fixed; z-index: 16; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h));
+  display: flex; gap: 8px; padding: 8px max(12px, calc((100% - 536px) / 2));
+  background: rgba(30, 33, 36, .94); border-top: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+.wo-dock .btn { min-height: 56px; }
+.wo-next { flex: 1; min-width: 0; justify-content: space-between; gap: 10px; padding: 0 12px 0 16px; text-align: left; }
+.wo-next-t { display: grid; min-width: 0; line-height: 1.2; }
+.wo-next-t small { color: var(--steel); font-size: 12px; font-weight: 650; }
+.wo-next-t b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wo-next svg { flex: none; width: 22px; height: 22px; color: var(--steel); }
+.wo-finish { flex: none; width: auto; padding: 0 22px; }
+.wo-dock.all-done .wo-finish { flex: 1; }
+
+/* ---------- Erledigte Übung, eingeklappt ---------- */
+.ex.folded { padding: 0; }
+.ex-fold {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 9px 14px;
+  border: 0; border-radius: 20px; background: none; color: var(--chalk); text-align: left;
+}
+.ex-fold-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.ex-fold-t b { font-size: 17px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-fold-t span { color: var(--steel); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-fold-pr { font-style: normal; font-weight: 750; color: var(--yellow); }
+.ex-fold-c { flex: none; display: flex; align-items: center; gap: 4px; color: var(--c); font-size: 15px; font-weight: 750; }
+.ex-fold-c svg { width: 20px; height: 20px; }
+/* Aufgeklappt: der Zähler oben rechts klappt wieder zu */
+.ex-unfold {
+  display: flex; align-items: center; gap: 4px; min-width: 44px; min-height: 44px; margin: -12px -8px -12px 0; padding: 0 8px;
+  border: 0; border-radius: 12px; background: none;
+}
+.ex-unfold svg { width: 18px; height: 18px; }
+
+/* ---------- Bestwert ---------- */
+.best { margin-top: 6px; color: var(--steel); font-size: 14px; }
+.best-k { margin-right: 4px; color: var(--dim); font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.best b { color: var(--yellow); font-weight: 750; }
+.best small { color: var(--dim); font-size: 12px; white-space: nowrap; }
+.lib-best {
+  display: grid; gap: 2px; margin-bottom: 14px; padding: 10px 14px; border-radius: 14px;
+  background: rgba(242, 194, 48, .1); box-shadow: inset 3px 0 0 var(--yellow);
+}
+.lib-best p { color: var(--chalk); font-size: 17px; }
+.lib-best b { color: var(--yellow); font-weight: 800; }
+.lib-best small { color: var(--steel); font-size: 13px; }
+
+/* ---------- Übersicht (Sheet) ---------- */
+.wo-ov-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.wo-ov-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--floor); color: var(--chalk); text-align: left;
+}
+.wo-ov-item.next { border-color: var(--c); }
+.wo-ov-n {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--deck2); color: var(--steel); font-size: 15px; font-weight: 750;
+}
+.wo-ov-n svg { width: 18px; height: 18px; }
+.wo-ov-item.done .wo-ov-n { background: var(--c); color: var(--on-c); }
+.wo-ov-t { flex: 1; min-width: 0; display: grid; }
+.wo-ov-t b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wo-ov-t small { color: var(--steel); font-size: 13px; }
+.wo-ov-c { flex: none; color: var(--steel); font-weight: 700; }
+
+/* ---------- Mini-Leiste über der Navigation (alle Seiten außer der Einheit) ---------- */
+.live-bar {
+  position: fixed; z-index: 16; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h));
+  display: flex; justify-content: center; padding: 6px 8px; pointer-events: none;
+}
+.live-btn {
+  pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; max-width: 544px; min-height: 56px;
+  padding: 6px 12px 6px 8px; border: 1px solid var(--line); border-radius: 16px;
+  background: rgba(49, 54, 60, .96); color: var(--chalk); text-align: left;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
+}
+.live-btn > svg { flex: none; width: 40px; height: 40px; }
+.live-txt { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.live-txt b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-txt > span { color: var(--steel); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-go { flex: none; display: flex; align-items: center; gap: 2px; color: var(--chalk); font-size: 14px; font-weight: 700; }
+.live-go svg { width: 18px; height: 18px; }
+.live-bar.over .live-btn { background: var(--c); border-color: transparent; color: var(--on-c); }
+.live-bar.over .live-txt > span { color: inherit; opacity: .85; }
+
+@media (max-width: 360px) {
+  .wo-finish { padding: 0 16px; }
+  .wo-next { padding: 0 10px 0 12px; }
+  .live-go { font-size: 0; gap: 0; }
+}

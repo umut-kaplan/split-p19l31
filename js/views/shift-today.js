@@ -54,12 +54,6 @@ export function shiftHead(day) {
   return t.cat === 'off' ? `Heute ${t.name}` : t.name;
 }
 
-/* „Heute Frühschicht, 06–14 Uhr“, „Heute frei“ */
-export function shiftDayText(code, when = 'Heute', date = null) {
-  const t = shiftText(code, date);
-  return t ? `${when} ${t}` : `${when} ist keine Schicht eingetragen`;
-}
-
 /* „Push um 15:30, nach der Frühschicht“ */
 export const trainingLine = t => `${t.name} um ${t.time}, ${t.reason}`;
 
@@ -216,7 +210,7 @@ export function shiftTodayCard() {
   </section>`;
 }
 
-/* ---------- Training-Tab und Einstellungen ---------- */
+/* ---------- Training-Tab ---------- */
 export function shiftTrainLine() {
   if (!hasShiftPlan(S.shifts)) {
     return `<p class="plan-active sh-train-line">Arbeitest du in Schichten? <button class="link" data-act="shiftopen" data-sub="setup">Schichtplan einrichten</button></p>`;
@@ -224,18 +218,5 @@ export function shiftTrainLine() {
   const p = plannedToday();
   const t = p && (p.done ? p.next : p.planned || p.next);
   return `<p class="plan-active sh-train-line">Schichtplan: ${t ? `nächstes Training <b>${esc(t.name)}</b> ${t.date === p.today ? 'heute' : esc(dayShort(t.date))} um ${esc(t.time)}` : 'kein Training geplant'}
-    <button class="link" data-act="shiftopen" data-sub="plan">Nächste 2 Wochen</button></p>`;
-}
-
-export function shiftProfileSection() {
-  const on = hasShiftPlan(S.shifts);
-  const p = on ? plannedToday() : null;
-  return `<section class="p-section card"><h2>Schichtplan</h2>
-    <p class="muted" style="margin:6px 0 14px">${on
-      ? `${esc(shiftDayText(p.shift.code, 'Heute', p.today))}. Die App plant ${S.profile.daysPerWeek}-mal pro Woche ein Training um deine Schichten.`
-      : 'Arbeitest du in Wechselschicht? Trag deinen Schichtplan ein oder importiere ihn aus deinem Kalender. Die App plant dann, an welchen Tagen und zu welcher Uhrzeit du trainierst.'}</p>
-    <div class="stack" style="margin-top:0">
-      <button class="btn ${on ? '' : 'primary'}" data-act="shiftopen" data-sub="${on ? 'calendar' : 'setup'}">${on ? 'Schichtkalender öffnen' : 'Schichtplan einrichten'}</button>
-    </div>
-  </section>`;
+    <button class="link" data-act="shiftopen" data-sub="calendar">Kalender</button></p>`;
 }

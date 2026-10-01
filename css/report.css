@@ -44,11 +44,18 @@
 .rec-muscles li.tired span:last-child { color: var(--yellow); }
 
 /* ---------- Check-in ---------- */
-.rec-ci .muted { margin: 4px 0 14px; font-size: 14px; }
-.rec-ci-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+/* Kompakt, weil die Karte auf „Heute“ eine der zwei Hinweis-Karten ist: „Heute nicht“ oben rechts, „Speichern“ hinter den Gefühlen */
+.rec-ci { padding-top: 8px; padding-bottom: 14px; }
+.today-hints > .rec-ci { padding-top: 8px; }
+.rec-ci-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.rec-ci-head h2 { font-size: 19px; }
+.rec-ci-head .small-print { margin-top: 2px; }
+.rec-ci-head .link { flex: none; }
+.rec-ci-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
 .rec-ci .stepper b { font-size: 22px; min-width: 4.2ch; }
-.rec-feel .chip { padding: 0 14px; }
-.rec-ci .sug-btns { margin-top: 16px; }
+.rec-feel { gap: 6px; margin-top: 10px; }
+.rec-feel .chip { padding: 0 13px; font-size: 14.5px; }
+.rec-feel .btn { margin-left: auto; padding: 0 16px; }
 .rec-ci-done { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding: 4px 4px 0; }
 .rec-ci-done p { font-size: 15px; }
 
@@ -62,7 +69,6 @@
 .rep-card-line { margin-top: 12px; }
 
 /* ---------- Ganzer Bericht ---------- */
-.rep-top { min-height: 44px; display: flex; align-items: center; }
 .rep-week {
   display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 10px;
   margin-top: 14px; padding: 8px; border-radius: 16px; background: var(--deck); border: 1px solid var(--line);

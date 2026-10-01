@@ -1,6 +1,6 @@
 /* Wochenbericht (Stufe 5): jeden Montag auf der Startseite, als Bild teilbar. */
 import { S, V, save } from '../state.js';
-import { esc, fmt0, fmt1, ymd, dMid } from '../util.js';
+import { esc, fmt0, fmt1, ymd, dMid, plural } from '../util.js';
 import { render } from '../render.js';
 import { weeklyReport, reportWeekStart, reportKey, reportHeadline, nextWeekStart } from '../domain/report.js';
 import { prevWeekStart } from '../domain/volume.js';
@@ -14,6 +14,7 @@ import { suggestionCards } from '../ui/suggestion.js';
 import { reportImageFile } from '../ui/report-image.js';
 import { toast } from '../ui/toast.js';
 import { shareFile, SHARE_FAILED } from '../ui/share-file.js';
+import { backLink, compareRow } from '../ui/navlinks.js';
 
 const resolve = n => findExercise(n, S.exercisesCustom);
 const mot = () => {
@@ -79,9 +80,9 @@ function trainingSection(r) {
   return `<section class="block card">
     <h2>Training</h2>
     <div class="stats rep-stats">
-      <div><b class="num">${t.count}/${t.target}</b><span>Einheiten</span></div>
-      <div><b class="num">${fmt0(t.sets)}</b><span>harte Sätze</span></div>
-      <div><b class="num">${fmt0(t.minutes)}</b><span>Minuten</span></div>
+      <div><b class="num">${t.count}/${t.target}</b><span>${plural(t.target, 'Einheit', 'Einheiten')}</span></div>
+      <div><b class="num">${fmt0(t.sets)}</b><span>${plural(fmt0(t.sets), 'harter Satz', 'harte Sätze')}</span></div>
+      <div><b class="num">${fmt0(t.minutes)}</b><span>${plural(fmt0(t.minutes), 'Minute', 'Minuten')}</span></div>
     </div>
     <p class="${t.met ? 'rep-good' : 'muted'}">${t.met ? 'Wochenziel geschafft.' : `Zum Wochenziel ${miss === 1 ? 'fehlte eine Einheit' : `fehlten ${miss} Einheiten`}.`}${t.tonnage > 0 ? ` Bewegt: ${t.tonnage >= 1000 ? `${fmt1(t.tonnage / 1000)} t` : `${fmt0(t.tonnage)} kg`}.` : ''}</p>
     ${t.sessions.length ? `<ul class="rep-sessions">${t.sessions.map(s => `
@@ -97,7 +98,7 @@ function muscleSection(r) {
     <h2>Sätze pro Muskelgruppe</h2>
     <p class="small-print">Zielbereich ${lo} bis ${hi} Sätze pro Woche, mitbeanspruchte Muskeln zählen halb. ${r.musclesOk} von ${r.muscles.length} im Ziel.</p>
     <ul class="vol-list">${r.muscles.map(m => `
-      <li class="vol-row ${m.rating}" aria-label="${esc(m.label)}: ${esc(fmt1(m.sets))} Sätze, ${rate[m.rating]}">
+      <li class="vol-row ${m.rating}" aria-label="${esc(m.label)}: ${esc(fmt1(m.sets))} ${m.sets === 1 ? 'Satz' : 'Sätze'}, ${rate[m.rating]}">
         <div class="vol-top"><span>${esc(m.label)}</span><span><b class="num">${esc(fmt1(m.sets))}</b> ${m.sets === 1 ? 'Satz' : 'Sätze'}</span></div>
         <div class="vol-bar" aria-hidden="true"><span class="vol-zone" style="left:${lo / SCALE * 100}%;width:${(hi - lo) / SCALE * 100}%"></span><i style="width:${Math.min(100, m.sets / SCALE * 100).toFixed(0)}%"></i></div>
       </li>`).join('')}</ul>
@@ -165,7 +166,7 @@ export function subview() {
   const r = build(start);
   const sug = isLatest(start) ? suggestionCards(null, 5) : '';
   return `<div class="day-yellow rep">
-    <div class="rep-top"><button class="link" data-act="repclose">Zurück zu Heute</button></div>
+    ${backLink()}
     <h1 class="page-title">Wochenbericht</h1>
     <div class="rep-week">
       <button class="icon" data-act="repweek" data-d="-1" aria-label="Woche davor">${ARROW('M15 6l-6 6 6 6')}</button>
@@ -187,6 +188,7 @@ export function subview() {
         <button class="btn primary" data-act="repshare">Als Bild teilen</button>
       </section>`
     : '<p class="empty rep-lead">In dieser Woche gibt es keine Einträge.</p>'}
+    <section class="block rep-cmp">${compareRow()}</section>
   </div>`;
 }
 
@@ -212,7 +214,6 @@ export const actions = {
     markSeen(start);
     render(); window.scrollTo(0, 0);
   },
-  repclose: () => { V.repView = null; render(); window.scrollTo(0, 0); },
   repweek: el => {
     const latest = reportWeekStart(Date.now());
     const cur = V.repView == null ? latest : V.repView;

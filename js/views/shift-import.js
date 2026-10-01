@@ -79,7 +79,7 @@ function vTitles(im) {
         <option value="">nicht zählen</option>${types.map(x => `<option value="${esc(x.id)}" ${cur === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}
       </select></li>`;
   }).join('')}</ul>
-    ${rest ? `<button class="link sh-more" data-act="shiftmapmore">${rest} weitere Titel zeigen</button>` : ''}`;
+    ${rest ? `<button class="link sh-more" data-act="shiftmapmore">${rest === 1 ? 'Einen weiteren Titel' : `${rest} weitere Titel`} zeigen</button>` : ''}`;
 }
 
 function vImport(im) {
@@ -91,7 +91,7 @@ function vImport(im) {
   const parts = typesOf(S.shifts).filter(t => t.id !== '-' && r.byCode[t.id])
     .map(t => `<li>${shiftBadge(t.id)}<span>${esc(t.name)}</span><span class="num">${r.byCode[t.id]} ${r.byCode[t.id] === 1 ? 'Tag' : 'Tage'}</span></li>`).join('');
   const notes = [
-    r.cancelled ? `${r.cancelled} abgesagte ${r.cancelled === 1 ? 'Termin' : 'Termine'} ausgelassen.` : '',
+    r.cancelled ? `${r.cancelled} ${r.cancelled === 1 ? 'abgesagter Termin' : 'abgesagte Termine'} ausgelassen.` : '',
     r.unsupported ? `${r.unsupported === 1 ? 'Eine Serie wiederholt' : `${r.unsupported} Serien wiederholen`} sich monatlich oder jährlich; davon zählt nur der erste Termin.` : '',
     r.conflicts ? `An ${r.conflicts === 1 ? 'einem Tag' : `${r.conflicts} Tagen`} standen mehrere Termine; es zählt Urlaub oder Krank (ganztägig oder ab 4 Stunden), sonst die frühere Schicht.` : '',
   ].filter(Boolean);

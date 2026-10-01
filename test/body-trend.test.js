@@ -60,6 +60,10 @@ test('Trend braucht genug Daten', () => {
   const r = weightTrend(series('2026-09-20', 5, () => 80), '2026-09-24');
   assert.equal(r.ok, false);
   assert.match(r.reason, /mindestens 5 Einträge über 2 Wochen/);
+  assert.match(r.reason, /Bisher: 5 Einträge über 4 Tage\./);
+  /* Einzahl (#64) */
+  assert.match(weightTrend(series('2026-09-24', 1, () => 80), '2026-09-24').reason, /Bisher: 1 Eintrag über 0 Tage\./);
+  assert.match(weightTrend(series('2026-09-23', 2, () => 80), '2026-09-24').reason, /Bisher: 2 Einträge über 1 Tag\./);
 });
 
 test('Trend und Prognose zum Zielgewicht', () => {

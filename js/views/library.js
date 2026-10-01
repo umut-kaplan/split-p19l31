@@ -1,6 +1,6 @@
 /* Übungsbibliothek (Stufe 2): Liste, Suche, Details, eigene Übungen mit Foto. */
 import { S, V, save } from '../state.js';
-import { esc, uid } from '../util.js';
+import { esc, uid, dShort } from '../util.js';
 import { render } from '../render.js';
 import { MUSCLES } from '../domain/muscles.js';
 import { EQUIPMENT } from '../domain/profile-options.js';
@@ -13,6 +13,7 @@ import { toast } from '../ui/toast.js';
 import { resizeImage } from '../ui/image.js';
 import { dbGet, dbPut, dbDel } from '../store/db.js';
 import { libNoteBlock } from './exercise-notes.js';
+import { personalRecords, mergeRecords, bestSummary } from '../domain/prs.js';
 
 const custom = () => S.exercisesCustom || (S.exercisesCustom = []);
 const tags = () => (S.profile.limitations && S.profile.limitations.tags) || [];
@@ -111,6 +112,22 @@ function libItem(e, t, q) {
 }
 
 /* ---------- Details ---------- */
+/* Bestwert aus dem Verlauf (4.6): alle Einträge, deren Name zu dieser Übung gehört, auch aus anderen Plänen */
+function bestBlock(e) {
+  const recs = [...personalRecords(S.sessions).values()].filter(r => {
+    const hit = findExercise(r.name, custom());
+    return hit && hit.id === e.id;
+  });
+  const m = mergeRecords(recs);
+  const b = bestSummary(m);
+  if (!b) return '';
+  return `<div class="lib-best">
+    <span class="best-k">Dein Bestwert</span>
+    <p>${b.items.map(it => `${it.label ? esc(it.label) + ' ' : ''}<b class="num">${esc(it.text)}</b>`).join(' · ')}</p>
+    <small>am ${esc(dShort(b.date))}, ${m.count} ${m.count === 1 ? 'Training' : 'Trainings'}${b.items.some(it => it.kind === 'e1rm') ? ', 1RM geschätzt nach Epley' : ''}</small>
+  </div>`;
+}
+
 export function showExercise(id) {
   const e = findExercise(id, custom());
   if (!e) return;
@@ -124,6 +141,7 @@ export function showExercise(id) {
   const c = e.credit;
   const body = `<div class="lib-detail">
     ${exImage(e, 'lib-hero')}
+    ${bestBlock(e)}
     ${hits.length ? `<div class="lib-limit">
       <b>Belastet ${esc(hits.join(' und '))}</b>
       <span>${hits.length === 1 ? 'Diese Einschränkung steht' : 'Diese Einschränkungen stehen'} in deinem Profil. ${safe.length

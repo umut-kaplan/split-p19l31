@@ -5,33 +5,48 @@ import { nextDay } from '../domain/progression.js';
 import { plateSVG } from '../ui/plate.js';
 import { vWorkout } from './workout.js';
 import { vHistory } from './history.js';
-import { vPlan } from './planedit.js';
+import { vPlan, daySubview } from './planedit.js';
 import * as library from './library.js';
 import * as compare from './compare.js';
 import * as knowledge from './knowledge.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { pendingSuggestions } from '../coach/index.js';
 import { shiftTrainLine } from './shift-today.js';
+import { ICON } from '../ui/icons.js';
 
-const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen'], ['knowledge', 'Wissen']];
+/* Vier Reiter; „Wissen“ steht als Umschalter oben im Reiter „Übungen“ */
+const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen']];
+const LIB_MODES = [['list', 'Übungen'], ['knowledge', 'Wissen']];
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
 export const modules = [library, compare, knowledge];
 
+/* Reiterleiste; im laufenden Training steht sie unter der Kopfleiste der Einheit */
+const subTabs = sub => `<div class="seg wide" role="tablist">${SUBS.map(([k, l]) =>
+  `<button role="tab" aria-selected="${sub === k}" class="${sub === k ? 'on' : ''}" data-act="trainsub" data-sub="${k}">${l}</button>`).join('')}</div>`;
+
 export function view() {
-  if (S.active) return vWorkout();
-  /* Unterseite „Vergleichen“ ersetzt die Trainingsseite, bis sie geschlossen oder über die Navigation verlassen wird */
-  const cmp = compare.subview();
-  if (cmp) return cmp;
-  const sub = V.trainSub;
-  const body = sub === 'history' ? vHistory() : sub === 'plan' ? vPlan() : sub === 'library' ? library.vLibrary()
-    : sub === 'knowledge' ? knowledge.vKnowledge() : vStart();
+  /* „Vergleichen“ zeigt app.js über jedem Bereich, auch während eines Trainings */
+  const sub = SUBS.some(([k]) => k === V.trainSub) ? V.trainSub : 'start';
+  /* Laufendes Training: „Einheit“ ist die Einheit; Verlauf, Plan und Übungen samt Wissen bleiben erreichbar (4.6) */
+  if (S.active && sub === 'start') return vWorkout(subTabs('start'));
+  /* Unterseite „Tag bearbeiten“ (Stift an einer Tageskarte unter „Einheit“); im Training gibt es sie nicht (nav.js, Ebene planday) */
+  const day = S.active ? null : daySubview();
+  if (day) return day;
+  const body = sub === 'history' ? vHistory() : sub === 'plan' ? vPlan() : sub === 'library' ? vExercises() : vStart();
   return `<div class="train-head">
       <h1 class="page-title">Training</h1>
-      <div class="seg wide" role="tablist">${SUBS.map(([k, l]) =>
-        `<button role="tab" aria-selected="${sub === k}" class="${sub === k ? 'on' : ''}" data-act="trainsub" data-sub="${k}">${l}</button>`).join('')}</div>
+      ${subTabs(sub)}
     </div>
     ${body}`;
+}
+
+/* Reiter „Übungen“: oben der Umschalter zwischen Übungsliste und Wissen-Karten */
+function vExercises() {
+  const mode = V.libMode === 'knowledge' ? 'knowledge' : 'list';
+  return `<div class="seg wide lib-mode" role="tablist" aria-label="Übungen oder Wissen">${LIB_MODES.map(([k, l]) =>
+    `<button role="tab" aria-selected="${mode === k}" class="${mode === k ? 'on' : ''}" data-act="libmode" data-v="${k}">${l}</button>`).join('')}</div>
+    ${mode === 'knowledge' ? knowledge.vKnowledge() : library.vLibrary()}`;
 }
 
 export function dayFacts(d) {
@@ -52,6 +67,7 @@ function vStart() {
     <p class="plan-active">Plan: <b>${esc(plan.name)}</b>
       <button class="link" data-act="trainsub" data-sub="plan">${S.plans.length > 1 ? 'Wechseln oder bearbeiten' : 'Bearbeiten'}</button></p>
     ${shiftTrainLine()}
+    ${compare.entryRow()}
     <div class="day-list">${plan.order.map(id => {
     const d = plan.days[id];
     const { sets, min } = dayFacts(d);
@@ -61,15 +77,16 @@ function vStart() {
       ${plateSVG(d.color, '', '', { small: true })}
       <div><h2>${esc(d.name)}${id === next ? '<span class="tag">Als Nächstes</span>' : ''}</h2>
         ${d.muscles ? `<p>${esc(d.muscles)}</p>` : ''}
-        <p>${empty ? 'Noch keine Übungen.' : `${d.exercises.length} Übungen, ${sets} Sätze, etwa ${min} Min.${last ? ` Zuletzt am ${esc(dShort(last.startedAt))}` : ''}`}</p></div>
+        <p>${empty ? 'Noch keine Übungen.' : `${d.exercises.length} ${d.exercises.length === 1 ? 'Übung' : 'Übungen'}, ${sets} ${sets === 1 ? 'Satz' : 'Sätze'}, etwa ${min} Min.${last ? ` Zuletzt am ${esc(dShort(last.startedAt))}` : ''}`}</p></div>
+      <button class="icon day-edit" data-act="planeditday" data-day="${id}" aria-label="${esc(d.name)} bearbeiten">${ICON.edit}</button>
       ${empty
-        ? `<button class="btn" data-act="trainsub" data-sub="plan">Übungen eintragen</button>`
+        ? `<button class="btn" data-act="planeditday" data-day="${id}">Übungen eintragen</button>`
         : `<button class="btn ${id === next ? 'primary' : ''}" data-act="start" data-day="${id}">${esc(d.name)} starten</button>`}
     </section>`;
-  }).join('')}</div>
-    ${compare.entryCard()}`;
+  }).join('')}</div>`;
 }
 
 export const actions = {
   trainsub: el => { V.trainSub = el.dataset.sub; render(); },
+  libmode: el => { V.libMode = el.dataset.v === 'knowledge' ? 'knowledge' : 'list'; render(); },
 };

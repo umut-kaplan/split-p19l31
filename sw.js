@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v4.5';
+const CACHE = 'split-v4.6';
 
 const CORE = [
   './',
@@ -40,6 +40,8 @@ const CORE = [
   'js/ui/image.js',
   'js/ui/suggestion.js',
   'js/views/today.js',
+  'js/views/today-quick.js',
+  'js/views/today-overview.js',
   'js/views/training.js',
   'js/views/workout.js',
   'js/views/history.js',
@@ -132,6 +134,7 @@ const NUTRITION_LOG = [
   'js/views/food-search.js',
   'js/views/food-scan.js',
   'js/views/food-forms.js',
+  'js/domain/food-quick.js',
   'js/vendor/zxing.min.js',
   'js/vendor/zxing.LICENSE.txt',
 ];
@@ -158,6 +161,7 @@ const REPORT = [
   'js/domain/recovery.js',
   'js/domain/report.js',
   'js/domain/today-plan.js',
+  'js/domain/today-hints.js',
   'js/ui/report-image.js',
 ];
 
@@ -275,7 +279,26 @@ const KNOWLEDGE = [
   'js/views/knowledge.js',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...SHIFTMODELS, ...PLATES2, ...BIRTH, ...KNOWLEDGE];
+/* Aufbau und Wege: Zurück per Verlauf, Einstellungen als Übersicht */
+const NAVIGATION = [
+  'css/navigation.css',
+  'js/nav.js',
+  'js/ui/navlinks.js',
+  'js/ui/edge-swipe.js',
+  'js/views/navigation.js',
+];
+
+/* Ablauf im Training: Übersicht, Aktionsleiste, Mini-Leiste, Bestwert, Tippfehler-Rückfrage, Bildschirm wach halten */
+const WORKOUT = [
+  'css/workout.css',
+  'js/wake-lock.js',
+  'js/domain/session-flow.js',
+  'js/domain/weight-check.js',
+  'js/views/workout-nav.js',
+  'js/views/live-bar.js',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...SHIFTMODELS, ...PLATES2, ...BIRTH, ...KNOWLEDGE, ...NAVIGATION, ...WORKOUT];
 
 self.addEventListener('install', ev => {
   /* Am Browser-Cache vorbei laden, sonst landen kurz vor einem Update geladene alte Dateien im neuen Cache */

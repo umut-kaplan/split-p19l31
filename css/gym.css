@@ -61,16 +61,23 @@
 .pl-sw.on { border-color: var(--c); background: var(--c-soft); color: var(--chalk); }
 
 /* ---------- Aufwärmen ---------- */
+/* Platzhalter, den workout.js nach einer Gewichtseingabe neu füllt (#66); ohne eigene Box */
+.wu-slot { display: contents; }
 .wu { margin-top: 10px; border-radius: 12px; background: var(--floor); }
-.wu > summary {
-  list-style: none; cursor: pointer; min-height: 44px; padding: 10px 12px;
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; color: var(--chalk);
+/* Kopf in zwei Zeilen, oben klein „Aufwärmen“, darunter die Stufen. Der Platzhalter vor der ersten Gewichtseingabe
+   (.wu-wait) ist genauso aufgebaut und genauso hoch, damit die Sätze nicht verrutschen, wenn die Rampe erscheint. */
+.wu > summary, .wu-sum {
+  list-style: none; min-height: 44px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--chalk);
 }
+.wu > summary { cursor: pointer; }
 .wu > summary::-webkit-details-marker { display: none; }
-.wu > summary::after { content: ''; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--steel); border-bottom: 2px solid var(--steel); transform: rotate(45deg); transition: transform .15s ease; }
+.wu > summary::after { content: ''; flex: none; margin: 0 2px 0 auto; width: 8px; height: 8px; border-right: 2px solid var(--steel); border-bottom: 2px solid var(--steel); transform: rotate(45deg); transition: transform .15s ease; }
 .wu[open] > summary::after { transform: rotate(-135deg); }
-.wu-k { color: var(--steel); font-weight: 650; }
-.wu > summary .num { font-weight: 700; }
+.wu-t { flex: 1; min-width: 0; display: grid; gap: 1px; line-height: 1.25; }
+.wu-k { color: var(--dim); font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.wu-v { font-weight: 700; }
+.wu-wait .wu-v { color: var(--steel); font-weight: 600; }
 .wu-list { list-style: none; margin: 0; padding: 0 12px; display: grid; gap: 6px; }
 .wu-list li { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
 .wu-list li span { color: var(--steel); font-size: 14px; text-align: right; }

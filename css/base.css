@@ -122,7 +122,8 @@ details.more > summary::-webkit-details-marker { display: none; }
 .choice.on { border-color: var(--c); background: linear-gradient(var(--c-soft), var(--c-soft)), var(--deck); }
 .choices { display: grid; gap: 8px; }
 .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--floor); border-radius: 12px; }
-.seg button { border: 0; background: none; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--steel); font-weight: 650; font-size: 15px; }
+/* 44 px hoch wie jede Tippfläche (Apple: 44 × 44 pt) */
+.seg button { border: 0; background: none; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 9px; color: var(--steel); font-weight: 650; font-size: 15px; }
 .seg button.on { background: var(--deck2); color: var(--chalk); box-shadow: inset 0 -2px 0 var(--c); }
 .seg.wide { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; width: 100%; }
 .stepper { display: flex; align-items: center; gap: 12px; }
@@ -134,6 +135,9 @@ details.more > summary::-webkit-details-marker { display: none; }
 .bar.water i { background: var(--blue); }
 
 /* ---------- Navigation ---------- */
+/* Höhe der Tab-Leiste ohne Home-Indikator: Rand 1 + 4 + Knopf 56 + 4 px. Aktionsleiste, Pausentimer, Mini-Leiste
+   (workout.css) und Hinweise stehen darüber. */
+:root { --tabs-h: 65px; }
 nav.tabs {
   position: fixed; z-index: 15; left: 0; right: 0; bottom: 0;
   display: flex; justify-content: center;
@@ -144,7 +148,7 @@ nav.tabs {
 }
 nav.tabs .in { display: grid; grid-template-columns: repeat(5, 1fr); width: 100%; max-width: 560px; }
 nav.tabs button {
-  position: relative; display: grid; justify-items: center; gap: 2px; min-height: 52px;
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; height: 56px;
   padding: 6px 0; border: 0; background: none; color: var(--dim); font-size: 11.5px; font-weight: 600;
 }
 nav.tabs svg { width: 25px; height: 25px; }
@@ -162,17 +166,28 @@ nav.tabs .live { position: absolute; top: 5px; left: calc(50% + 9px); width: 9px
   animation: rise .25s ease both;
 }
 .sheet h2 { font-size: 22px; margin-bottom: 8px; }
+/* Überschrift bekommt beim Öffnen den Fokus (sheet.js), für Vorlesen und Tastatur; ohne Rahmen */
+.sheet h2:focus { outline: none; }
 .sheet > p { color: var(--steel); margin-bottom: 8px; }
 .sheet-actions { display: grid; gap: 10px; margin-top: 18px; }
 .form { display: grid; gap: 12px; margin-top: 8px; }
 .form .help { color: var(--dim); font-size: 13px; margin-top: -6px; }
 @keyframes rise { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Hinweis unten über der Tab-Leiste, im Training über Aktionsleiste und Pausentimer, sonst über der Mini-Leiste
+   (workout.css). Er fängt keine Tipps ab: Reiter, Zurück und Knöpfe darunter bleiben bedienbar; nur Knöpfe im Hinweis
+   selbst sind antippbar. Über einem Sheet steht er oben, damit er dessen Knöpfe nicht verdeckt. */
 .toast {
-  position: fixed; z-index: 60; left: 50%; top: calc(env(safe-area-inset-top) + 14px);
-  transform: translateX(-50%); max-width: 90vw;
+  position: fixed; z-index: 60; left: 50%; bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h) + 12px);
+  transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px);
   padding: 12px 18px; border-radius: 14px; background: var(--chalk); color: var(--floor);
   font-weight: 700; font-size: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+  pointer-events: none;
 }
+.toast button, .toast a { pointer-events: auto; }
+body:has(.live-bar) .toast { bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h) + var(--live-h) + 8px); }
+body:has(.wo-dock) .toast { bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h) + var(--dock-h) + 12px); }
+body:has(.timer) .toast { bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h) + var(--dock-h) + var(--timer-h) + 16px); }
+body:has(.sheet) .toast, body:has(.ob-main) .toast { top: calc(env(safe-area-inset-top) + 14px); bottom: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

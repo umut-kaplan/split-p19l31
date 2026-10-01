@@ -1,6 +1,6 @@
 /* Wochenbericht als Bild (1080 × 1350) im Stil der App: Gummiboden, Hantelscheibe, große Zahlen.
    Alles läuft synchron, damit Safari das Teilen-Menü direkt aus dem Tipp heraus öffnet. */
-import { fmt0, fmt1 } from '../util.js';
+import { fmt0, fmt1, plural } from '../util.js';
 import { PAL } from './plate.js';
 import { formatRecord, RECORD_LABEL } from '../domain/prs.js';
 
@@ -127,8 +127,8 @@ export function drawReport(g, report, recovery, range) {
     ['Harte Sätze', fmt0(t.sets), `${report.musclesOk} ${report.musclesOk === 1 ? 'Muskelgruppe' : 'Muskelgruppen'} im Ziel`, null],
     ['Neue Rekorde', fmt0(report.recordGroups.length), report.recordGroups.length ? report.recordGroups.slice(0, 2).map(r => r.name).join(', ') + (report.recordGroups.length > 2 ? ` +${report.recordGroups.length - 2}` : '') : 'Nächste Woche vielleicht', report.recordGroups.length ? C.yellow : null],
     ['Gewicht', w.ok ? signed(w.delta, 'kg') : 'offen', w.ok ? `Schnitt jetzt ${fmt1(w.end)} kg` : 'Zu wenige Einträge', null],
-    ['Ø Kalorien', n.days ? fmt0(n.avgKcal) : 'offen', n.days ? (report.targets && report.targets.kcal ? `Ziel ${fmt0(report.targets.kcal)} kcal` : `an ${n.days} Tagen erfasst`) : 'Nichts eingetragen', null],
-    ['Ø Protein', n.days ? `${fmt0(n.avgProtein)} g` : 'offen', n.days ? (report.targets && report.targets.protein ? `Ziel ${fmt0(report.targets.protein)} g` : `an ${n.days} Tagen erfasst`) : 'Nichts eingetragen', null],
+    ['Ø Kalorien', n.days ? fmt0(n.avgKcal) : 'offen', n.days ? (report.targets && report.targets.kcal ? `Ziel ${fmt0(report.targets.kcal)} kcal` : `an ${n.days} ${plural(n.days, 'Tag', 'Tagen')} erfasst`) : 'Nichts eingetragen', null],
+    ['Ø Protein', n.days ? `${fmt0(n.avgProtein)} g` : 'offen', n.days ? (report.targets && report.targets.protein ? `Ziel ${fmt0(report.targets.protein)} g` : `an ${n.days} ${plural(n.days, 'Tag', 'Tagen')} erfasst`) : 'Nichts eingetragen', null],
   ];
   cells.forEach((c, i) => {
     const x = pad + (i % 2) * (cw + gap);

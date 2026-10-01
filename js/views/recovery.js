@@ -9,6 +9,7 @@ import { recoveryFromState, LEVEL_LABEL, FEELING_LABEL } from '../domain/recover
 import { suggestToday, restText } from '../domain/today-plan.js';
 import { plateSVG } from '../ui/plate.js';
 import { toast } from '../ui/toast.js';
+import { ampelIsHint } from '../domain/today-hints.js';
 import { plannedNextId, withShiftPlan } from './shift-today.js';
 
 const resolve = n => findExercise(n, S.exercisesCustom);
@@ -19,19 +20,43 @@ function heroDayId(plan) {
 }
 
 /* ---------- Ampel und Tagesvorschlag ---------- */
-export function trainTodayCard() {
+/* Ampel, Vorschlag und Tag auf der Scheibe. shiftRest: Pause nur, weil der Schichtplan heute kein Training vorsieht. */
+function ampel() {
   const plan = activePlan();
   const today = ymd();
   const rec = recoveryFromState(S, today);
   const done = [...S.sessions].reverse().find(s => ymd(s.startedAt) === today && (!s.planId || s.planId === plan.id));
   /* Mit Schichtplan ist die geplante Einheit der Kandidat; an Tagen ohne Plan rät die Karte zur Pause */
-  const sug = withShiftPlan(suggestToday({
+  const base = suggestToday({
     plan, sessions: S.sessions, resolve, level: rec.level,
     nextId: plannedNextId(plan) || nextDay(plan.order, S.sessions, plan.id),
     trainedToday: done ? { dayId: done.dayId, name: done.name } : null,
-  }));
+  });
+  const sug = withShiftPlan(base);
+  return { plan, rec, sug, heroId: heroDayId(plan), shiftRest: !!sug && sug !== base && sug.kind === 'rest' };
+}
+
+/* Auf „Heute“: Rät die Ampel etwas anderes als die Scheibe, steht sie als Hinweis-Karte oben (hint).
+   Sonst reicht eine Zeile unter der Schnellzeile, die die ganze Karte aufklappt (line). */
+export function ampelOnToday() {
+  const a = ampel();
+  if (!a.sug) return { hint: '', line: '' };
+  if (ampelIsHint(a.sug, a.heroId, { shiftRest: a.shiftRest })) return { hint: trainTodayCard(a) + checkinPart(), line: '' };
+  const open = !!V.recOpen;
+  const line = `<section class="block rec-line rec-${a.rec.level}">
+    <button class="rec-line-btn" data-act="recline" aria-expanded="${open}">
+      <span class="rec-light" aria-hidden="true">${plateSVG(a.rec.level, '', '', { small: true })}</span>
+      <span class="rec-line-t"><b>Ampel ${esc(LEVEL_LABEL[a.rec.level].toLowerCase())}</b><small>${esc(a.sug.title)}</small></span>
+      <span class="rec-line-more">${open ? 'Weniger' : 'Warum?'}</span>
+    </button>
+  </section>
+  ${open ? trainTodayCard(a) + checkinPart() : ''}`;
+  return { hint: '', line };
+}
+
+export function trainTodayCard(a = ampel()) {
+  const { plan, rec, sug, heroId } = a;
   if (!sug) return '';
-  const heroId = heroDayId(plan);
   const day = sug.dayId && plan.days[sug.dayId];
   const color = sug.kind === 'rest' ? rec.level : day ? day.color : 'steel';
   let buttons = '';
@@ -97,24 +122,35 @@ function draft(today) {
   return V.recDraft;
 }
 
+/* Erledigter Check-in als Zeile mit „Ändern“, sonst leer */
+export function checkinLine() {
+  const today = ymd();
+  const ci = S.checkins[today];
+  if (!ci || ci.skipped || V.recEdit === today || !(ci.sleepH > 0 || ci.feeling)) return '';
+  const parts = [];
+  if (ci.sleepH > 0) parts.push(`${fmt1(ci.sleepH)} h Schlaf`);
+  if (ci.feeling) parts.push(`Gefühl ${FEELING_LABEL[ci.feeling]}`);
+  return `<section class="block rec-ci-done">
+    <p><span class="muted">Check-in:</span> ${esc(parts.join(', '))}</p>
+    <button class="link" data-act="recedit">Ändern</button>
+  </section>`;
+}
+
+/* Unter der Ampel: der erledigte Check-in als Zeile, nach „Ändern“ die Karte an derselben Stelle */
+const checkinPart = () => (V.recEdit === ymd() ? checkinCard() : checkinLine());
+
+/* Die Karte zum Ausfüllen, solange der Check-in für heute offen ist (oder geändert wird), sonst leer */
 export function checkinCard() {
   const today = ymd();
   const ci = S.checkins[today];
   const editing = V.recEdit === today;
-  if (ci && ci.skipped && !editing) return '';
-  if (ci && (ci.sleepH > 0 || ci.feeling) && !editing) {
-    const parts = [];
-    if (ci.sleepH > 0) parts.push(`${fmt1(ci.sleepH)} h Schlaf`);
-    if (ci.feeling) parts.push(`Gefühl ${FEELING_LABEL[ci.feeling]}`);
-    return `<section class="block rec-ci-done">
-      <p><span class="muted">Check-in:</span> ${esc(parts.join(', '))}</p>
-      <button class="link" data-act="recedit">Ändern</button>
-    </section>`;
-  }
+  if (ci && !editing && (ci.skipped || ci.sleepH > 0 || ci.feeling)) return '';
   const d = draft(today);
   return `<section class="block card rec-ci">
-    <h2>Kurzer Check-in</h2>
-    <p class="muted">Freiwillig. Schlaf und Gefühl machen die Ampel genauer.</p>
+    <div class="rec-ci-head">
+      <div><h2>Kurzer Check-in</h2><p class="small-print">Freiwillig. Schlaf und Gefühl machen die Ampel genauer.</p></div>
+      <button class="link" data-act="recskip">Heute nicht</button>
+    </div>
     <div class="rec-ci-row">
       <span class="label" style="margin:0">Schlaf letzte Nacht</span>
       <div class="stepper">
@@ -123,13 +159,9 @@ export function checkinCard() {
         <button class="icon" data-act="recsleep" data-d="0.5" aria-label="Eine halbe Stunde mehr" ${d.sleepH >= 14 ? 'disabled' : ''}>+</button>
       </div>
     </div>
-    <p class="label" style="margin-top:14px">Wie fühlst du dich?</p>
-    <div class="chips rec-feel" role="group" aria-label="Gefühl von 1 bis 5">${FEELINGS.map(n =>
-      `<button class="chip ${d.feeling === n ? 'on' : ''}" aria-pressed="${d.feeling === n}" data-act="recfeel" data-v="${n}">${esc(cap(FEELING_LABEL[n]))}</button>`).join('')}</div>
-    <div class="sug-btns">
-      <button class="btn small primary" data-act="recsave">Speichern</button>
-      <button class="btn small ghost" data-act="recskip">Heute nicht</button>
-    </div>
+    <div class="chips rec-feel" role="group" aria-label="Wie fühlst du dich? Gefühl von 1 bis 5">${FEELINGS.map(n =>
+      `<button class="chip ${d.feeling === n ? 'on' : ''}" aria-pressed="${d.feeling === n}" data-act="recfeel" data-v="${n}">${esc(cap(FEELING_LABEL[n]))}</button>`).join('')}
+      <button class="btn small primary" data-act="recsave">Speichern</button></div>
   </section>`;
 }
 
@@ -165,6 +197,8 @@ export const actions = {
     V.recDraft = null;
     render();
   },
+  /* Zuklappen bricht ein angefangenes „Ändern“ beim Check-in ab, sonst bliebe die Karte unsichtbar offen */
+  recline: () => { V.recOpen = !V.recOpen; if (!V.recOpen) { V.recEdit = null; V.recDraft = null; } render(); },
 };
 
 export const inputs = {};

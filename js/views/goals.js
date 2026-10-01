@@ -1,6 +1,6 @@
 /* Motivation (Stufe 5): Serie mit Joker, Wochenziele, Ziele und Meilensteine, Abzeichen. */
 import { S, V, save, activePlan } from '../state.js';
-import { esc, fmt, fmt1, fmtIn, dShort, uid, toNum, ymd } from '../util.js';
+import { esc, fmt, fmt1, fmtIn, dShort, uid, toNum, ymd, plural } from '../util.js';
 import { render } from '../render.js';
 import { weekStreakWithJokers, weekHistoryWithJokers } from '../domain/streaks.js';
 import { weeklyGoals, evaluateGoal, weightGoalStatus, syncGoals, GOAL_KINDS } from '../domain/motivation.js';
@@ -13,6 +13,7 @@ import { plateSVG } from '../ui/plate.js';
 import { badgeSVG } from '../ui/badge.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
+import { backLink, compareRow } from '../ui/navlinks.js';
 
 const mot = () => {
   if (!S.motivation) S.motivation = { goals: [], weekly: { proteinDays: 5, waterDays: 5 }, badges: {}, reportSeen: null };
@@ -25,7 +26,7 @@ const monthName = t => new Date(t).toLocaleDateString('de-DE', { month: 'long' }
 const pctW = p => Math.round(Math.max(0, Math.min(1, p)) * 100);
 
 /* ---------- Abzeichen und Ziele abgleichen ---------- */
-/* Läuft beim Zeichnen der Startseite. Nur wenn sich die Daten geändert haben, und gespeichert wird nur bei Neuem. */
+/* Läuft beim Zeichnen der Startseite (Überblick und Wochenziele). Nur wenn sich die Daten geändert haben, und gespeichert wird nur bei Neuem. */
 let lastSig = null;
 function signature() {
   const log = (S.nutrition && S.nutrition.log) || {};
@@ -37,7 +38,7 @@ function signature() {
   ].join('|');
 }
 
-function syncAll() {
+export function syncAll() {
   const sig = signature();
   if (sig === lastSig) return;
   lastSig = sig;
@@ -76,7 +77,7 @@ export function streakCard(color) {
         ${plate(w)}
         <span class="num">${label(w)}</span>
       </div>`).join('')}</div>
-    <p class="small-print" style="margin-top:10px">Diese Woche ${st.thisWeek} von ${target} Einheiten. Pro Monat überbrückt ein Joker eine verpasste Woche; der Joker für ${esc(monthName(Date.now()))} ist ${st.jokerFree ? 'noch frei' : 'schon eingesetzt'}.</p>
+    <p class="small-print" style="margin-top:10px">Diese Woche ${st.thisWeek} von ${target} ${plural(target, 'Einheit', 'Einheiten')}. Pro Monat überbrückt ein Joker eine verpasste Woche; der Joker für ${esc(monthName(Date.now()))} ist ${st.jokerFree ? 'noch frei' : 'schon eingesetzt'}.</p>
   </section>`;
 }
 
@@ -84,7 +85,7 @@ export function streakCard(color) {
 function goalRow(label, done, target, note) {
   const reached = done >= target;
   return `<div class="goal-row mot-row ${reached ? 'reached' : ''}">
-    <div class="goal-top"><span>${label}</span><span><b class="num">${done}</b> <small>von ${target} Tagen</small></span></div>
+    <div class="goal-top"><span>${label}</span><span><b class="num">${done}</b> <small>von ${target} ${plural(target, 'Tag', 'Tagen')}</small></span></div>
     <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${target}" aria-valuenow="${Math.min(done, target)}" aria-label="${esc(label)}"><i style="width:${pctW(done / target)}%"></i></div>
     ${note ? `<p class="small-print">${note}</p>` : ''}
   </div>`;
@@ -134,7 +135,7 @@ export function subview() {
   const earned = BADGES.filter(b => m.badges[b.id]);
   const goals = [...m.goals].sort((a, b) => (!!a.doneAt - !!b.doneAt) || b.createdAt - a.createdAt);
   return `<div class="day-yellow mot-page">
-    <div class="mot-top"><button class="link" data-act="motclose">Zurück zu Heute</button></div>
+    ${backLink()}
     <h1 class="page-title">Erfolge</h1>
     <p class="page-sub">Ziele, Meilensteine und Abzeichen.</p>
 
@@ -167,6 +168,8 @@ export function subview() {
       ${!wgs && !goals.length ? '<p class="empty">Noch keine Ziele. Zum Beispiel ein Zielgewicht, „Bankdrücken 100 kg“ oder „12 Wochen dabei“.</p>' : ''}
       <div class="stack"><button class="btn" data-act="goaladd">Ziel hinzufügen</button></div>
     </section>
+
+    <section class="block mot-cmp">${compareRow()}</section>
 
     <section class="block">
       <h2>Abzeichen</h2>
@@ -305,7 +308,6 @@ function weeklySheet() {
 
 export const actions = {
   motopen: () => { V.motView = 'goals'; V.roll = false; render(); window.scrollTo(0, 0); },
-  motclose: () => { V.motView = null; V.badgeFresh = null; render(); window.scrollTo(0, 0); },
   motbody: () => { V.motView = null; V.tab = 'body'; V.bodySub = 'weight'; render(); window.scrollTo(0, 0); },
   motweekly: weeklySheet,
   goaladd: kindSheet,

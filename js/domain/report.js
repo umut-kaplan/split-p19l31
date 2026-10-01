@@ -1,6 +1,7 @@
 /* Wochenbericht: alle Zahlen einer Woche (Montag bis Sonntag). Reine Funktionen.
    Durchschnitte beim Essen zählen nur Tage mit Einträgen, damit leere Tage den Schnitt nicht verfälschen. */
 import { weekStart } from './streaks.js';
+import { plural } from '../util.js';
 import { isoWeekKey, prevWeekStart, weekMuscleSets, volumeRating } from './volume.js';
 import { sessionRecords } from './prs.js';
 import { movingAverage } from './body.js';
@@ -124,7 +125,7 @@ export function weeklyReport(S, start, ctx = {}) {
 
 /* Kurzfassung für die Karte auf der Startseite, ein Satz */
 export function reportHeadline(r) {
-  const parts = [`${r.training.count} von ${r.training.target} Einheiten`];
+  const parts = [`${r.training.count} von ${r.training.target} ${plural(r.training.target, 'Einheit', 'Einheiten')}`];
   const n = r.recordGroups.length;
   if (n) parts.push(`${n} ${n === 1 ? 'Übung' : 'Übungen'} mit neuem Rekord`);
   if (r.weight.ok) {

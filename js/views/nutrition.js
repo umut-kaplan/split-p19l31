@@ -186,6 +186,7 @@ export function view() {
   return `<div class="day-yellow">
     <h1 class="page-title">Ernährung</h1>
     ${daySwitch(date)}
+    ${log.vStart(date)}
     ${t.ok ? summaryCard(t, tot) : missingCard(t)}
     ${sugg ? `<section class="block"><div class="stack" style="margin-top:0">${sugg}</div></section>` : ''}
     ${log.vMealsSection(date)}
@@ -214,7 +215,7 @@ export function todayGoalsCard() {
   return `<section class="block card"><h2>Tagesziele</h2>
     ${row('Kalorien', tot.kcal, t.kcal, 'kcal')}
     ${row('Protein', tot.protein, t.protein, 'g')}
-    <div class="day-yellow" style="margin-top:12px"><button class="btn small" data-act="nutopen">Essen eintragen</button></div>
+    <div class="day-yellow" style="margin-top:12px"><button class="btn small" data-act="foodstart" data-from="today">Essen eintragen</button></div>
     ${waterBlock()}
   </section>`;
 }
@@ -278,5 +279,4 @@ export const actions = {
   nuttoday: () => { V.nutDate = null; render(); },
   nutgo: el => { const d = el.dataset.date; V.nutDate = d === ymd() ? null : d; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
   nutgoals: openGoals,
-  nutopen: () => { V.nutDate = null; V.tab = 'nutrition'; render(); window.scrollTo(0, 0); },
 };

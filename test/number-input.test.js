@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toNum, fmtIn } from '../js/util.js';
+import { toNum, fmtIn, plural } from '../js/util.js';
 import { parseAmount } from '../js/domain/foods.js';
 
 test('toNum liest Tausenderpunkte, wie die App sie selbst anzeigt', () => {
@@ -41,4 +41,11 @@ test('parseAmount: 1000 g bleibt 1000 g, auch mit Tausenderpunkt und Einheit', (
   assert.equal(parseAmount('1,5'), 1.5);
   assert.equal(parseAmount('0'), null);
   assert.equal(parseAmount(''), null);
+});
+
+test('Einzahl oder Mehrzahl nach der Zahl, auch formatiert (4.6)', () => {
+  assert.equal(plural(1, 'Satz', 'Sätze'), 'Satz');
+  assert.equal(plural('1', 'Tag', 'Tage'), 'Tag');
+  assert.equal(plural('1,0', 'Stunde', 'Stunden'), 'Stunde');
+  for (const n of [0, 2, 0.5, '1,5', 12]) assert.equal(plural(n, 'Satz', 'Sätze'), 'Sätze', String(n));
 });

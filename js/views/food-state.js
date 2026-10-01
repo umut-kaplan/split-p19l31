@@ -1,9 +1,12 @@
 /* Gemeinsamer Zustand der Eintragen-Ansichten: Ansichtsstapel, lokale Lebensmittel, Einträge speichern. */
 import { S, V, save } from '../state.js';
+import { ymd } from '../util.js';
 import { render } from '../render.js';
 import { FOODS_BASIC } from '../data/foods-basic.js';
 import { recipeNutrients } from '../domain/nutrition.js';
 import { pushRecent, pickNutrients } from '../domain/foods.js';
+import { mealForTime } from '../domain/food-quick.js';
+import { hasShiftPlan, dayShift, addDays } from '../domain/shifts.js';
 
 /* Ältere Stände haben einzelne Listen noch nicht */
 export function nut() {
@@ -14,19 +17,35 @@ export function nut() {
   return n;
 }
 
+/* Mahlzeit, die jetzt passt: nach der Uhr, mit Schichtplan auch nach der Schicht von heute und gestern (domain/food-quick.js) */
+export function mealNow(now = new Date()) {
+  const min = now.getHours() * 60 + now.getMinutes();
+  if (!hasShiftPlan(S.shifts)) return mealForTime(min);
+  const today = ymd(now);
+  return mealForTime(min, { today: dayShift(S.shifts, today), yesterday: dayShift(S.shifts, addDays(today, -1)) });
+}
+
 /* ---------- Ansichtsstapel: Suche, Scanner, Formulare liegen übereinander ---------- */
 export const stack = () => (V.foodStack || (V.foodStack = []));
 export const topView = () => { const s = stack(); return s.length ? s[s.length - 1] : null; };
 const go = () => { render(); window.scrollTo(0, 0); };
+/* Eine Ansicht mit from (z. B. 'today' für „+ Essen“ auf Heute) führt nach dem letzten Schließen dorthin zurück */
+const back = v => { if (v && v.from && !stack().length) V.tab = v.from; };
 export function openView(v) { stack().push(v); go(); }
-export function closeView() { stack().pop(); go(); }
+export function closeView() { const v = stack().pop(); back(v); go(); }
 export function replaceView(v) { stack().pop(); stack().push(v); go(); }
-export function closeAllViews() { V.foodStack = []; go(); }
+export function closeAllViews() { const first = stack()[0]; V.foodStack = []; back(first); go(); }
 /* Oberste Ansichten schließen, bis eine der gesuchten Art oben liegt */
 export function popTo(kind) {
   const s = stack();
   while (s.length && s[s.length - 1].kind !== kind) s.pop();
   go();
+}
+/* Suchfeld fokussieren. Direkt im Tipp aufgerufen, öffnet iOS dabei die Tastatur. */
+export function focusSearch() {
+  const el = document.getElementById('food-q');
+  if (!el) return;
+  try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
 }
 
 /* ---------- Lebensmittel aus allen lokalen Quellen im selben Format ---------- */

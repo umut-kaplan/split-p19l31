@@ -11,9 +11,12 @@ import {
   nut, stack, topView, openView, closeView, closeAllViews, popTo, customFood,
   addEntries, markUsed, findEntry,
 } from './food-state.js';
+import { backLink } from '../ui/navlinks.js';
 
+/* „‹ Zurück“ ist die gemeinsame Aktion back (views/navigation.js): oberste Ansicht zu, Kamera aus, Tastatur zu und
+   zurück an die Stelle der Seite darunter, an der man sie verlassen hat */
 export const bar = title => `<div class="food-bar">
-  <button class="link food-back" data-act="foodback">Zurück</button>
+  ${backLink()}
   <h1>${esc(title)}</h1>
 </div>`;
 
@@ -133,7 +136,7 @@ export function saveMealSheet(date, meal) {
   const suggestion = items.slice(0, 2).map(e => e.name.replace(/\s*\(.*\)$/, '')).join(', ') + (items.length > 2 ? ' …' : '');
   openSheet({
     title: 'Als Mahlzeit speichern',
-    text: `${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'} aus ${MEALS[meal]} vom ${dShort(date + 'T12:00')}. Danach trägst du sie mit einem Tipp wieder ein.`,
+    text: `${items.length} ${items.length === 1 ? 'Eintrag' : 'Einträge'} aus ${MEALS[meal]} vom ${dShort(date + 'T12:00')} Danach trägst du sie mit einem Tipp wieder ein.`,
     body: `<div class="form"><label>Name<input id="food-mealname" value="${esc(suggestion)}" maxlength="60" autocomplete="off"></label></div>`,
     actions: [
       { label: 'Mahlzeit speichern', kind: 'primary', fn: () => {

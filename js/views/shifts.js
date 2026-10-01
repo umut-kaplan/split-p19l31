@@ -1,10 +1,11 @@
 /* Schichtplan als eigene Seite: Einrichtung (Vorlage oder eigenes Muster, views/shift-setup.js), Monatskalender mit
    Einzeländerungen samt Uhrzeit, Import aus einer Kalender-Datei (views/shift-import.js), die nächsten 2 Wochen mit
    Übernahme in den iPhone-Kalender, Schichtarten (views/shift-types.js) und Trainingszeiten.
-   Geöffnet über data-act="shiftopen" von „Heute“, aus dem Training-Tab und aus den Einstellungen; app.js zeigt die Seite,
-   solange V.shiftView gesetzt ist. */
+   Geöffnet über data-act="shiftopen" von „Heute“ und aus dem Training-Tab (Reiter „Kalender“) und aus den Einstellungen
+   (Reiter „Einstellungen“); app.js zeigt die Seite, solange V.shiftView gesetzt ist. „‹ Zurück“ geht wie die Wischgeste
+   eine Ebene zurück (js/nav.js): aus Schichtart und „Muster ändern“ auf die Seite darunter, sonst aus dem Schichtplan. */
 import { S, V, save } from '../state.js';
-import { esc, ymd, dShort } from '../util.js';
+import { esc, ymd, dShort, plural } from '../util.js';
 import { render } from '../render.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
@@ -21,6 +22,7 @@ import * as setup from './shift-setup.js';
 import * as types from './shift-types.js';
 import * as imp from './shift-import.js';
 import { knowledgeLink } from './knowledge.js';
+import { backLink } from '../ui/navlinks.js';
 
 export const modules = [setup, types, imp];
 
@@ -47,7 +49,7 @@ export function view() {
   const tabs = sub === 'setup' || sub === 'type' ? '' : `<div class="seg wide sh-seg" role="tablist" aria-label="Schichtplan">${SUBS.map(([k, l]) =>
     `<button role="tab" aria-selected="${sub === k}" class="${sub === k ? 'on' : ''}" data-act="shiftsub" data-sub="${k}">${l}</button>`).join('')}</div>`;
   return `<div class="day-blue sh-page">
-    <div class="sh-top"><button class="link" data-act="shiftclose">Zurück</button></div>
+    ${backLink()}
     <h1 class="page-title">Schichtplan</h1>
     ${tabs}
     ${body}
@@ -232,7 +234,7 @@ function deliverIcs(mon, asFile) {
 function patternText(p) {
   const t = templateOf(p);
   const i = patternIndex(p, ymd());
-  const what = t ? `Vorlage „${t.name}“${t.variant ? `, ${t.variant}` : ''}` : `Eigenes Muster mit ${p.days.length} Tagen`;
+  const what = t ? `Vorlage „${t.name}“${t.variant ? `, ${t.variant}` : ''}` : `Eigenes Muster mit ${p.days.length} ${plural(p.days.length, 'Tag', 'Tagen')}`;
   return `${what}. Heute ist Tag ${i + 1} von ${p.days.length} (${nameOf(p.days[i])}).`;
 }
 
@@ -289,7 +291,6 @@ export const actions = {
     V.shiftMonth = null; V.shiftDraft = null; V.shiftImport = null; V.shiftType = null;
     render(); top();
   },
-  shiftclose: () => { V.shiftView = null; V.shiftImport = null; V.shiftDraft = null; V.shiftType = null; V.shiftFit = null; render(); top(); },
   shiftsub: el => { V.shiftView = el.dataset.sub; V.shiftDraft = null; V.shiftImport = null; V.shiftType = null; render(); },
   shiftmonth: el => {
     const cur = /^\d{4}-\d{2}$/.test(V.shiftMonth || '') ? V.shiftMonth : ymd().slice(0, 7);

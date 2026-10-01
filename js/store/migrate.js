@@ -37,6 +37,8 @@ export function defaultState() {
       backupRemindDays: 7, backupSnoozedAt: null,
       /* Vergleich: Körpergewicht im eigenen QR-Code mitteilen */
       compareWeight: true,
+      /* Bildschirm während eines Trainings anlassen (Screen Wake Lock, js/wake-lock.js) */
+      wakeLock: true,
       plates: plateSettings(null),
     },
     /* Dauerhafte Notizen pro Übung: { 'exId|Name': 'Sitz Stufe 4' }. Trainings tragen optional rating: { rpe, note }. */
@@ -112,6 +114,9 @@ function normalizeCompare(c) {
   return { code: c.code, scannedAt: Number.isFinite(c.scannedAt) ? c.scannedAt : null };
 }
 
+/* Ältere Stände kennen den Schalter nicht: dann an, wie für neue */
+const cleanWakeLock = st => !(st && st.wakeLock === false);
+
 /* Füllt fehlende Felder auf, damit ältere Stände mit neuem Code laufen */
 export function normalize(s) {
   if (!s || typeof s !== 'object' || !Array.isArray(s.plans) || !s.plans.length || !Array.isArray(s.sessions)) {
@@ -124,7 +129,7 @@ export function normalize(s) {
     ...s,
     schema: SCHEMA,
     profile: { ...d.profile, ...p, birthDate: cleanBirthDate(p.birthDate), limitations: { ...d.profile.limitations, ...(p.limitations || {}) } },
-    settings: { ...d.settings, ...(s.settings || {}), plates: plateSettings(s.settings && s.settings.plates) },
+    settings: { ...d.settings, ...(s.settings || {}), plates: plateSettings(s.settings && s.settings.plates), wakeLock: cleanWakeLock(s.settings) },
     body: { ...d.body, ...(s.body || {}) },
     nutrition: { ...d.nutrition, ...(s.nutrition || {}) },
     exercisesCustom: Array.isArray(s.exercisesCustom) ? s.exercisesCustom : [],

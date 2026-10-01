@@ -18,6 +18,9 @@ const run = (o = {}) => suggestToday({ plan, sessions: [], resolve, level: 'gree
 test('Ruhezeit als Text', () => {
   assert.equal(restText(30), 'seit 30 Stunden');
   assert.equal(restText(80), 'seit 3 Tagen');
+  /* Einzahl (4.6) */
+  assert.equal(restText(1.2), 'seit 1 Stunde');
+  assert.equal(restText(0.2), 'seit 1 Stunde');
   assert.equal(restText(Infinity), 'noch nie trainiert');
   assert.equal(REST_HOURS, 48);
 });

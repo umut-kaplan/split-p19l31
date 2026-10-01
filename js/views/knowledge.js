@@ -1,4 +1,4 @@
-/* Wissen: Unter-Reiter von Training mit kurzen Karten und ihren Quellen (js/data/knowledge.js).
+/* Wissen: kurze Karten mit ihren Quellen (js/data/knowledge.js), unter Training · Übungen per Umschalter „Übungen · Wissen“.
    knowledgeLink(id) setzt auf jeder Seite einen kleinen „Warum?“-Knopf, der die Karte als Sheet öffnet.
    app.js sammelt die Aktion „knowshow“ ein, sie gilt deshalb überall. */
 import { esc } from '../util.js';

@@ -110,6 +110,21 @@ test('Schichtart aus dem Titel', () => {
   assert.equal(codeFromTitle('Früh/Spät getauscht'), 'F');
 });
 
+test('Früh, Spät und Nacht nur als ganzes Wort oder als Schicht- und Dienstwort', () => {
+  const cases = {
+    Frühjahrsputz: null, 'Frühjahrsputz Keller': null, 'Frühstück': null, Frühling: null, Frühchen: null,
+    Nachtwanderung: null, 'Nachttisch kaufen': null, Nachtisch: null,
+    Spätzle: null, 'Später anrufen': null, Spätsommer: null, 'Spätlese probieren': null, Latex: null,
+    'Früh-Schicht': 'F', Frühschichten: 'F', 'Früh1': 'F', 'Frühdienst A': 'F', 'Frühbereitschaft': 'F',
+    'Spät 14-22': 'S', Spätdienste: 'S', Nachtwache: 'N', Nachtdienst: 'N', Nachtbereitschaft: 'N', 'Night shift': 'N', 'Late shift': 'S',
+    /* Zusammengesetzt: nach dem Schichtwort darf das Wort weitergehen */
+    Frühdienstvertretung: 'F', Nachtdienstwoche: 'N', Spätdienstwoche: 'S', Nachtschichtzulage: 'N', 'Frühschichtwoche KW 41': 'F',
+    Nachtwachenplan: 'N', Frühbereitschaftsdienst: 'F', Nightshift: 'N', 'Frühdienst-Vertretung': 'F',
+    Nachtwächter: null, Spätzlepfanne: null, Frühjahrsdienstplan: null, Spätlese: null,
+  };
+  Object.entries(cases).forEach(([title, code]) => assert.equal(codeFromTitle(title), code, title));
+});
+
 test('Schichtart aus der Startzeit, wenn der Titel nichts verrät', () => {
   assert.equal(codeFromTime(5 * 60), 'F');
   assert.equal(codeFromTime(8 * 60), 'F');

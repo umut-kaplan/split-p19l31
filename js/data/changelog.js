@@ -2,6 +2,19 @@
    Vor jeder Veröffentlichung hier einen Eintrag anlegen; die Version muss zu CACHE in sw.js passen, ein Test prüft das. */
 export const CHANGES = [
   {
+    version: '4.6',
+    date: '2026-10-01',
+    items: [
+      '„Heute“ ist kürzer: Unter der Scheibe trägst du mit einem Tipp Wasser, Essen oder dein Gewicht ein. Darunter stehen höchstens zwei Hinweise und ein Überblick in Kacheln, „Alles zeigen“ klappt die ganzen Karten auf.',
+      'Essen in zwei Tipps: Die Suche öffnet sich gleich mit Tastatur, die Mahlzeit wählt Split nach Uhrzeit und Schicht, der Barcode-Knopf steht direkt daneben. Unter dem Feld findest du „Wie gestern“ und was du zuletzt gegessen hast.',
+      'Im Training klappen erledigte Übungen ein, „Übersicht“ oben rechts zeigt alle auf einen Blick, und unten bringt dich ein Knopf zur nächsten offenen Übung. Verlauf, Plan und Übungen kannst du nebenbei öffnen; eine Leiste über den Tabs zeigt Zeit und Pause und führt zurück.',
+      'An jeder Übung steht dein Bestwert. Tippst du dich beim Gewicht vertan, etwa 950 statt 95 kg, fragt Split nach. Der Bildschirm bleibt im Training an, abschalten kannst du das unter Einstellungen · Training.',
+      'Zurück wie gewohnt: Wischen vom linken Rand oder „‹ Zurück“ oben links bringt dich überall eine Seite zurück, an die Stelle, an der du warst, auch im Schichtplan und in der Ernährung. Ein Tipp auf einen Tab bringt dich zu dessen Startseite. Die Einstellungen sind jetzt eine kurze Übersicht mit einer Seite pro Thema.',
+      'Mit dem Trainingspartner vergleichen steht oben unter Training, auch während des Trainings. Ein Stift an jedem Tag öffnet direkt dessen Übungen, und das Wissen findest du unter Übungen.',
+      'Größere Tippflächen: Reiter, „Zurück“, Haken und die Knöpfe im Training sind mindestens 44 Punkt groß, auch auf kleinen iPhones, und Hinweise verdecken keine Knöpfe mehr.',
+    ],
+  },
+  {
     version: '4.5',
     date: '2026-10-01',
     items: [

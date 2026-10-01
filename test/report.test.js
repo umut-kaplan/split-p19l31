@@ -103,4 +103,6 @@ test('Muskeln und Überschrift, leere Woche ohne Daten', () => {
   const empty = weeklyReport({ profile: {}, sessions: [], body: { weights: [] }, nutrition: { log: {} } }, monday);
   assert.equal(empty.hasData, false);
   assert.equal(reportHeadline(empty), '0 von 3 Einheiten.');
+  /* Einzahl (4.6): Wochenziel eine Einheit */
+  assert.equal(reportHeadline(weeklyReport({ profile: { daysPerWeek: 1 }, sessions: [], body: { weights: [] }, nutrition: { log: {} } }, monday)), '0 von 1 Einheit.');
 });

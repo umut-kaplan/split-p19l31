@@ -1,7 +1,8 @@
 import { S, save } from './state.js';
 import { esc, mmss } from './util.js';
 import { render } from './render.js';
-import { ICON } from './ui/icons.js';
+import { createWakeLock, wakeOn } from './wake-lock.js';
+import { liveBar, takeShown, restText } from './views/live-bar.js';
 
 /* ---------- Ton ---------- */
 let actx = null;
@@ -29,12 +30,11 @@ function beep() {
 }
 
 /* ---------- Bildschirm an lassen ---------- */
-let lock = null;
-export async function wake() {
-  if (!S.active || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
-  try { lock = await navigator.wakeLock.request('screen'); } catch (e) { lock = null; }
-}
-export function release() { if (lock) { lock.release().catch(() => {}); lock = null; } }
+/* Solange ein Training läuft und der Schalter in den Einstellungen an ist (S.settings.wakeLock, Standard an).
+   wake() beim Start, beim Zurückkommen aus dem Hintergrund (app.js) und nach dem Umschalten; release() beim Beenden. */
+const screenLock = createWakeLock({ want: () => !!S.active && wakeOn(S.settings) });
+export const wake = () => screenLock.sync();
+export const release = () => screenLock.release();
 
 /* ---------- Pausentimer ---------- */
 export function startRest(seconds, label) {
@@ -43,8 +43,11 @@ export function startRest(seconds, label) {
     : null;
 }
 
+/* Über der Navigation: auf der Seite der Einheit der Pausentimer, auf allen anderen Seiten die Mini-Leiste (live-bar.js) */
 export function vTimer() {
-  const t = S.active && S.active.timer;
+  if (!S.active) return '';
+  if (!takeShown()) return liveBar();
+  const t = S.active.timer;
   if (!t) return '';
   return `<div class="timer day-${S.active.color}" id="timer" role="timer" aria-live="off">
     <svg class="t-ring" viewBox="0 0 64 64" aria-hidden="true">
@@ -53,31 +56,68 @@ export function vTimer() {
         transform="rotate(-90 32 32)" stroke-dasharray="175.93" stroke-dashoffset="0"/>
       <circle cx="32" cy="32" r="9" fill="#9AA1AA"/><circle cx="32" cy="32" r="4.5" fill="#1E2124"/>
     </svg>
-    <div style="min-width:0"><div class="t-time" id="t-time">0:00</div><div class="t-label" id="t-label">Pause nach ${esc(t.label)}</div></div>
+    <div style="min-width:0"><div class="t-time" id="t-time">0:00</div><div class="t-label" id="t-label">${esc(labelTexts(t, false)[0])}</div></div>
     <div class="t-btns">
       <button data-act="t-minus" aria-label="15 Sekunden weniger">−15</button>
       <button data-act="t-plus" aria-label="15 Sekunden mehr">+15</button>
-      <button data-act="t-stop" aria-label="Pause beenden">${ICON.check}</button>
+      <button class="t-skip" data-act="t-stop" aria-label="Pause überspringen">Weiter</button>
     </div>
   </div>`;
 }
 
-/* Rechnet mit der Uhrzeit, darum stimmt der Timer auch nach dem Entsperren */
+/* Beschriftung unter der Zeit, längste Fassung zuerst: „Pause nach Bankdrücken“, sonst nur „Bankdrücken“ */
+export function labelTexts(t, over) {
+  if (over) return ['Pause vorbei. Nächster Satz!', 'Pause vorbei.'];
+  const name = String(t.label || '');
+  return [`Pause nach ${name}`, name.replace(/^dem /, '')];
+}
+
+/* Höchstens zwei Zeilen und nie mitten im Wort abgeschnitten (4.6): Passt „Pause nach …“ nicht, steht nur die Übung da.
+   Ist ein einzelnes Wort breiter als die Spalte, darf es getrennt werden; reicht auch das nicht, endet die Beschriftung
+   nach dem letzten ganzen Wort mit „…“, zur Not in kleinerer Schrift. Gemessen wird nur, wenn sich Text oder Breite ändern. */
+function fitLabel(el, texts) {
+  const fits = () => {
+    const cs = getComputedStyle(el);
+    const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.25;
+    return el.scrollHeight <= Math.ceil(lh * 2) + 1 && el.scrollWidth <= el.clientWidth + 1;
+  };
+  el.classList.remove('hy', 'sm');
+  for (const v of texts) { el.textContent = v; if (fits()) return; }
+  const words = texts[texts.length - 1].split(' ');
+  const cut = n => (n < words.length ? words.slice(0, n).join(' ') + '…' : words.join(' '));
+  for (const cls of ['hy', 'sm']) {
+    el.classList.add(cls);
+    for (let n = words.length; n >= 1; n--) {
+      el.textContent = cut(n);
+      if (fits()) return;
+    }
+  }
+}
+
+/* Rechnet mit der Uhrzeit, darum stimmt der Timer auch nach dem Entsperren.
+   Trainingszeit und Pause stehen in der Kopfleiste der Einheit und in der Mini-Leiste (data-tick). Der Ton kommt auf jeder Seite. */
 export function tick() {
   const a = S.active;
   if (!a) return;
-  const el = document.getElementById('elapsed');
-  if (el) el.textContent = mmss((Date.now() - a.startedAt) / 1000);
+  const since = mmss((Date.now() - a.startedAt) / 1000);
+  document.querySelectorAll('[data-tick="elapsed"]').forEach(el => { el.textContent = since; });
   const t = a.timer;
-  const box = document.getElementById('timer');
-  if (!t || !box) return;
+  if (!t) return;
   const left = (t.endAt - Date.now()) / 1000;
   const over = left <= 0;
-  document.getElementById('t-time').textContent = over ? '0:00' : mmss(Math.ceil(left));
-  document.getElementById('t-label').textContent = over ? 'Pause vorbei. Nächster Satz!' : 'Pause nach ' + t.label;
-  const frac = over || !t.total ? 0 : Math.min(1, left * 1000 / t.total);
-  document.getElementById('t-ring').setAttribute('stroke-dashoffset', (175.93 * (1 - frac)).toFixed(2));
-  box.classList.toggle('over', over);
+  const box = document.getElementById('timer');
+  if (box) {
+    document.getElementById('t-time').textContent = over ? '0:00' : mmss(Math.ceil(left));
+    const label = document.getElementById('t-label');
+    const texts = labelTexts(t, over);
+    const key = `${texts[0]}|${label.clientWidth}`;
+    if (label.dataset.fit !== key) { fitLabel(label, texts); label.dataset.fit = key; }
+    const frac = over || !t.total ? 0 : Math.min(1, left * 1000 / t.total);
+    document.getElementById('t-ring').setAttribute('stroke-dashoffset', (175.93 * (1 - frac)).toFixed(2));
+    box.classList.toggle('over', over);
+  }
+  document.querySelectorAll('[data-tick="rest"]').forEach(el => { el.textContent = restText(t); });
+  document.querySelectorAll('.live-bar').forEach(el => el.classList.toggle('over', over));
   if (over && !t.fired) { t.fired = true; save(); beep(); }
 }
 
@@ -89,4 +129,6 @@ export const actions = {
     t.endAt += 15000; t.total += 15000; t.fired = false; save(); tick();
   },
   't-stop': () => { S.active.timer = null; save(); render(); },
+  /* Schalter „Bildschirm im Training wach halten“ in Einstellungen · Training (settings.js) */
+  wakelock: () => { S.settings.wakeLock = !wakeOn(S.settings); save(); wake(); render(); },
 };

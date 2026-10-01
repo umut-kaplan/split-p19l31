@@ -1,5 +1,5 @@
 import { S, V, save, activePlan } from '../state.js';
-import { esc, fmt, fmt1, dShort, dMid, dLong, ymd } from '../util.js';
+import { esc, fmt, fmt1, dShort, dMid, dLong, ymd, plural } from '../util.js';
 import { render } from '../render.js';
 import { lineChart } from '../ui/chart.js';
 import { toast } from '../ui/toast.js';
@@ -226,7 +226,7 @@ function vMuscles() {
       const val = x.sets[m] || 0;
       return `<i class="${volumeRating(val)} ${i === weeks.length - 1 - back ? 'cur' : ''}" style="height:${Math.max(6, Math.min(100, val / SCALE * 100)).toFixed(0)}%"></i>`;
     }).join('');
-    return `<li class="vol-row ${r}" aria-label="${esc(MUSCLES[m])}: ${esc(fmt1(v))} Sätze ${esc(weekLabel)}, ${rateText[r]}">
+    return `<li class="vol-row ${r}" aria-label="${esc(MUSCLES[m])}: ${esc(fmt1(v))} ${v === 1 ? 'Satz' : 'Sätze'} ${esc(weekLabel)}, ${rateText[r]}">
       <div class="vol-top"><span>${esc(MUSCLES[m])}</span><span><b class="num">${esc(fmt1(v))}</b> ${v === 1 ? 'Satz' : 'Sätze'}</span></div>
       <div class="vol-line">
         <div class="vol-bar" aria-hidden="true"><span class="vol-zone" style="left:${lo / SCALE * 100}%;width:${(hi - lo) / SCALE * 100}%"></span><i style="width:${Math.min(100, v / SCALE * 100).toFixed(1)}%"></i></div>
@@ -239,7 +239,7 @@ function vMuscles() {
       <div class="cal-nav">
         <button class="icon" data-act="histweek" data-d="1" aria-label="Woche davor" ${back >= weeks.length - 1 ? 'disabled' : ''}>${LEFT}</button>
         <div><h2>${thisWeek ? 'Diese Woche' : `Woche ab ${esc(dShort(w.start))}`}</h2>
-          <p class="small-print">${w.total ? `${fmt(w.total)} Sätze, ${inRange} von ${shown.length} Muskelgruppen im Ziel`
+          <p class="small-print">${w.total ? `${fmt(w.total)} ${plural(fmt(w.total), 'Satz', 'Sätze')}, ${inRange} von ${shown.length} ${plural(shown.length, 'Muskelgruppe', 'Muskelgruppen')} im Ziel`
             : thisWeek ? 'Noch kein Training diese Woche. Mit dem Pfeil links siehst du die Vorwoche.' : 'Kein Training in dieser Woche'}</p></div>
         <button class="icon" data-act="histweek" data-d="-1" aria-label="Woche danach" ${thisWeek ? 'disabled' : ''}>${RIGHT}</button>
       </div>

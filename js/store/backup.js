@@ -142,8 +142,8 @@ export function initImport() {
       if (onlyTraining) next = { ...S, plans: next.plans, activePlanId: next.activePlanId, sessions: next.sessions, active: null, settings: { ...S.settings } };
       const images = onlyTraining ? [] : restorableImages(raw);
       const text = onlyTraining
-        ? `Es stammt aus der ersten Version und enthält ${next.sessions.length} Trainings. Plan und Verlauf werden ersetzt, Profil und Körperdaten bleiben.`
-        : `Es enthält ${next.sessions.length} Trainings${images.length ? ` und ${images.length} ${images.length === 1 ? 'Bild' : 'Bilder'}` : ''} und ersetzt alle Daten auf diesem Gerät.${!images.length && next.body.photos.length ? ' Fotos sind nicht enthalten; vorhandene Fotos auf diesem Gerät bleiben, soweit sie zum Backup passen.' : ''}`;
+        ? `Es stammt aus der ersten Version und enthält ${next.sessions.length} ${next.sessions.length === 1 ? 'Training' : 'Trainings'}. Plan und Verlauf werden ersetzt, Profil und Körperdaten bleiben.`
+        : `Es enthält ${next.sessions.length} ${next.sessions.length === 1 ? 'Training' : 'Trainings'}${images.length ? ` und ${images.length} ${images.length === 1 ? 'Bild' : 'Bilder'}` : ''} und ersetzt alle Daten auf diesem Gerät.${!images.length && next.body.photos.length ? ' Fotos sind nicht enthalten; vorhandene Fotos auf diesem Gerät bleiben, soweit sie zum Backup passen.' : ''}`;
       confirmSheet('Backup laden?', text, 'Backup laden', async () => {
         next.settings.lastBackup = Date.now();
         /* Erst wenn der neue Stand wirklich gespeichert ist, werden Fotos angeglichen. Sonst bleibt alles, wie es war. */

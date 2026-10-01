@@ -17,6 +17,9 @@ export const toNum = v => {
   return parseFloat(s.replace(',', '.'));
 };
 
+/* Einzahl oder Mehrzahl nach der Zahl: plural(1, 'Satz', 'Sätze') ergibt „Satz“. n darf auch schon formatiert sein („1“, „1,0“). */
+export const plural = (n, one, many) => (Number(String(n).replace(',', '.')) === 1 ? one : many);
+
 export const mmss = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 export const unitL = u => u === 'sec' ? 'Sek.' : 'Wdh.';
 export const exName = e => e.names.join(' oder ');

@@ -117,3 +117,30 @@ export function sessionRecords(priorSessions, ex) {
     return items.length ? { name: x.name, items } : null;
   }).filter(Boolean);
 }
+
+/* Mehrere Einträge aus personalRecords zu einer Übung zusammenführen, z. B. dieselbe Übung in zwei Plänen.
+   Je Kennzahl gilt der höchste Wert mit seinem Datum. Liefert null bei leerer Liste. */
+export function mergeRecords(list = []) {
+  const recs = list.filter(Boolean);
+  if (!recs.length) return null;
+  const out = { ...recs[0], count: 0 };
+  RECORD_KINDS.forEach(k => { out[k] = null; });
+  recs.forEach(r => {
+    out.count += r.count || 0;
+    RECORD_KINDS.forEach(k => { if (r[k] && (!out[k] || r[k].value > out[k].value)) out[k] = r[k]; });
+  });
+  return out;
+}
+
+/* Bestwert für die Übungskarte im Training und das Anleitungs-Sheet (4.6).
+   Mit Gewicht: schwerster Satz und, wenn vorhanden, 1RM nach Epley. Ohne Gewicht: meiste Wiederholungen. Auf Zeit: längste Zeit.
+   Liefert { items: [{ kind, label, text }], date, text } oder null, wenn es noch keinen Bestwert gibt. */
+export function bestSummary(rec) {
+  if (!rec) return null;
+  const kinds = rec.unit === 'sec' ? ['time'] : rec.weight ? ['weight', 'e1rm'] : ['reps'];
+  const items = kinds.filter(k => rec[k] && rec[k].value > 0)
+    .map(k => ({ kind: k, label: k === 'e1rm' ? RECORD_LABEL.e1rm : '', text: formatRecord(k, rec[k].value) }));
+  if (!items.length) return null;
+  const date = rec[kinds.find(k => rec[k] && rec[k].value > 0)].date;
+  return { items, date, text: items.map(it => (it.label ? `${it.label} ${it.text}` : it.text)).join(' · ') };
+}

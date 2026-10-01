@@ -6,7 +6,7 @@
    tpl ist die id der Vorlage oder Variante (null bei eigenem Muster), pick der angetippte Tag, chosen ein
    ausgewählter Kandidat, brush die Schichtart zum Eintragen, clip eine kopierte Woche. */
 import { S, V, save } from '../state.js';
-import { esc, ymd } from '../util.js';
+import { esc, ymd, plural } from '../util.js';
 import { render } from '../render.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet } from '../ui/sheet.js';
@@ -194,7 +194,7 @@ function vToday(d, on) {
     : 'Tippe auf den Tag im Muster, der heute bei dir dran ist. Hast du heute Urlaub oder bist krank, nimm den Tag, der laut Plan wäre.';
   return `<section class="block card sh-setup">
       <h2>${esc(t ? t.name : 'Eigenes Muster')}</h2>
-      ${t ? `<p class="muted">${esc(t.desc)} ${esc(timesLine(t.times))}.</p>${vVariants(t)}` : `<p class="muted">${d.days.length} Tage.</p>`}
+      ${t ? `<p class="muted">${esc(t.desc)} ${esc(timesLine(t.times))}.</p>${vVariants(t)}` : `<p class="muted">${d.days.length} ${plural(d.days.length, 'Tag', 'Tage')}.</p>`}
       <h3 class="sh-h3">Welcher Tag ist heute?</h3>
       <p class="muted sh-hint">${esc(hint)}</p>
       ${vFit(d, idx)}
@@ -206,7 +206,7 @@ function vToday(d, on) {
         <button class="btn primary" data-act="shiftsave" ${idx != null ? '' : 'disabled'}>Muster speichern</button>
         ${t ? '<button class="btn ghost" data-act="shiftcustomize">Muster anpassen</button>' : '<button class="btn ghost" data-act="shiftcustomize">Muster bearbeiten</button>'}
         <button class="btn ghost" data-act="shiftback">${t ? 'Andere Vorlage wählen' : 'Zurück zur Auswahl'}</button>
-        ${on ? '<button class="link" data-act="shiftsub" data-sub="settings">Abbrechen</button>' : ''}
+        ${on ? '<button class="link" data-act="back">Abbrechen</button>' : ''}
       </div>
     </section>`;
 }

@@ -10,6 +10,7 @@
    5. Ampel gelb: trainieren wie bei grün, mit dem Hinweis, pro Übung einen Satz weniger zu machen oder RIR 3 zu halten.
    Bei grün und gelb ist die Alternative der nächstbeste andere Tag. */
 import { MUSCLES } from './muscles.js';
+import { plural } from '../util.js';
 import { workSets } from './settypes.js';
 
 export const REST_HOURS = 48;
@@ -21,10 +22,14 @@ const labelList = keys => {
   return l.length <= 1 ? l.join('') : `${l.slice(0, -1).join(', ')} und ${l[l.length - 1]}`;
 };
 
+/* „vor 1 Stunde“, „vor 20 Stunden“ */
+const ago = hours => { const h = Math.max(1, Math.round(hours)); return `${h} ${plural(h, 'Stunde', 'Stunden')}`; };
+
 /* Ruhezeit als Text: „seit 30 Stunden“, „seit 3 Tagen“ */
 export function restText(hours) {
   if (!isFinite(hours)) return 'noch nie trainiert';
-  if (hours < 48) return `seit ${Math.max(1, Math.round(hours))} Stunden`;
+  const h = Math.max(1, Math.round(hours));
+  if (hours < 48) return `seit ${h} ${plural(h, 'Stunde', 'Stunden')}`;
   const d = Math.floor(hours / 24);
   return `seit ${d} Tagen`;
 }
@@ -114,7 +119,7 @@ export function suggestToday({ plan, sessions, resolve, level = 'green', nextId,
       kind: 'rest', dayId: null, title: 'Heute lieber Pause',
       reason: 'Die Ampel steht auf Rot. Ein Spaziergang, 20 bis 30 Minuten lockeres Cardio oder Mobilität tun heute besser als schweres Training.',
       hint: null,
-      alt: { kind: 'train', dayId: light, title: `Wenn du trotzdem trainierst: ${info[light].name}`, reason: `Das ist die leichteste Einheit mit ${info[light].totalSets} Sätzen, mach sie locker.` },
+      alt: { kind: 'train', dayId: light, title: `Wenn du trotzdem trainierst: ${info[light].name}`, reason: `Das ist die leichteste Einheit mit ${info[light].totalSets} ${plural(info[light].totalSets, 'Satz', 'Sätzen')}, mach sie locker.` },
       muscles,
     };
   }
@@ -129,9 +134,9 @@ export function suggestToday({ plan, sessions, resolve, level = 'green', nextId,
     const tired = c.rest.filter(r => r.h < REST_HOURS).sort((a, b) => a.h - b.h)[0];
     if (best !== cand && info[best].minRest > c.minRest) {
       pick = best;
-      reason = `Eigentlich wäre ${c.name} dran, aber ${MUSCLES[tired.m]} hast du vor ${Math.max(1, Math.round(tired.h))} Stunden trainiert. ${info[best].name} passt besser: ${freshText(info[best])}.`;
+      reason = `Eigentlich wäre ${c.name} dran, aber ${MUSCLES[tired.m]} hast du vor ${ago(tired.h)} trainiert. ${info[best].name} passt besser: ${freshText(info[best])}.`;
     } else {
-      reason = `${c.name} ist dran. ${MUSCLES[tired.m]} hattest du vor ${Math.max(1, Math.round(tired.h))} Stunden, darum heute etwas lockerer.`;
+      reason = `${c.name} ist dran. ${MUSCLES[tired.m]} hattest du vor ${ago(tired.h)}, darum heute etwas lockerer.`;
     }
   }
   const altId = byRest.find(id => id !== pick) || (pick !== cand ? cand : null);
@@ -140,7 +145,7 @@ export function suggestToday({ plan, sessions, resolve, level = 'green', nextId,
     reason: info[altId].fresh ? `${freshText(info[altId])}.` : `${labelList(info[altId].main)} ${info[altId].main.length === 1 ? 'ist' : 'sind'} noch nicht ganz erholt (${restText(info[altId].minRest)}).`,
   } : null;
   const hint = level === 'yellow'
-    ? 'Die Ampel steht auf Gelb: Mach pro Übung einen Satz weniger oder lass 3 Wiederholungen im Tank (RIR 3).'
+    ? 'Die Ampel steht auf Gelb: Mach pro Übung einen Satz weniger oder lass 3 Wiederholungen in Reserve (RIR 3).'
     : null;
   return { kind: 'train', dayId: pick, title: `Heute: ${info[pick].name}`, reason, hint, alt, muscles };
 }

@@ -28,7 +28,7 @@ export function weightChart(weights, { today, range = '4w', target = null } = {}
   const line = ma.map(p => `${X(p.date).toFixed(1)},${Y(p.avg).toFixed(1)}`).join(' ');
   const last = ma[ma.length - 1];
   const area = ma.length > 1 ? `M${X(ma[0].date).toFixed(1)},${H - B} L${line.split(' ').join(' L')} L${X(last.date).toFixed(1)},${H - B} Z` : '';
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gewichtsverlauf: ${raw.length} Einträge, zuletzt ${esc(fmt1(raw[raw.length - 1].kg))} kg, Schnitt ${esc(fmt1(last.avg))} kg">
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gewichtsverlauf: ${raw.length} ${raw.length === 1 ? 'Eintrag' : 'Einträge'}, zuletzt ${esc(fmt1(raw[raw.length - 1].kg))} kg, Schnitt ${esc(fmt1(last.avg))} kg">
     <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--c)" stop-opacity=".22"/><stop offset="1" stop-color="var(--c)" stop-opacity="0"/></linearGradient></defs>
     ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="rgba(238,235,228,.08)"/>
       <text x="${L - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#6F7680" font-family="ui-rounded,system-ui">${fmt(Math.round(v * 10) / 10)}</text>`).join('')}

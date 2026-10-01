@@ -26,7 +26,7 @@ const longDate = d => {
   if (d.slice(0, 4) !== ymd().slice(0, 4)) opts.year = 'numeric';
   return dayOf(d).toLocaleDateString('de-DE', opts);
 };
-const signedKg = v => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${fmt1(Math.abs(v))} kg`;
+export const signedKg = v => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${fmt1(Math.abs(v))} kg`;
 
 /* Ein Eintrag pro Tag. Ein zweiter Wert am selben Tag ersetzt den ersten. */
 export function recordWeight(kg, source = 'manual', date = ymd()) {
@@ -130,8 +130,8 @@ function goalCard(all, tr) {
 }
 
 /* ---------- Startseite ---------- */
-/* Foto-Erinnerung, wenn diese Woche noch keins existiert, sonst eine Zeile zum Gewichtstrend, sonst nichts */
-export function todayBodyCard() {
+/* Hinweis-Karte, solange diese Woche noch kein Foto existiert und sie nicht weggetippt ist */
+export function photoReminderCard() {
   const today = ymd();
   if (photoReminderDue(S.body.photos, today, S.settings.lastPhotoPrompt)) {
     return `<section class="block card day-white b-remind">
@@ -143,7 +143,12 @@ export function todayBodyCard() {
       </div>
     </section>`;
   }
-  const tr = weightTrend(S.body.weights, today);
+  return '';
+}
+
+/* Gewichtstrend unter „Alles zeigen“ im Überblick, ohne Trend nichts */
+export function weightTrendCard() {
+  const tr = weightTrend(S.body.weights, ymd());
   if (!tr.ok) return '';
   return `<section class="block card day-white">
     <h2>Gewichtstrend</h2>

@@ -20,13 +20,12 @@
   border-bottom: 1px solid var(--line);
 }
 .wo-row { display: flex; align-items: center; gap: 12px; }
-.wo-row svg { width: 44px; height: 44px; flex: none; }
-.wo-row h1 { font-family: var(--round); font-size: 26px; font-weight: 800; }
+.wo-row > svg { width: 44px; height: 44px; flex: none; }
+.wo-row h1 { font-family: var(--round); font-size: 26px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wo-row .elapsed { color: var(--steel); font-size: 15px; }
 .wo-row .grow { flex: 1; min-width: 0; }
-.progress { height: 6px; margin-top: 12px; border-radius: 3px; background: var(--deck2); overflow: hidden; }
-.progress i { display: block; height: 100%; background: var(--c); border-radius: 3px; transition: width .35s ease; }
-.wo-note { margin: 16px 0 4px; color: var(--steel); font-size: 15px; }
+/* Fortschritt: ein Abschnitt pro Übung (workout.css) */
+.wo-note { margin: 0 0 4px; color: var(--steel); font-size: 15px; }
 
 .ex {
   margin-top: 14px; padding: 16px 14px 12px;
@@ -54,7 +53,7 @@
 .set-h, .set { display: grid; grid-template-columns: 26px 1fr 1fr 50px 50px; gap: 8px; align-items: center; }
 .set-h { color: var(--dim); font-size: 13px; padding: 0 0 4px; }
 .set-h span:nth-child(n+2) { text-align: center; }
-.set { padding: 5px 0; }
+.set { padding: 3px 0; }
 .set-n { color: var(--steel); font-weight: 700; text-align: center; }
 .set input {
   width: 100%; min-width: 0; height: 48px;
@@ -65,8 +64,9 @@
 .set input::placeholder { color: var(--dim); font-weight: 600; }
 .set input:focus { outline: none; border-color: var(--c); }
 .rir { height: 48px; border: 1px solid var(--line); border-radius: 12px; background: var(--floor); font-size: 18px; font-weight: 700; color: var(--steel); }
+/* Abhaken ist der Hauptknopf im Studio: 56 pt hoch (4.6) */
 .check {
-  width: 50px; height: 48px; border-radius: 14px;
+  width: 50px; height: 56px; border-radius: 14px;
   border: 2px solid var(--deck2); background: transparent;
   display: grid; place-items: center; color: var(--dim);
 }
@@ -76,12 +76,13 @@
 .set.done .set-n { color: var(--c); }
 @keyframes pop { 0% { transform: scale(.8); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .ex-foot { display: flex; gap: 18px; margin-top: 2px; }
-.wo-end { display: grid; gap: 10px; margin-top: 26px; }
+.wo-end { display: grid; justify-items: center; gap: 6px; margin-top: 26px; }
 
 /* ---------- Pausentimer ---------- */
+/* Steht nur auf der Seite der Einheit, über der Aktionsleiste (workout.css); anderswo zeigt die Mini-Leiste die Pause */
 .timer {
   position: fixed; z-index: 20;
-  left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 72px);
+  left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + var(--tabs-h) + var(--dock-h) + 6px);
   max-width: 536px; margin: 0 auto;
   display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center;
   padding: 12px 14px; border-radius: 22px;
@@ -92,16 +93,22 @@
 }
 .timer .t-ring { width: 56px; height: 56px; display: block; }
 .timer .t-time { font-family: var(--round); font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+/* Höchstens zwei Zeilen; den Text kürzt timer.js am Wortende (fitLabel). .hy erlaubt die Trennung eines zu langen Worts,
+   .sm ist die kleinere Schrift für den Notfall. */
 .timer .t-label {
   color: var(--steel); font-size: 13px; line-height: 1.25; margin-top: 4px;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  max-height: 2.5em; overflow: hidden; overflow-wrap: normal;
 }
+.timer .t-label.hy { -webkit-hyphens: auto; hyphens: auto; }
+.timer .t-label.sm { font-size: 11px; }
 .t-btns { display: flex; gap: 6px; }
 .t-btns svg { width: 20px; height: 20px; }
 .t-btns button {
-  min-width: 44px; height: 44px; padding: 0 8px; border-radius: 12px; border: 0;
+  min-width: 48px; height: 56px; padding: 0 8px; border-radius: 12px; border: 0;
   background: var(--floor); font-weight: 700; font-size: 15px; display: grid; place-items: center;
 }
+/* Pause überspringen: der deutlichste der drei Knöpfe */
+.t-btns .t-skip { padding: 0 14px; background: var(--c); color: var(--on-c); }
 .timer.over { background: var(--c); border-color: transparent; color: var(--on-c); }
 .timer.over .t-label { color: inherit; opacity: .85; }
 .timer.over .t-btns button { background: rgba(0, 0, 0, .22); color: inherit; }
@@ -140,12 +147,17 @@
 .day-tabs button.on { border-color: var(--c); background: linear-gradient(var(--c-soft), var(--c-soft)), var(--deck); }
 .pe-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
 .pe {
-  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center;
   padding: 12px 10px 12px 14px; background: var(--deck); border: 1px solid var(--line); border-radius: 16px;
 }
-.pe b { display: block; font-size: 17px; }
+.pe b { display: block; font-size: 17px; overflow-wrap: anywhere; hyphens: auto; }
 .pe span { color: var(--steel); font-size: 14px; }
 .pe-tools { display: flex; gap: 4px; }
+/* Schmal (#63): die drei Knöpfe (je 44 px) unter den Namen, rechtsbündig, damit lange Namen nicht über den Rand laufen */
+@media (max-width: 360px) {
+  .pe { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .pe-tools { justify-content: flex-end; }
+}
 
 /* ---------- Abschluss ---------- */
 .summary { text-align: center; padding-top: 20px; }
@@ -159,9 +171,16 @@
 .prs li { margin-top: 6px; }
 .prs b { color: var(--yellow); }
 
+/* Bis 429 px ohne Ring, damit neben der Zeit genug Platz für die Beschriftung bleibt (4.6) */
+@media (max-width: 429px) {
+  .timer { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 10px 10px 14px; }
+  .timer .t-ring { display: none; }
+}
 @media (max-width: 360px) {
   .set-h, .set { grid-template-columns: 22px 1fr 1fr 44px 46px; gap: 6px; }
+  .t-btns { gap: 4px; }
   .t-btns button { min-width: 44px; padding: 0 4px; }
+  .t-btns .t-skip { padding: 0 10px; }
 }
 
 /* ---------- Vorschläge ---------- */

@@ -47,6 +47,8 @@ test('Schlaf: Schnitt der letzten Nächte, Check-in geht vor', () => {
   assert.equal(s({ sleepH: 4.5 }).level, 'yellow');     // Schnitt 6,8, aber die letzte Nacht unter 6 h
   assert.equal(s({ sleepH: 5.5 }).level, 'yellow');
   assert.match(s({ sleepH: 5.5 }).summary, /^Gelb, weil du letzte Nacht nur 5,5 Stunden geschlafen hast\.$/);
+  /* Einzahl (4.6) */
+  assert.match(s({ sleepH: 1 }).summary, /letzte Nacht nur 1 Stunde geschlafen hast\.$/);
   assert.equal(s({ sleepH: 3.5 }).level, 'red');        // letzte Nacht unter 4 h
   assert.equal(recoveryStatus({ checkins: { [TODAY]: { sleepH: 5.5 } } }, TODAY).level, 'yellow');
   assert.equal(recoveryStatus({ checkins: { [TODAY]: { sleepH: 4.5 } } }, TODAY).level, 'red');

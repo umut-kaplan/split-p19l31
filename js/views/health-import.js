@@ -1,7 +1,7 @@
 /* Import aus dem Apple-Health-Export (Stufe 6). Abschnitt unter Einstellungen.
    Nach dem Übernehmen der Tageswerte fragt ein Sheet, ob Geburtsdatum, Geschlecht und Größe ins Profil sollen. */
 import { S, V, save, replaceState, KEY } from '../state.js';
-import { esc, fmt0, fmt1, dShort, ymd } from '../util.js';
+import { esc, fmt0, fmt1, dShort, ymd, plural } from '../util.js';
 import { render } from '../render.js';
 import { toast } from '../ui/toast.js';
 import { confirmSheet, openSheet, closeSheet } from '../ui/sheet.js';
@@ -34,10 +34,11 @@ const sinceFor = key => {
 const days = n => `${fmt0(n)} ${n === 1 ? 'Tag' : 'Tage'}`;
 
 /* ---------- Ansicht ---------- */
-export function importSection() {
+/* heading: false auf der eigenen Unterseite „Apple Health“, die schon so heißt */
+export function importSection({ heading = true } = {}) {
   const s = st();
   return `<section class="p-section card ahi">
-    <h2>Apple Health importieren</h2>
+    ${heading ? '<h2>Apple Health importieren</h2>' : ''}
     ${s.phase === 'reading' ? vReading(s) : s.phase === 'done' ? vDone(s) : s.phase === 'error' ? vError(s) : vIdle()}
   </section>`;
 }
@@ -75,7 +76,7 @@ function vReading(s) {
 }
 
 function progressText(s) {
-  const recs = s.records ? `, ${fmt0(s.records)} Einträge durchgesehen` : '';
+  const recs = s.records ? `, ${fmt0(s.records)} ${plural(s.records, 'Eintrag', 'Einträge')} durchgesehen` : '';
   return `${mbText(s.done)} von ${mbText(s.total)} MB gelesen${recs}`;
 }
 
@@ -144,7 +145,7 @@ async function start(file) {
     job = null;
     Object.assign(s, { phase: 'done', result });
     render();
-    if (V.tab !== 'profile' || V.setView !== 'main') toast('Health-Export gelesen, unter Einstellungen übernehmen');
+    if (V.tab !== 'profile' || V.setView !== 'health') toast('Health-Export gelesen, unter Einstellungen bei Apple Health übernehmen');
   } catch (e) {
     if (job !== ctrl) return;
     job = null;

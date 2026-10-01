@@ -13,7 +13,7 @@
    - Bewertung nach der Einheit: 9 oder 10 von 10 bei einem Training der letzten 48 Stunden macht gelb.
      Allein dadurch wird die Ampel nie rot.
    Die Ampel zeigt das schlechteste Signal. Ohne auswertbare Signale bleibt sie grün und sagt das ehrlich. */
-import { fmt0, fmt1 } from '../util.js';
+import { fmt0, fmt1, plural } from '../util.js';
 import { dayNumber, dateFromDayNumber } from './body.js';
 import { recentRating, RPE_LABEL, RPE_HARD, RPE_HOURS } from './rating.js';
 import { workSets } from './settypes.js';
@@ -121,6 +121,8 @@ export function restingHrShift(restingHr = [], today) {
 /* Verhältnis immer mit einer Nachkommastelle, z. B. „1,0“ */
 const ratioText = r => (Math.round(r * 10) / 10).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
+/* „7,5 Stunden“, „1 Stunde“ */
+const hrs = h => `${fmt1(h)} ${plural(fmt1(h), 'Stunde', 'Stunden')}`;
 const joinClauses = list => (list.length <= 1 ? list.join('') : `${list.slice(0, -1).join(', ')} und ${list[list.length - 1]}`);
 
 /* Die Ampel. input: { sessions, cardio, sleep, restingHr, checkins, now }, today: 'YYYY-MM-DD'.
@@ -160,12 +162,12 @@ export function recoveryStatus(input, today) {
     const lastWorse = RANK[byLast] > RANK[byAvg];
     reasons.push({
       signal: 'sleep', level,
-      text: `Schlaf: ${span} ${fmt1(avg)} Stunden${last && nights.length > 1 ? `, letzte Nacht ${fmt1(last.hours)}` : ''}.`,
+      text: `Schlaf: ${span} ${hrs(avg)}${last && nights.length > 1 ? `, letzte Nacht ${fmt1(last.hours)}` : ''}.`,
       clause: level === 'green'
-        ? `du ${span} ${fmt1(avg)} Stunden geschlafen hast`
+        ? `du ${span} ${hrs(avg)} geschlafen hast`
         : lastWorse
-          ? `du letzte Nacht nur ${fmt1(last.hours)} Stunden geschlafen hast`
-          : `du ${span} nur ${fmt1(avg)} Stunden geschlafen hast`,
+          ? `du letzte Nacht nur ${hrs(last.hours)} geschlafen hast`
+          : `du ${span} nur ${hrs(avg)} geschlafen hast`,
     });
   } else {
     notes.push('Ohne Angaben zum Schlaf fehlt der Ampel ein wichtiges Signal.');

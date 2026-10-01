@@ -1,5 +1,5 @@
 import { S, V, save, activePlan } from '../state.js';
-import { esc, fmt0 } from '../util.js';
+import { esc, fmt0, plural } from '../util.js';
 import { render } from '../render.js';
 import { calorieGoal, waterGoal } from '../domain/energy.js';
 import { PLAN_CHOICES, choosePlan, currentChoice } from '../domain/plan-choice.js';
@@ -48,7 +48,7 @@ const STEPS = [
         <li>Plan: <b>${esc(activePlan().name)}</b></li>
         <li>${cg.ok ? `Kalorienziel: <b class="num">${fmt0(cg.kcal)} kcal</b> am Tag` : `Für das Kalorienziel fehlt noch: ${esc(cg.missing.join(', '))}`}</li>
         <li>Wasser: <b class="num">${(waterGoal(p.weightKg) / 1000).toLocaleString('de-DE')} l</b> am Tag</li>
-        <li>Serie: <b>${p.daysPerWeek}</b> Einheiten pro Woche</li>
+        <li>Serie: <b>${p.daysPerWeek}</b> ${plural(p.daysPerWeek, 'Einheit', 'Einheiten')} pro Woche</li>
       </ul>`;
     },
   },

@@ -104,7 +104,7 @@ export function weightTrend(weights, today, days = 28) {
   const pts = (weights || []).filter(w => { const n = dayNumber(w.date); return n <= t && n > t - days; }).sort(byDate);
   const span = pts.length ? dayNumber(pts[pts.length - 1].date) - dayNumber(pts[0].date) : 0;
   if (pts.length < 5 || span < 14) {
-    return { ok: false, n: pts.length, spanDays: span, reason: `Für einen Trend braucht die App mindestens 5 Einträge über 2 Wochen. Bisher: ${pts.length} Einträge über ${span} Tage.` };
+    return { ok: false, n: pts.length, spanDays: span, reason: `Für einen Trend braucht die App mindestens 5 Einträge über 2 Wochen. Bisher: ${pts.length} ${pts.length === 1 ? 'Eintrag' : 'Einträge'} über ${span} ${span === 1 ? 'Tag' : 'Tage'}.` };
   }
   const r = linearRegression(pts.map(p => dayNumber(p.date)), pts.map(p => p.kg));
   return { ok: true, perDay: r.slope, perWeek: r.slope * 7, current: r.intercept + r.slope * t, slopeSE: r.slopeSE, sd: r.sd, n: pts.length, spanDays: span };

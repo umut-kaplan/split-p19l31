@@ -72,3 +72,18 @@ test('Tage ohne Eintrag werden zur Art mit Kategorie Urlaub, ohne solche Art gib
   assert.doesNotMatch(importSection(), /data-in="shiftgaps"/);
   assert.equal(S.shifts.types.some(t => t.cat === 'vacation'), false);
 });
+
+test('Einzahl in der Vorschau: ein abgesagter Termin, ein weiterer Titel (#64)', () => {
+  const s = defaultState();
+  replaceState(s);
+  const one = ['BEGIN:VCALENDAR', 'VERSION:2.0',
+    ...ev(0, '20261005', 'Frühdienst', '060000', '140000'),
+    ...ev(1, '20261006', 'Spätdienst', '140000', '220000').map(l => (l === 'END:VEVENT' ? 'STATUS:CANCELLED\r\nEND:VEVENT' : l)),
+    ...TITLES.slice(0, 9).flatMap((t, i) => ev(i + 2, `202610${String(7 + i).padStart(2, '0')}`, t)),
+    'END:VCALENDAR', ''].join('\r\n');
+  V.shiftImport = { name: 'eins.ics', text: one, map: {}, titles: {}, gaps: false };
+  inputs.shiftgaps({ checked: false }, 'change');
+  const html = importSection();
+  assert.match(html, /1 abgesagter Termin ausgelassen\./);
+  assert.match(html, /Einen weiteren Titel zeigen/);
+});

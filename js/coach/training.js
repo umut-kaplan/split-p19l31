@@ -67,7 +67,7 @@ function deloads(S, now) {
       id: `deload:${key}:${isoWeekKey(b.s.startedAt)}`,
       area: 'training',
       title: `Deload für ${name}`,
-      reason: `Bei ${name} hast du zweimal hintereinander nicht alle ${e.sets} Sätze mit mindestens ${e.repMin} Wdh. geschafft, darum schlägt die App für die nächste Einheit ${fmt(nw)} statt ${fmt(w)} kg vor, also etwa 10 % weniger.`,
+      reason: `Bei ${name} hast du zweimal hintereinander nicht ${e.sets === 1 ? 'den Satz' : `alle ${e.sets} Sätze`} mit mindestens ${e.repMin} Wdh. geschafft, darum schlägt die App für die nächste Einheit ${fmt(nw)} statt ${fmt(w)} kg vor, also etwa 10 % weniger.`,
       acceptLabel: `Auf ${fmt(nw)} kg senken`,
       apply: S2 => {
         S2.trainingOverrides = S2.trainingOverrides || {};
@@ -149,33 +149,59 @@ function volumeGaps(S, now) {
   return [];
 }
 
-/* ---------- c) Einschränkungen ---------- */
+/* ---------- c) Einschränkungen ----------
+   Ein Vorschlag pro Plan-Eintrag (#65): Belasten mehrere Varianten eines Eintrags (z. B. „Kniebeugen / Hackenschmidt“)
+   den eingetragenen Bereich, ersetzt das Annehmen alle zusammen durch eine schonende Alternative. Steht schon eine
+   schonende Variante im Eintrag und gibt es keine weitere Alternative, schlägt die App vor, die belastenden zu streichen. */
 function limitations(S) {
   const tags = (S.profile.limitations && S.profile.limitations.tags) || [];
   if (!tags.length) return [];
   const out = [];
   const seen = new Set();
-  planEntries(planOf(S)).forEach(({ day, e, name }) => {
-    if (seen.has(name)) return;
-    const lib = findExercise(name, S.exercisesCustom);
-    const hit = limitationHits(lib, tags);
-    if (!hit.length) return;
-    seen.add(name);
-    const sameDay = new Set(day.exercises.flatMap(x => x.names));
-    const alt = safeAlternatives(lib, S.exercisesCustom, tags).find(a => !sameDay.has(a.name));
-    if (!alt) return;
-    out.push({
-      id: `limit:${e.id}|${name}:${[...hit].sort().join('+')}`,
-      area: 'training',
-      title: `${name} tauschen?`,
-      reason: `${name} belastet ${hit.length > 1 ? 'deine eingetragenen Bereiche' : 'deinen eingetragenen Bereich'} ${hit.join(' und ')}, ${alt.name} trainiert ähnliche Muskeln und schont ${hit.length > 1 ? 'sie' : 'ihn'}.`,
-      acceptLabel: `Gegen ${alt.name} tauschen`,
-      apply: S2 => {
-        const p = planOf(S2);
-        p.order.forEach(dId => (p.days[dId] ? p.days[dId].exercises : []).forEach(x => {
-          x.names = x.names.map(n => (n === name ? alt.name : n));
-        }));
-      },
+  const plan = planOf(S);
+  plan.order.forEach(dayId => {
+    const day = plan.days[dayId];
+    if (!day) return;
+    day.exercises.forEach(e => {
+      const hits = e.names.map(name => {
+        const lib = findExercise(name, S.exercisesCustom);
+        return { name, lib, areas: limitationHits(lib, tags) };
+      }).filter(h => h.areas.length);
+      if (!hits.length) return;
+      const names = hits.map(h => h.name);
+      const key = `${e.id}|${names.join('+')}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const areas = [...new Set(hits.flatMap(h => h.areas))];
+      const sameDay = new Set(day.exercises.flatMap(x => x.names));
+      const alt = hits.map(h => safeAlternatives(h.lib, S.exercisesCustom, tags).find(a => !sameDay.has(a.name))).find(Boolean) || null;
+      const keep = e.names.filter(n => !names.includes(n));
+      if (!alt && !keep.length) return;
+      const who = names.join(' und ');
+      const what = `${who} ${names.length > 1 ? 'belasten' : 'belastet'} ${areas.length > 1 ? 'deine eingetragenen Bereiche' : 'deinen eingetragenen Bereich'} ${areas.join(' und ')}`;
+      const them = areas.length > 1 ? 'sie' : 'ihn';
+      out.push({
+        id: `limit:${key}:${[...areas].sort().join('+')}`,
+        area: 'training',
+        title: alt ? `${who} tauschen?` : `${who} streichen?`,
+        reason: alt
+          ? `${what}, ${alt.name} trainiert ähnliche Muskeln und schont ${them}.`
+          : `${what}. ${keep.join(' und ')} ${keep.length > 1 ? 'stehen' : 'steht'} schon als Variante in dieser Übung und ${keep.length > 1 ? 'schonen' : 'schont'} ${them}.`,
+        acceptLabel: alt ? `Gegen ${alt.name} tauschen` : `${who} streichen`,
+        /* Im ganzen Plan: belastende Varianten raus, an die Stelle der ersten die Alternative (nie doppelt) */
+        apply: S2 => {
+          const p = planOf(S2);
+          p.order.forEach(dId => (p.days[dId] ? p.days[dId].exercises : []).forEach(x => {
+            if (!x.names.some(n => names.includes(n))) return;
+            const next = [];
+            x.names.forEach(n => {
+              const v = !names.includes(n) ? n : alt && !x.names.includes(alt.name) ? alt.name : null;
+              if (v && !next.includes(v)) next.push(v);
+            });
+            if (next.length) x.names = next;
+          }));
+        },
+      });
     });
   });
   return out;

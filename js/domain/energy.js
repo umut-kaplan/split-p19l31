@@ -1,4 +1,4 @@
-import { fmt0, fmt1, ymd } from '../util.js';
+import { fmt0, fmt1, ymd, plural } from '../util.js';
 import { leanMass, latestComposition, currentWeight } from './body.js';
 import { cardioKcalPerDay, stepsKcalPerDay, burnAverage, KCAL_PER_STEP_KG } from './activity.js';
 import { profileAge } from './birthdate.js';
@@ -60,10 +60,10 @@ function activityLines(cardio, steps, activityLabel) {
     out.push(`Plus ${n0(cardio.kcalPerDay)} kcal pro Tag für Cardio: ${cardio.count} ${cardio.count === 1 ? 'Einheit' : 'Einheiten'} mit zusammen ${n0(cardio.minutes)} Minuten und ${n0(cardio.kcal)} kcal in den letzten 7 Tagen, geschätzt nach MET und auf 7 Tage verteilt.`);
   }
   if (steps.enough) {
-    const walk = steps.walkSteps >= 1 ? ` Gehen aus deinem Cardio (etwa ${n0(steps.walkSteps)} Schritte am Tag) zieht die App ab, weil es schon als Cardio zählt.` : '';
+    const walk = steps.walkSteps >= 1 ? ` Gehen aus deinem Cardio (etwa ${n0(steps.walkSteps)} ${plural(n0(steps.walkSteps), 'Schritt', 'Schritte')} am Tag) zieht die App ab, weil es schon als Cardio zählt.` : '';
     out.push(steps.kcalPerDay > 0
-      ? `Plus ${n0(steps.kcalPerDay)} kcal pro Tag für Schritte: im Schnitt ${n0(steps.avgSteps)} Schritte an ${steps.days} Tagen, davon ${n0(steps.extra)} über den ${n0(steps.baseline)}, die in „${activityLabel}“ schon stecken, mal ${KCAL_PER_STEP_KG.toLocaleString('de-DE', { maximumFractionDigits: 4 })} kcal pro Schritt und kg.${steps.capped ? ' Mehr als 12.000 zusätzliche Schritte am Tag zählen nicht weiter.' : ''}${walk}`
-      : `Kein Zuschlag für Schritte: im Schnitt ${n0(steps.avgSteps)} an ${steps.days} Tagen, das steckt in „${activityLabel}“ (${n0(steps.baseline)} Schritte) schon drin.${walk}`);
+      ? `Plus ${n0(steps.kcalPerDay)} kcal pro Tag für Schritte: im Schnitt ${n0(steps.avgSteps)} Schritte an ${steps.days} ${plural(steps.days, 'Tag', 'Tagen')}, davon ${n0(steps.extra)} über den ${n0(steps.baseline)}, die in „${activityLabel}“ schon stecken, mal ${KCAL_PER_STEP_KG.toLocaleString('de-DE', { maximumFractionDigits: 4 })} kcal pro Schritt und kg.${steps.capped ? ' Mehr als 12.000 zusätzliche Schritte am Tag zählen nicht weiter.' : ''}${walk}`
+      : `Kein Zuschlag für Schritte: im Schnitt ${n0(steps.avgSteps)} an ${steps.days} ${plural(steps.days, 'Tag', 'Tagen')}, das steckt in „${activityLabel}“ (${n0(steps.baseline)} Schritte) schon drin.${walk}`);
   }
   return out;
 }
@@ -121,7 +121,7 @@ export function calorieGoal(p, ctx = {}) {
   if (burn.enough) {
     const diff = burn.avg - tdee;
     const rel = Math.abs(diff) / tdee * 100;
-    lines.push(`Zum Vergleich: Deine Uhr misst im Schnitt ${fmt0(burn.avg)} kcal Tagesverbrauch an ${burn.days} Tagen, die Rechnung ergibt ${fmt0(tdee)} kcal${rel >= 5 ? ` (${fmt0(rel)} % ${diff > 0 ? 'weniger' : 'mehr'})` : ''}. Die App bleibt bei ihrer Rechnung, weil Uhren den Verbrauch oft deutlich überschätzen und der wöchentliche Abgleich mit deinem Gewicht das Ziel ohnehin nachführt.`);
+    lines.push(`Zum Vergleich: Deine Uhr misst im Schnitt ${fmt0(burn.avg)} kcal Tagesverbrauch an ${burn.days} ${plural(burn.days, 'Tag', 'Tagen')}, die Rechnung ergibt ${fmt0(tdee)} kcal${rel >= 5 ? ` (${fmt0(rel)} % ${diff > 0 ? 'weniger' : 'mehr'})` : ''}. Die App bleibt bei ihrer Rechnung, weil Uhren den Verbrauch oft deutlich überschätzen und der wöchentliche Abgleich mit deinem Gewicht das Ziel ohnehin nachführt.`);
   }
   return {
     ok: true, bmr, formula: lean ? 'katch' : 'mifflin', lean,

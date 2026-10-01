@@ -8,7 +8,9 @@
    Schichtart, in dieser Reihenfolge:
    1. Eine gemerkte Zuordnung des Nutzers für genau diesen Titel (map, Schlüssel titleKey).
    2. Der Titel ist Name oder Kürzel einer Schichtart, z. B. „Zwischendienst“ oder „Z“.
-   3. Wörter im Titel: Früh/Frueh/F, Spät/Spaet/S, Nacht/N (auch „Frühschicht“, „Spätdienst“, „F-Schicht“ usw.),
+   3. Wörter im Titel: Früh/Frueh/F, Spät/Spaet/S, Nacht/N (auch „Frühschicht“, „Spätdienst“, „Nachtwache“, „F-Schicht“,
+      „Nachtdienstwoche“ usw., aber nur als ganzes Wort oder mit Schicht, Dienst, Wache oder Bereitschaft dahinter:
+      „Frühjahrsputz“ und „Nachtwanderung“ sind keine Schicht),
       Tag/Tagschicht/Tagdienst (T), 24 h/24-Stunden-Dienst (X), Wache/Wachdienst (X, nur ab 16 Stunden Dauer),
       Dispo/Reserve (D), „frei“ ('-'); stehen mehrere im Titel, zählt das erste. Nur wenn keins davon vorkommt:
       Urlaub/Urlaubstag (U), Krank/krankgeschrieben/Krankmeldung (K) oder „AU“ als ganzer Titel. Urlaub und Krank
@@ -273,11 +275,16 @@ const norm = s => String(s || '').toLowerCase()
 export const titleKey = title => String(title || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 60);
 /* Titel für die Anzeige, höchstens max Zeichen, gekürzt mit „…“ */
 const clip = (s, max) => (s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s);
-/* Schichtwörter. Stehen mehrere im Titel, zählt das erste. */
+/* Schichtwörter. Stehen mehrere im Titel, zählt das erste.
+   Früh, Spät und Nacht nur als ganzes Wort oder mit Schicht, Dienst, Wache, Bereitschaft oder Shift dahinter
+   („Frühschicht“, „Spätdienst“, „Nachtwache“, auch „Früh1“). Danach darf das Wort weitergehen: „Frühdienstvertretung“,
+   „Nachtdienstwoche“, „Nachtschichtzulage“. Nicht „Frühstück“, „Frühjahrsputz“, „Spätzle“ oder „Nachtwanderung“. */
+const ALONE = '(?![a-z])';
+const shiftWord = stem => new RegExp(`\\b${stem}(?:(?:schicht|dienst|wache|bereitschaft|shift)|${ALONE})`);
 const SHIFT_WORDS = [
-  ['F', /\b(?:frueh(?!stueck)|early)/],
-  ['S', /\b(?:spaet|late\b)/],
-  ['N', /\b(?:nacht|night)/],
+  ['F', shiftWord('(?:frueh|early)')],
+  ['S', shiftWord('(?:spaet|late)')],
+  ['N', shiftWord('(?:nacht|night)')],
   ['T', /\b(?:tag(?:schicht|dienst)|day\s*shift)/],
   ['X', /\b24\s*[-–]?\s*(?:h\b|std|stunden)|\b24er\b/],
   ['W', /\bwach(?:e|dienst)\b/],

@@ -10,6 +10,7 @@ import { loadZxing } from '../ui/zxing.js';
 import { toast } from '../ui/toast.js';
 import { openSheet, closeSheet, confirmSheet } from '../ui/sheet.js';
 import * as scan from './compare-scan.js';
+import { backLink, compareRow } from '../ui/navlinks.js';
 
 const shareWeight = () => S.settings.compareWeight !== false;
 const dateOf = d => new Date(d + 'T12:00');
@@ -43,14 +44,12 @@ function accepted(r) {
 }
 
 /* ---------- Einstieg auf der Trainingsseite ---------- */
-export function entryCard() {
+/* Kompakte Zeile unter der Planzeile; Erfolge und Wochenbericht nutzen compareRow() ohne den letzten Stand */
+export function entryRow() {
   const st = storedStand();
-  return `<section class="block card cmp-entry">
-    <h2>Vergleichen</h2>
-    <p class="muted">Zeig deinen Stand als QR-Code oder scanne den Code eines Trainingspartners. Die Daten gehen direkt von Handy zu Handy.</p>
-    ${st ? `<p class="small-print">Zuletzt verglichen mit ${esc(partnerName(st.stand))}${st.scannedAt ? ` am ${esc(dShort(st.scannedAt))}` : '.'}</p>` : ''}
-    <div class="stack" style="margin-top:12px"><button class="btn" data-act="cmpopen">Vergleichen</button></div>
-  </section>`;
+  return `<div class="cmp-entry">${compareRow(st
+    ? `Zuletzt mit ${partnerName(st.stand)}${st.scannedAt ? ` am ${dShort(st.scannedAt)}` : ''}`
+    : undefined)}</div>`;
 }
 
 /* ---------- Unterseite ---------- */
@@ -74,7 +73,7 @@ function pasteCard(open) {
 function mainPage() {
   const st = storedStand();
   return `<div class="cmp day-yellow">
-    <div class="mot-top"><button class="link" data-act="cmpclose">Zurück zum Training</button></div>
+    ${backLink()}
     <h1 class="page-title">Vergleichen</h1>
     <p class="page-sub">Einer zeigt seinen Stand als QR-Code, der andere scannt ihn. Nichts geht über das Internet.</p>
     ${st ? comparison(st) : (S.compare ? '<p class="empty block">Der gespeicherte Stand lässt sich nicht mehr lesen. Scanne ihn noch einmal.</p>' : '')}
@@ -97,9 +96,9 @@ function mainPage() {
 function scanPage() {
   setTimeout(scan.attach, 0);
   return `<div class="cmp day-yellow">
-    <div class="mot-top"><button class="link" data-act="cmpscanclose">Abbrechen</button></div>
+    ${backLink()}
     <h1 class="page-title">Code scannen</h1>
-    <p class="page-sub">Der andere öffnet in Split <b>Training, Vergleichen, Meinen Stand zeigen</b>.</p>
+    <p class="page-sub">Der andere öffnet in Split <b>Training, Mit Trainingspartner vergleichen, Meinen Stand zeigen</b>.</p>
     ${scan.cameraFailed() ? '' : `<div class="scan-box cmp-scan-box">
       <video id="cmp-video" playsinline muted autoplay aria-label="Kamerabild"></video>
       <div class="cmp-frame" aria-hidden="true"></div>
@@ -171,7 +170,7 @@ function contents(code, hadName) {
   return `<ul class="rules cmp-contents">
     <li>Vorname: <b>${st.name ? esc(st.name) : hadName ? 'nicht enthalten' : 'keiner eingetragen'}</b></li>
     <li>Rekorde: <b>${lifts.length ? esc(lifts.join(', ')) : 'noch keine bei Grundübungen'}</b></li>
-    <li>Letzte 7 Tage: <b>${fmt0(st.week.sets)} Sätze, ${fmt0(st.week.kg)} kg</b></li>
+    <li>Letzte 7 Tage: <b>${fmt0(st.week.sets)} ${st.week.sets === 1 ? 'Satz' : 'Sätze'}, ${fmt0(st.week.kg)} kg</b></li>
     <li>Serie: <b>${weeksText(st.streak.weeks)}</b></li>
     <li>Körpergewicht: <b>${esc(body)}</b></li>
   </ul>`;
@@ -187,7 +186,7 @@ async function showMine() {
   openSheet({
     title: 'Mein Stand',
     body: `${qr ? `<div class="cmp-qr" data-version="${qr.version}" data-mask="${qr.mask}">${qr.svg}</div>
-        <p class="cmp-qr-hint">Der andere scannt ihn in Split unter <b>Training, Vergleichen, Code scannen</b>. Dreh die Helligkeit hoch, falls es nicht klappt.</p>`
+        <p class="cmp-qr-hint">Der andere scannt ihn in Split unter <b>Training, Mit Trainingspartner vergleichen, Code scannen</b>. Dreh die Helligkeit hoch, falls es nicht klappt.</p>`
       : '<p class="banner">Der QR-Code ließ sich nicht erzeugen. Der andere kann den Code-Text unten einfügen.</p>'}
       <p class="small-print cmp-in">Darin steckt nur diese Zusammenfassung:</p>
       ${contents(code, !!st.name)}
@@ -212,8 +211,8 @@ async function copyCode() {
 }
 
 export const actions = {
+  /* Aus Training, Erfolge oder Wochenbericht; app.js zeigt die Seite über dem jeweiligen Bereich, Zurück führt dorthin */
   cmpopen: () => { V.cmpView = 'main'; go(); },
-  cmpclose: () => { scan.stopScanner(); V.cmpView = null; go(); },
   cmpweight: () => { S.settings.compareWeight = !shareWeight(); save(); render(); },
   cmpshow: showMine,
   cmpcopy: copyCode,
@@ -227,7 +226,6 @@ export const actions = {
     V.cmpView = 'scan';
     go();
   },
-  cmpscanclose: () => { scan.stopScanner(); V.cmpView = 'main'; go(); },
   cmpscanretry: () => { actions.cmpscan(); },
   cmppaste: () => {
     const el = document.getElementById('cmp-paste');

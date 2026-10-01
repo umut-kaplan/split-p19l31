@@ -8,6 +8,7 @@ import { plateSettings, nearestLoadable, loadBar, perSideText } from '../domain/
 import { barInfo } from './plates.js';
 import { warmupRamp, warmupTargets, rampText, roundToStep, rampSets } from '../domain/warmup.js';
 import { isWarmup } from '../domain/settypes.js';
+import { lastLog } from '../domain/progression.js';
 
 const libOf = x => findExercise(x.name, S.exercisesCustom);
 
@@ -34,27 +35,58 @@ function rampFor(x, i) {
   return ramp.length ? { ramp, work, bar, st } : null;
 }
 
+/* Erledigter Arbeitssatz: Die Rampe kommt zu spät, übernehmen lässt sie sich dann nicht mehr (#66) */
+const workDone = x => x.log.some(s => s.done && !isWarmup(s));
+
+/* Bekäme Übung i mit einem Gewicht einen Aufwärm-Vorschlag? Ob sie dran ist, hängt nur von ihr und den Übungen davor ab,
+   nicht von ihrem Gewicht (domain/warmup.js). */
+function rampPossible(x, i) {
+  const a = S.active;
+  if (!a || x.unit === 'sec') return false;
+  return warmupTargets(a.ex.map((e, k) => ({ lib: libOf(e), workKg: k === i ? 1 : workKg(e) }))).includes(i);
+}
+
+/* Was die Zeile zeigt: die Rampe, einen Platzhalter oder nichts. key steht als data-ramp an der Zeile, damit workout.js
+   nach einer Gewichtseingabe sieht, ob sich etwas geändert hat.
+   Platzhalter (#66): Beim ersten Mal einer Übung gibt es die Rampe erst mit dem eingetragenen Gewicht. Die Zeile steht
+   vorher schon da, gleich hoch, damit die Sätze darunter nicht verrutschen, wenn die Rampe erscheint. */
+function lineOf(x, i) {
+  const rf = rampFor(x, i);
+  if (rf) return { rf, key: `${rampText(rf.ramp, fmt)}|${x.log.some(isWarmup) || workDone(x) ? 1 : 0}` };
+  if (workDone(x) || x.log.some(isWarmup) || lastLog(S.sessions, x.exId, x.name) || !rampPossible(x, i)) return { key: '' };
+  return { wait: workKg(x) > 0 ? 'light' : 'empty', key: workKg(x) > 0 ? 'wait-light' : 'wait' };
+}
+export const rampKey = (x, i) => lineOf(x, i).key;
+
+/* Zwei Zeilen: oben klein „Aufwärmen“, darunter die Stufen oder der Platzhalter */
+const head = (v, cls = 'num') => `<span class="wu-t"><span class="wu-k">Aufwärmen</span><span class="wu-v ${cls}">${v}</span></span>`;
+
 /* Aufklappbare Zeile auf der Übungskarte. x: Übung der laufenden Einheit, i: Index in S.active.ex */
 export function warmupLine(x, i) {
-  const rf = rampFor(x, i);
+  const { rf, wait, key } = lineOf(x, i);
+  if (wait) {
+    return `<div class="wu wu-wait" data-ramp="${esc(key)}"><p class="wu-sum">${head(wait === 'light' ? 'Bei dem Gewicht nicht nötig' : 'Erst das Gewicht eintragen', '')}</p></div>`;
+  }
   if (!rf) return '';
   const { ramp, work, bar, st } = rf;
   const taken = x.log.some(isWarmup);
-  const key = `${i}:${x.exId}`;
-  const open = V.wuOpen && V.wuOpen[key];
+  const late = !taken && workDone(x);
+  const k = `${i}:${x.exId}`;
+  const open = V.wuOpen && V.wuOpen[k];
   const plates = kg => {
     if (!bar) return '';
     const r = loadBar(kg, bar.kg, st.available);
     return r.status === 'exact' ? `je Seite ${perSideText(r.perSide, fmt)}` : r.status === 'bar' ? 'leere Stange' : '';
   };
-  return `<details class="wu" ${open ? 'open' : ''}>
-    <summary data-act="gymwu" data-key="${esc(key)}"><span class="wu-k">Aufwärmen</span> <span class="num">${esc(rampText(ramp, fmt))}</span></summary>
+  return `<details class="wu" data-ramp="${esc(key)}" ${open ? 'open' : ''}>
+    <summary data-act="gymwu" data-key="${esc(k)}">${head(esc(rampText(ramp, fmt)))}</summary>
     <ul class="wu-list">${ramp.map(s => `
       <li><b class="num">${esc(fmt(s.kg))} kg × ${s.reps}</b>${bar ? `<span>${esc(plates(s.kg))}</span>` : ''}</li>`).join('')}</ul>
     <p class="small-print">Aus ${esc(fmt(work))} kg Arbeitsgewicht, kurze Pausen dazwischen. ${taken
       ? 'Steht als Aufwärmsätze (A) in der Liste und zählt nicht mit.'
-      : 'Zählt nicht mit. Übernommen stehen die Stufen als Aufwärmsätze (A) in der Liste, zum Abhaken.'}</p>
-    ${taken ? '' : `<div class="wu-take"><button class="btn small" data-act="wutake" data-i="${i}">Aufwärmsätze übernehmen</button></div>`}
+      : late ? 'Zählt nicht mit. Der erste Arbeitssatz ist schon erledigt, darum lassen sich die Aufwärmsätze nicht mehr übernehmen.'
+        : 'Zählt nicht mit. Übernommen stehen die Stufen als Aufwärmsätze (A) in der Liste, zum Abhaken.'}</p>
+    ${taken || late ? '' : `<div class="wu-take"><button class="btn small" data-act="wutake" data-i="${i}">Aufwärmsätze übernehmen</button></div>`}
   </details>`;
 }
 
@@ -63,7 +95,7 @@ export const actions = {
   wutake: el => {
     const i = +el.dataset.i;
     const x = S.active && S.active.ex[i];
-    if (!x || x.log.some(isWarmup)) return;
+    if (!x || x.log.some(isWarmup) || workDone(x)) return;
     const rf = rampFor(x, i);
     if (!rf) return;
     x.log.unshift(...rampSets(rf.ramp, fmtIn));

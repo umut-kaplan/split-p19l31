@@ -1,14 +1,19 @@
 import { S, V, save, dayOf, activePlan } from '../state.js';
-import { esc, fmt, toNum, mmss, unitL, dShort, uid } from '../util.js';
+import { esc, fmt, toNum, mmss, unitL, dShort, uid, plural } from '../util.js';
 import { render } from '../render.js';
 import { suggest, lastLog } from '../domain/progression.js';
 import { plateSVG } from '../ui/plate.js';
 import { ICON } from '../ui/icons.js';
 import { toast } from '../ui/toast.js';
-import { confirmSheet } from '../ui/sheet.js';
+import { confirmSheet, openSheet, closeSheet } from '../ui/sheet.js';
 import { startRest, unlockAudio, wake, release } from '../timer.js';
 import { infoButton } from './library.js';
-import { personalRecords, setRecords, sessionRecords, RECORD_LABEL, formatRecord } from '../domain/prs.js';
+import { personalRecords, setRecords, sessionRecords, RECORD_LABEL, formatRecord, bestSummary } from '../domain/prs.js';
+import { overviewOf, progressOf, foldSummary, setsSummary } from '../domain/session-flow.js';
+import { checkWeight, referenceFor } from '../domain/weight-check.js';
+import { markShown } from './live-bar.js';
+import * as nav from './workout-nav.js';
+import { compareRow, COMPARE_SHORT } from '../ui/navlinks.js';
 import { findExercise, limitationHits } from '../domain/library.js';
 import { setType, nextType, isWarmup, isTop, workSets, topSets, tonnage, setLabels, setName, typePrefix } from '../domain/settypes.js';
 import { groupsOf, groupAt, restAfter } from '../domain/superset.js';
@@ -18,12 +23,18 @@ import * as rating from './session-rating.js';
 import * as plates from './plates.js';
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [notes, warmup, rating, plates];
+export const modules = [notes, warmup, rating, plates, nav];
 
 const keyOf = x => x.exId + '|' + x.name;
 /* Angenommener Deload-Vorschlag für diese Übung, siehe coach/training.js */
 const overrideFor = x => (S.trainingOverrides && S.trainingOverrides[keyOf(x)]) || null;
 const recordText = recs => recs.map(r => `${RECORD_LABEL[r.kind]} ${formatRecord(r.kind, r.value)}`).join(', ');
+/* Bestwerte der früheren Einheiten, einmal pro Stand gerechnet (jede Übungskarte und jeder Haken fragt danach) */
+let recCache = { list: null, n: -1, map: null };
+const priorRecords = () => {
+  if (recCache.list !== S.sessions || recCache.n !== S.sessions.length) recCache = { list: S.sessions, n: S.sessions.length, map: personalRecords(S.sessions) };
+  return recCache.map;
+};
 
 /* „80 × 8“, mit Satztyp davor: „A 40 × 10“, „D 60 × 12“ */
 const fmtSet = (s, unit) => {
@@ -77,31 +88,32 @@ export function startWorkout(dayId) {
   };
   V.pick = null;
   V.tab = 'training';
+  V.trainSub = 'start';
+  nav.resetFlow();
   save(); wake(); render();
-  window.scrollTo(0, 0);
+  nav.showStart();
 }
 
 /* ---------- Ansicht ---------- */
-export function vWorkout() {
+const HELP = 'Erst aufwärmen, Aufwärmsätze zählen nicht. Bei den Arbeitssätzen 1–2 Wiederholungen in Reserve lassen. Leere Felder übernehmen beim Abhaken den grauen Vorschlag. Ein Tipp auf die Satznummer wechselt den Typ: A Aufwärmen, D Drop, V bis Versagen. Erledigte Übungen klappen ein, ein Tipp klappt sie wieder auf.';
+
+/* subTabs: Reiterleiste des Trainingsbereichs (training.js), damit Verlauf, Plan und Übungen auch im Training erreichbar sind */
+export function vWorkout(subTabs = '') {
   const a = S.active;
-  /* Aufwärmsätze zählen im Fortschritt nicht mit */
-  const total = a.ex.reduce((n, x) => n + workSets(x.log).length, 0);
-  const done = a.ex.reduce((n, x) => n + workSets(x.log).filter(s => s.done).length, 0);
-  return `<div class="day-${a.color}">
-    <div class="wo-bar">
-      <div class="wo-row">
-        ${plateSVG(a.color, '', '', { small: true })}
-        <div class="grow"><h1>${esc(a.name)}</h1><span class="elapsed num" id="elapsed">${mmss((Date.now() - a.startedAt) / 1000)}</span></div>
-        <button class="btn small primary" data-act="finish">Beenden</button>
-      </div>
-      <div class="progress" aria-label="${done} von ${total} Sätzen"><i style="width:${total ? done / total * 100 : 0}%"></i></div>
-    </div>
-    <p class="wo-note">Erst aufwärmen, Aufwärmsätze zählen nicht. Bei den Arbeitssätzen 1–2 Wiederholungen im Tank lassen. Leere Felder übernehmen beim Abhaken den grauen Vorschlag. Ein Tipp auf die Satznummer wechselt den Typ: A Aufwärmen, D Drop, V bis Versagen.</p>
+  /* Diese Seite zeigt die Einheit: Pausentimer statt Mini-Leiste (live-bar.js) */
+  markShown();
+  const ov = overviewOf(a.ex);
+  return `<div class="day-${a.color} wo">
+    ${nav.woHeader(a, ov)}
+    ${subTabs ? `<div class="train-head wo-subs">${subTabs}</div>` : ''}
+    <div class="cmp-entry wo-cmp">${compareRow('', COMPARE_SHORT)}</div>
+    ${nav.woHelp(HELP)}
     ${groupsOf(a.ex).map(g => (g.length > 1 ? ssGroup(g) : exCard(a.ex[g[0]], g[0]))).join('')}
     <div class="wo-end">
-      <button class="btn primary" data-act="finish">Training beenden</button>
       <button class="btn ghost" data-act="discard">Training verwerfen</button>
+      <button class="link" data-act="cmpopen">Mit Trainingspartner vergleichen (QR-Code)</button>
     </div>
+    ${nav.woDock(a, ov)}
   </div>`;
 }
 
@@ -115,13 +127,35 @@ function ssGroup(g) {
   </div>`;
 }
 
+/* Erledigte Übung, eingeklappt: eine Zeile mit Name und Zusammenfassung, ein Tipp klappt sie auf */
+function foldedCard(x, i, p) {
+  const sum = foldSummary(x);
+  const pr = x.log.some(s => s.done && s.rec);
+  return `<section class="ex complete folded" id="ex${i}">
+    <button class="ex-fold" data-act="exfold" data-i="${i}" aria-expanded="false" aria-label="${esc(x.name)}, erledigt: ${esc(sum)}${pr ? ', neuer Rekord' : ''}. Tippen klappt auf">
+      <span class="ex-fold-t"><b>${esc(x.name)}</b><span class="num">${pr ? '<i class="ex-fold-pr">Rekord</i> ' : ''}${esc(sum)}</span></span>
+      <span class="ex-fold-c num">${ICON.check}${p.done}/${p.total}</span>
+    </button>
+  </section>`;
+}
+
+/* Bestwert der Übung wie unter Verlauf · Rekorde, für dieselbe Übung im Plan */
+function bestLine(x) {
+  const b = bestSummary(priorRecords().get(keyOf(x)));
+  if (!b) return '';
+  return `<p class="best"><span class="best-k">Bestwert</span> ${b.items.map(it =>
+    `${it.label ? esc(it.label) + ' ' : ''}<b class="num">${esc(it.text)}</b>`).join(' · ')} <small class="num">am ${esc(dShort(b.date))}</small></p>`;
+}
+
 function exCard(x, i) {
+  const p = progressOf(x);
+  if (p.complete && !nav.isOpen(i)) return foldedCard(x, i, p);
   const sug = suggest(S.sessions, { ...x, id: x.exId }, x.name);
   const L = lastLog(S.sessions, x.exId, x.name);
   /* Satzzähler x/y ohne Aufwärmsätze */
   const work = workSets(x.log);
-  const doneN = work.filter(s => s.done).length;
-  const complete = work.length > 0 && doneN >= work.length;
+  const doneN = p.done;
+  const complete = p.complete;
   const g = groupAt(S.active.ex, i);
   const direct = g.length > 1 && i !== g[g.length - 1];
   const labels = setLabels(x.log);
@@ -132,20 +166,23 @@ function exCard(x, i) {
     ? `<div class="hint deload"><strong>Deload: ${esc(fmt(x.deload))} kg</strong><span>Vorschlag angenommen: diese Einheit etwa 10&nbsp;% leichter und ${x.repMax} Wdh. pro Satz, danach geht es wieder aufwärts.</span></div>`
     : `<div class="hint ${sug.kind}"><strong>${esc(sug.text)}</strong><span>${esc(sug.sub)}</span></div>`;
   return `<section class="ex ${complete ? 'complete' : ''}" id="ex${i}">
-    <div class="ex-title"><h2>${esc(x.name)}</h2><span class="ex-count num">${doneN}/${work.length}</span></div>
+    <div class="ex-title"><h2>${esc(x.name)}</h2>${complete
+      ? `<button class="ex-count ex-unfold num" data-act="exfold" data-i="${i}" aria-expanded="true" aria-label="${esc(x.name)} zuklappen">${doneN}/${work.length}${ICON.up}</button>`
+      : `<span class="ex-count num">${doneN}/${work.length}</span>`}</div>
     ${infoButton(x.name)}
     ${notes.exerciseNote(x, i)}
     ${x.names.length > 1 ? `<div class="seg" role="group" aria-label="Variante">${x.names.map((n, v) =>
       `<button data-act="variant" data-i="${i}" data-v="${v}" class="${v === x.v ? 'on' : ''}" aria-pressed="${v === x.v}">${esc(n)}</button>`).join('')}</div>` : ''}
     <div class="ex-meta">
-      <span><b class="num">${x.sets}</b> Sätze</span>
+      <span><b class="num">${x.sets}</b> ${plural(x.sets, 'Satz', 'Sätze')}</span>
       <span><b class="num">${x.repMin}–${x.repMax}</b> ${unitL(x.unit)}</span>
       ${direct ? '<span>Danach ohne Pause weiter</span>' : `<span>Pause <b class="num">${mmss(x.rest)}</b></span>`}
     </div>
-    ${L ? `<p class="last">Letztes Mal am ${esc(dShort(L.date))}: <span class="num">${L.sets.map(s => fmtSet(s, x.unit)).join(', ')}</span></p>` : ''}
+    ${L ? `<p class="last">Letztes Mal am ${esc(dShort(L.date))}: <span class="num">${esc(setsSummary(L.sets, x.unit))}</span></p>` : ''}
+    ${bestLine(x)}
     ${hits.length ? `<p class="ex-warn">Belastet ${esc(hits.join(' und '))}, das du als Einschränkung eingetragen hast. Bei Beschwerden leichter gehen oder unter „Anleitung“ eine Alternative wählen.</p>` : ''}
     ${hint}
-    ${warmup.warmupLine(x, i)}
+    <div class="wu-slot" id="wu${i}">${warmup.warmupLine(x, i)}</div>
     <div class="sets ${bar ? 'with-plates' : ''}">
       <div class="set-h"><span>Satz</span><span>kg</span>${bar ? '<span></span>' : ''}<span>${unitL(x.unit)}</span><span>RIR</span><span></span></div>
       ${x.log.map((s, j) => {
@@ -177,8 +214,35 @@ function recordsFor(x, j) {
   const s = x.log[j];
   if (!isTop(s)) return null;
   const before = x.log.filter((b, k) => b.done && k !== j).map(b => ({ w: toNum(b.w) || 0, r: toNum(b.r), t: setType(b) }));
-  const recs = setRecords(personalRecords(S.sessions).get(keyOf(x)), before, { w: toNum(s.w) || 0, r: toNum(s.r) }, x.unit);
+  const recs = setRecords(priorRecords().get(keyOf(x)), before, { w: toNum(s.w) || 0, r: toNum(s.r) }, x.unit);
   return recs.length ? recs : null;
+}
+
+/* Tippfehler abfangen: „950 kg stimmt?“, bevor der Satz zählt (domain/weight-check.js) */
+function askWeight(i, j, w, c) {
+  const x = S.active.ex[i];
+  const kg = `${fmt(w)} kg`;
+  const was = c.basis === 'best'
+    ? `Dein Bestwert bei ${x.name} liegt bei ${fmt(c.ref)} kg.`
+    : `Zuletzt hast du bei ${x.name} mit ${fmt(c.ref)} kg trainiert.`;
+  openSheet({
+    title: `${kg} stimmt?`,
+    text: `${was} ${kg} wären mehr als anderthalbmal so viel. Vielleicht ein Tippfehler?`,
+    actions: [
+      { label: 'Ja', kind: '', fn: () => {
+        const s = S.active && S.active.ex[i] && S.active.ex[i].log[j];
+        V.sheet = null;
+        if (!s) { render(); return; }
+        s.okW = s.w;
+        toggleSet(i, j);
+      } },
+      { label: 'Korrigieren', kind: 'primary', fn: () => {
+        closeSheet();
+        const el = document.querySelector(`input[data-in="w"][data-i="${i}"][data-j="${j}"]`);
+        if (el) { el.focus(); el.select(); }
+      } },
+    ],
+  });
 }
 
 function toggleSet(i, j) {
@@ -188,7 +252,14 @@ function toggleSet(i, j) {
   const r = s.r === '' ? toNum(s.pr) : toNum(s.r);
   if (!isFinite(r) || r <= 0) { toast(`Bitte ${unitL(x.unit)} eintragen`); return; }
   if (!isFinite(w) || w < 0) { toast('Gewicht als Zahl eintragen, z. B. 42,5'); return; }
+  /* Nur selbst eingetragene Gewichte prüfen; einmal bestätigt, fragt die App für diesen Wert nicht noch einmal */
+  if (s.w !== '' && s.okW !== s.w) {
+    const c = checkWeight(w, referenceFor({ prior: priorRecords().get(keyOf(x)) || null, last: lastLog(S.sessions, x.exId, x.name), log: x.log, j }));
+    if (c.ask) { askWeight(i, j, w, c); return; }
+  }
+  const wasComplete = progressOf(x).complete;
   s.w = fmt(w);
+  if (s.okW !== undefined) s.okW = s.w;
   s.r = String(Math.round(r));
   s.rec = recordsFor(x, j);
   s.done = true;
@@ -205,8 +276,14 @@ function toggleSet(i, j) {
     if (navigator.vibrate) navigator.vibrate([60, 40, 60, 40, 120]);
     toast(`Neuer Rekord bei ${x.name}: ${recordText(s.rec)}`);
   }
+  /* Gerade fertig geworden: die Übung klappt ein und bleibt dabei im Blick */
+  const folded = !wasComplete && progressOf(x).complete;
+  if (folded && V.exOpen) delete V.exOpen[i];
   render();
   V.prFlash = null;
+  /* Im Blick behalten: die eingeklappte Übung oder den nächsten offenen Satz (im Supersatz den der nächsten Übung) */
+  if (folded) nav.keepInView(i);
+  else nav.revealOpenSet(rest.why === 'superset' ? rest.next : i);
 }
 
 /* ---------- Abschluss ---------- */
@@ -266,8 +343,8 @@ export function vSummary() {
     <div class="plate-btn roll">${plateSVG(s.color, 'Geschafft', s.name + ' erledigt')}</div>
     <h1>${esc(s.name)} erledigt</h1>
     <div class="stats">
-      <div><b>${s.minutes}</b><span>${s.minutes === 1 ? 'Minute' : 'Minuten'}</span></div>
-      <div><b>${s.sets}</b><span>Sätze</span></div>
+      <div><b>${s.minutes}</b><span>${plural(s.minutes, 'Minute', 'Minuten')}</span></div>
+      <div><b>${s.sets}</b><span>${plural(s.sets, 'Satz', 'Sätze')}</span></div>
       <div><b>${tons ? fmt(Math.round(s.volume / 100) / 10) : fmt(s.volume)}</b><span>${tons ? 'Tonnen bewegt' : 'kg bewegt'}</span></div>
     </div>
     ${s.prs.length ? `<div class="card prs"><h2 style="font-size:18px">Neue Rekorde</h2><ul class="rules">
@@ -281,7 +358,8 @@ export function vSummary() {
 
 export const actions = {
   start: el => { unlockAudio(); startWorkout(el.dataset.day); },
-  resume: () => { V.tab = 'training'; render(); window.scrollTo(0, 0); },
+  /* „Weiter trainieren“ auf Heute: zurück zur nächsten offenen Übung */
+  resume: () => nav.backToWorkout(),
   variant: el => {
     const x = S.active.ex[+el.dataset.i], v = +el.dataset.v;
     if (x.v === v) return;
@@ -314,7 +392,7 @@ export const actions = {
   finish: () => {
     const open = S.active.ex.reduce((n, x) => n + workSets(x.log).filter(s => !s.done).length, 0);
     if (open === 0) { finishWorkout(); return; }
-    confirmSheet('Training beenden?', `${open} Sätze sind noch offen. Gespeichert werden nur die abgehakten.`, 'Training beenden', finishWorkout, 'primary');
+    confirmSheet('Training beenden?', `${open === 1 ? 'Ein Satz ist' : `${open} Sätze sind`} noch offen. Gespeichert werden nur die abgehakten.`, 'Training beenden', finishWorkout, 'primary');
   },
   discard: () => confirmSheet('Training verwerfen?', 'Alle Einträge dieses Trainings gehen verloren.', 'Training verwerfen', discardWorkout),
   closesummary: () => { V.summary = null; V.tab = 'today'; V.roll = true; render(); window.scrollTo(0, 0); },
@@ -325,8 +403,36 @@ export const inputs = {
   r: (el, type) => setField(el, 'r', type),
 };
 function setField(el, k, type) {
+  if (type === 'change' && k === 'w') { refreshRamps(); return; }
   if (type !== 'input') return;
   const x = S.active && S.active.ex[+el.dataset.i];
   const s = x && x.log[+el.dataset.j];
   if (s) { s[k] = el.value.trim(); save(); }
+  if (k === 'w') { clearTimeout(rampTimer); rampTimer = setTimeout(refreshRamps, RAMP_DELAY); }
+}
+
+/* Nach einer Gewichtseingabe (#66): Beim ersten Mal einer Übung gibt es erst mit dem eingetragenen Gewicht eine
+   Aufwärmrampe, und ein anderes Gewicht ändert sie. Die Zeile folgt schon beim Tippen (kurz nach der letzten Ziffer)
+   und spätestens beim Verlassen des Felds. Nur die Zeile wird ersetzt, nicht die Karte: Ein Neuzeichnen nähme dem
+   nächsten Feld den Fokus und verschluckte den Tipp auf den Haken, der das Feld gerade verlassen hat.
+   Die Sätze darunter bleiben dabei stehen: Die Zeile ist vorher schon da (Platzhalter in warmup.js), und wird sie doch
+   höher oder niedriger (die Stufen brauchen auf schmalen Bildschirmen zwei Zeilen), rollt die Seite um genau den
+   Unterschied mit. So trifft ein Tipp, der gerade auf dem Haken landet, auch den Haken. */
+const RAMP_DELAY = 300;
+let rampTimer = 0;
+function refreshRamps() {
+  clearTimeout(rampTimer); rampTimer = 0;
+  const a = S.active;
+  if (!a) return;
+  a.ex.forEach((x, i) => {
+    const slot = document.getElementById('wu' + i);
+    if (!slot) return;
+    const cur = slot.firstElementChild ? slot.firstElementChild.dataset.ramp || '' : '';
+    if (cur === warmup.rampKey(x, i)) return;
+    const below = slot.nextElementSibling;
+    const y0 = below ? below.getBoundingClientRect().top : 0;
+    slot.innerHTML = warmup.warmupLine(x, i);
+    const d = below ? below.getBoundingClientRect().top - y0 : 0;
+    if (Math.abs(d) >= 1) window.scrollBy(0, d);
+  });
 }

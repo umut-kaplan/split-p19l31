@@ -1,4 +1,4 @@
-/* „Neu in Split“: nach einem Update einmal beim Start, sonst über die Einstellungen */
+/* „Neu in Split“: nach einem Update einmal beim Start, sonst als Unterseite der Einstellungen */
 import { S, save } from '../state.js';
 import { esc } from '../util.js';
 import { openSheet, closeSheet } from '../ui/sheet.js';
@@ -27,11 +27,8 @@ export function showIfNew() {
 /* Nach der Einrichtung ist der aktuelle Stand bekannt */
 export function markSeen() { S.settings.seenVersion = APP_VERSION; }
 
-export const section = () => `<section class="p-section card"><h2>Was ist neu</h2>
-  <p class="muted" style="margin:6px 0 14px">Du nutzt Version ${esc(APP_VERSION)}.</p>
-  <button class="btn" data-act="whatsnew">Alle Änderungen ansehen</button>
-</section>`;
+/* Inhalt der Unterseite „Was ist neu“ in den Einstellungen: alle Versionen, die neueste oben */
+export const changesPage = () => `<p class="page-sub">Du nutzt Version ${esc(APP_VERSION)}.</p>
+  <section class="block card">${vChanges(CHANGES)}</section>`;
 
-export const actions = {
-  whatsnew: () => show(CHANGES, 'Was ist neu'),
-};
+export const actions = {};
