@@ -1,7 +1,7 @@
 /* Offline-Betrieb: Die App-Dateien liegen im Cache. Beim Start kommt die gespeicherte Version,
    im Hintergrund lädt der Service Worker die neue. Nach einem Update CACHE hochzählen.
    Jede neue Datei gehört in eine der Listen unten; test/sw-assets.test.js prüft das. */
-const CACHE = 'split-v4.4';
+const CACHE = 'split-v4.5';
 
 const CORE = [
   './',
@@ -249,6 +249,15 @@ const SHIFTS = [
   'js/views/shift-today.js',
 ];
 
+/* Schichtmodelle: Vorlagen, Einstieg „heute“, eigene Schichtarten */
+const SHIFTMODELS = [
+  'js/domain/shift-templates.js',
+  'js/domain/shift-entry.js',
+  'js/views/shift-setup.js',
+  'js/views/shift-types.js',
+  'js/views/shift-import.js',
+];
+
 /* Eigene Stangen und Scheiben */
 const PLATES2 = [
   'js/views/plate-settings.js',
@@ -260,7 +269,13 @@ const BIRTH = [
   'js/views/birthdate.js',
 ];
 
-const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...PLATES2, ...BIRTH];
+/* Wissen-Karten mit Quellen */
+const KNOWLEDGE = [
+  'js/data/knowledge.js',
+  'js/views/knowledge.js',
+];
+
+const ASSETS = [...CORE, ...TRAINING_DATA, ...TRAINING, ...BODY, ...NUTRITION_LOG, ...NUTRITION, ...MOTIVATION, ...REPORT, ...ACTIVITY, ...IMPORT, ...GYM, ...NOTES, ...ONB, ...CHANGELOG, ...BACKUPCSV, ...SETTYPES, ...COMPARE, ...SHIFTS, ...SHIFTMODELS, ...PLATES2, ...BIRTH, ...KNOWLEDGE];
 
 self.addEventListener('install', ev => {
   /* Am Browser-Cache vorbei laden, sonst landen kurz vor einem Update geladene alte Dateien im neuen Cache */

@@ -5,14 +5,23 @@
    EXDATE und geänderte Einzeltermine (RECURRENCE-ID). Andere Wiederholungen zählen nur mit dem ersten Termin
    und werden in der Zusammenfassung genannt.
 
-   Schichtart:
-   1. Titel: Früh/Frueh/F, Spät/Spaet/S, Nacht/N (auch „Frühschicht“, „Spätdienst“, „F-Schicht“ usw.),
-      Urlaub wird zu 'U', „frei“ zu '-'.
-   2. Sonst die Startzeit: höchstens 2 Stunden neben dem eingestellten Schichtbeginn, bei Standardzeiten
-      also 04–08 Uhr Früh, 12–16 Uhr Spät, 20–24 Uhr Nacht. Das gilt nur für Termine ab 4 Stunden Dauer,
-      damit ein kurzer Termin am Morgen nicht als Frühschicht zählt.
-   Eine Nachtschicht zählt zum Tag, an dem sie beginnt. Übernommen werden nur Datum und Schichtart. */
-import { WORK, DEFAULT_TIMES, isYmd, dayNum, fromDayNum, addDays, toMin } from './shifts.js';
+   Schichtart, in dieser Reihenfolge:
+   1. Eine gemerkte Zuordnung des Nutzers für genau diesen Titel (map, Schlüssel titleKey).
+   2. Der Titel ist Name oder Kürzel einer Schichtart, z. B. „Zwischendienst“ oder „Z“.
+   3. Wörter im Titel: Früh/Frueh/F, Spät/Spaet/S, Nacht/N (auch „Frühschicht“, „Spätdienst“, „F-Schicht“ usw.),
+      Tag/Tagschicht/Tagdienst (T), 24 h/24-Stunden-Dienst (X), Wache/Wachdienst (X, nur ab 16 Stunden Dauer),
+      Dispo/Reserve (D), „frei“ ('-'); stehen mehrere im Titel, zählt das erste. Nur wenn keins davon vorkommt:
+      Urlaub/Urlaubstag (U), Krank/krankgeschrieben/Krankmeldung (K) oder „AU“ als ganzer Titel. Urlaub und Krank
+      zählen nur als ganzes Wort, „Krankengymnastik“, „Krankenpflege“ oder „Urlaubsvertretung“ also nicht.
+      Fehlt die voreingestellte Art, nimmt die App die erste Art derselben Kategorie.
+   4. Sonst Startzeit und Dauer: Beginn höchstens 2 Stunden neben dem Beginn einer Art mit Arbeitszeit, bei mehreren
+      die mit dem kleinsten Abstand (Beginn plus halbe Abweichung der Dauer). Bei Standardzeiten also 04–08 Uhr Früh,
+      12–16 Uhr Spät, 20–24 Uhr Nacht; eine Stunde 12-h-Dienst ab 06:00 wird Tag, 24 Stunden ab 07:00 der 24-h-Dienst.
+      Das gilt nur für Termine ab 4 Stunden Dauer, damit ein kurzer Termin am Morgen nicht als Frühschicht zählt.
+      Ohne Ende und Dauer rechnet die App mit 8 Stunden und wählt nur unter Früh, Spät und Nacht.
+   Bei mehreren Terminen an einem Tag gehen Urlaub und Krank vor, außer aus einem Termin unter 4 Stunden.
+   Eine Nacht- oder 24-h-Schicht zählt zum Tag, an dem sie beginnt. Übernommen werden nur Datum und Schichtart. */
+import { DEFAULT_TIMES, DEFAULT_TYPES, isTimedCat, shiftMinutes, isYmd, dayNum, fromDayNum, addDays, toMin } from './shifts.js';
 
 export const MIN_SHIFT_MINUTES = 240;
 export const TIME_TOLERANCE = 120;
@@ -260,36 +269,72 @@ function toEvent(raw) {
 /* ---------- Schichtart ---------- */
 const norm = s => String(s || '').toLowerCase()
   .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
-const WORDS = [
-  ['U', /\burlaub/],
-  ['-', /\bfrei\b/],
+/* Schlüssel eines Titels für gemerkte Zuordnungen: klein, ohne doppelte Leerzeichen, höchstens 60 Zeichen */
+export const titleKey = title => String(title || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 60);
+/* Titel für die Anzeige, höchstens max Zeichen, gekürzt mit „…“ */
+const clip = (s, max) => (s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s);
+/* Schichtwörter. Stehen mehrere im Titel, zählt das erste. */
+const SHIFT_WORDS = [
   ['F', /\b(?:frueh(?!stueck)|early)/],
   ['S', /\b(?:spaet|late\b)/],
   ['N', /\b(?:nacht|night)/],
+  ['T', /\b(?:tag(?:schicht|dienst)|day\s*shift)/],
+  ['X', /\b24\s*[-–]?\s*(?:h\b|std|stunden)|\b24er\b/],
+  ['W', /\bwach(?:e|dienst)\b/],
+  ['D', /\b(?:dispo|reserve)/],
 ];
+const OFF_WORD = ['-', /\bfrei\b/];
+/* Urlaub und Krank nur als ganzes Wort: „Krankengymnastik“, „Krankenhaus“, „Krankenpflege“ und „Urlaubsvertretung“
+   sind keine Abwesenheit */
+const ABSENCE_WORDS = [
+  ['U', /\b(?:rest|sonder|jahres|bildungs|erholungs)?urlaub(?:stage?)?\b/],
+  ['K', /\bkrank(?:geschrieben|gemeldet|meldung|schreibung|heit)?\b/],
+];
+/* „AU“ (Arbeitsunfähigkeit) nur als ganzer Titel, sonst träfe es auch „HU/AU“ fürs Auto */
+const AU_ONLY = /^au[\s\d:.\-–()/]*$/;
+/* Ab so vielen Minuten ist eine Wache ein 24-h-Dienst */
+const WATCH_MIN = 960;
 
-/* Schichtart aus dem Titel oder null */
-export function codeFromTitle(title) {
-  const t = norm(title).trim();
-  if (!t) return null;
-  /* Ein einzelner Buchstabe, auch „F-Schicht“, „N 22-06“ */
-  const one = /^([fsn])(?:\s*[-–]?\s*(?:schicht|dienst))?[\s\d:.\-–()/]*$/.exec(t);
-  if (one) return one[1].toUpperCase();
+/* Code des Worts, das im Titel zuerst steht, oder null */
+function firstWord(t, list) {
   let best = null;
-  WORDS.forEach(([code, re]) => {
+  list.forEach(([code, re]) => {
     const m = re.exec(t);
     if (m && (!best || m.index < best.index)) best = { code, index: m.index };
   });
   return best ? best.code : null;
 }
 
-/* Schichtart aus der Startzeit (Minuten nach Mitternacht) oder null */
-export function codeFromTime(min, times = DEFAULT_TIMES, tolerance = TIME_TOLERANCE) {
+/* Schichtart aus dem Titel oder null. Mit Dauer in Minuten zählt „Wache“ erst ab 16 Stunden als 24-h-Dienst.
+   Ein Schichtwort geht vor Urlaub und Krank: „Krankenpflege Spätdienst“ und auch „Krank Frühdienst“ bleiben Schicht. */
+export function codeFromTitle(title, durMin = null) {
+  const t = norm(title).trim();
+  if (!t) return null;
+  /* Ein einzelner Buchstabe, auch „F-Schicht“, „N 22-06“ */
+  const one = /^([fsnt])(?:\s*[-–]?\s*(?:schicht|dienst))?[\s\d:.\-–()/]*$/.exec(t);
+  if (one) return one[1].toUpperCase();
+  /* „Tag“ allein oder mit Uhrzeit, nicht „Tag der offenen Tür“ */
+  if (/^(?:12\s*h\s*)?tag(?:\s*12\s*h)?[\s\d:.\-–()/]*$/.test(t)) return 'T';
+  if (AU_ONLY.test(t)) return 'K';
+  const shifts = SHIFT_WORDS.filter(([code]) => code !== 'W' || durMin == null || durMin >= WATCH_MIN);
+  const code = firstWord(t, shifts)
+    ? firstWord(t, [...shifts, OFF_WORD])
+    : firstWord(t, [...ABSENCE_WORDS, OFF_WORD]);
+  return code === 'W' ? 'X' : code;
+}
+
+/* Schichtart aus der Startzeit (Minuten nach Mitternacht) oder null. times: Uhrzeiten je Code.
+   Mit Dauer gewinnt bei mehreren passenden Arten die, deren Dauer besser passt. */
+export function codeFromTime(min, times = DEFAULT_TIMES, tolerance = TIME_TOLERANCE, durMin = null) {
   let best = null;
-  WORK.forEach(c => {
-    let d = Math.abs(min - toMin(times[c][0]));
+  Object.keys(times).forEach(c => {
+    const t = times[c];
+    if (!t) return;
+    let d = Math.abs(min - toMin(t[0]));
     d = Math.min(d, 1440 - d);
-    if (d <= tolerance && (!best || d < best.d)) best = { c, d };
+    if (d > tolerance) return;
+    const score = d + (durMin != null ? Math.abs(durMin - shiftMinutes(t)) / 2 : 0);
+    if (!best || score < best.score) best = { c, score };
   });
   return best ? best.c : null;
 }
@@ -297,15 +342,39 @@ export function codeFromTime(min, times = DEFAULT_TIMES, tolerance = TIME_TOLERA
 /* ---------- Schichten aus einer Datei ---------- */
 /* Ausgenommene Termine: ganztägig nach Datum, sonst nach Zeitpunkt */
 const exKeys = list => list.map(dt => (dt.allDay ? 'D' + dt.date : 'T' + toLocal(dt).ms));
-/* Vorrang bei mehreren Terminen an einem Tag: Urlaub, dann die früheste Schicht, zuletzt „frei“ */
-const PRIO = { U: 0, F: 1, S: 1, N: 1, '-': 2 };
+/* Vorrang bei mehreren Terminen an einem Tag: Urlaub und Krank, dann die früheste Schicht, zuletzt „frei“.
+   Urlaub oder Krank aus einem Termin unter 4 Stunden (short) verdrängt keine Schicht, nur „frei“. */
+const PRIO = { vacation: 0, sick: 0, off: 2 };
+const prio = (cat, short) => ((cat === 'vacation' || cat === 'sick') && short ? 1.5 : PRIO[cat] ?? 1);
+/* Ohne Ende und Dauer: so lange dauert ein Termin für die Erkennung über die Startzeit, und nur diese Arten kommen in Frage */
+const ASSUMED_MINUTES = 480;
+const ASSUMED_CATS = ['early', 'late', 'night'];
+/* Diese Arten gelten für jeden Tag, den ein Termin abdeckt; eine Schicht nur für den Tag ihres Beginns */
+const SPANS = ['vacation', 'sick', 'off'];
 
-/* Liefert { days: { Datum: Code }, from, to, shifts, vacation, byCode, unknown: [{ date, title }], cancelled,
-   unsupported, conflicts, events } oder wirft einen Fehler, wenn die Datei kein Kalender ist.
+/* Liefert { days: { Datum: Code }, from, to, shifts, vacation, gapDays, byCode, unknown: [{ date, title, key }],
+   unknownTitles: [{ key, title, count, first }], cancelled, unsupported, conflicts, events }
+   oder wirft einen Fehler, wenn die Datei kein Kalender ist.
+   types: Schichtarten, times: Uhrzeiten je Code für die Erkennung über die Startzeit,
+   map: gemerkte Zuordnungen { titleKey: Code }, gaps: Code für Tage im Zeitraum ohne Termin (z. B. 'U') oder null,
    until begrenzt endlose Serien (Standard: 400 Tage nach ihrem Beginn). */
-export function shiftsFromIcs(text, { times = DEFAULT_TIMES, until = null } = {}) {
+export function shiftsFromIcs(text, { times = DEFAULT_TIMES, types = DEFAULT_TYPES, until = null, map = {}, gaps = null } = {}) {
   if (!/BEGIN:VCALENDAR/i.test(String(text || ''))) throw new Error('Das ist keine Kalender-Datei (.ics).');
   const events = parseIcs(text);
+  const byId = new Map(types.map(t => [t.id, t]));
+  const cat = code => (byId.get(code) || {}).cat;
+  /* Voreingestellter Code aus dem Titel: gibt es die Art nicht mehr, die erste Art derselben Kategorie */
+  const resolve = code => {
+    if (byId.has(code)) return code;
+    const def = DEFAULT_TYPES.find(t => t.id === code);
+    const alt = def && types.find(t => t.cat === def.cat);
+    return alt ? alt.id : null;
+  };
+  const named = new Map();
+  types.forEach(t => [t.name, t.short].forEach(n => { const k = norm(n).trim(); if (k && !named.has(k)) named.set(k, t.id); }));
+  /* Nur Arten mit Arbeitszeit, deren Uhrzeiten bekannt sind */
+  const timeTable = Object.fromEntries(Object.entries(times).filter(([c]) => byId.has(c) && isTimedCat(cat(c))));
+  const timeTableNoEnd = Object.fromEntries(Object.entries(timeTable).filter(([c]) => ASSUMED_CATS.includes(cat(c))));
   const moved = new Map();
   events.filter(e => e.recurrenceId && e.uid).forEach(e => {
     moved.set(e.uid, [...(moved.get(e.uid) || []), ...exKeys([e.recurrenceId])]);
@@ -316,13 +385,15 @@ export function shiftsFromIcs(text, { times = DEFAULT_TIMES, until = null } = {}
   let unsupported = 0;
   let conflicts = 0;
   let total = 0;
-  const put = (date, code, min) => {
+  const put = (date, code, min, short) => {
     const cur = days[date];
-    if (!cur) { days[date] = { code, min }; return; }
-    if (cur.code === code) return;
+    if (!cur) { days[date] = { code, min, short }; return; }
+    if (cur.code === code) { cur.short = cur.short && short; return; }
     conflicts++;
-    const better = PRIO[code] < PRIO[cur.code] || (PRIO[code] === PRIO[cur.code] && (min ?? 1440) < (cur.min ?? 1440));
-    if (better) days[date] = { code, min };
+    const a = prio(cat(code), short);
+    const b = prio(cat(cur.code), cur.short);
+    const better = a < b || (a === b && (min ?? 1440) < (cur.min ?? 1440));
+    if (better) days[date] = { code, min, short };
   };
 
   events.forEach(ev => {
@@ -339,38 +410,66 @@ export function shiftsFromIcs(text, { times = DEFAULT_TIMES, until = null } = {}
     const spanDays = ev.start.allDay
       ? Math.max(1, Math.min(MAX_SPAN_DAYS, ev.end ? dayNum(ev.end.date) - dayNum(ev.start.date) : ev.duration ? Math.ceil(ev.duration / 1440) : 1))
       : 1;
+    const key = titleKey(ev.summary);
+    const own = map && byId.has(map[key]) ? map[key] : named.get(norm(ev.summary).trim()) || null;
+    const word = own ? null : codeFromTitle(ev.summary, durMin);
+    const fromTitle = own || (word && resolve(word));
     list.forEach(o => {
       const loc = toLocal(o);
       if (skip.has('D' + o.date) || (!loc.allDay && skip.has('T' + loc.ms))) return;
       total++;
-      let code = codeFromTitle(ev.summary);
-      if (!code && !loc.allDay && !(durMin != null && durMin < MIN_SHIFT_MINUTES)) code = codeFromTime(loc.min, times);
+      let code = fromTitle;
+      const short = !loc.allDay && durMin != null && durMin < MIN_SHIFT_MINUTES;
+      if (!code && !loc.allDay && !short) {
+        code = durMin != null ? codeFromTime(loc.min, timeTable, TIME_TOLERANCE, durMin)
+          : codeFromTime(loc.min, timeTableNoEnd, TIME_TOLERANCE, ASSUMED_MINUTES);
+      }
       if (!code) {
-        unknown.push({ date: loc.date, title: (ev.summary || 'Termin ohne Titel').slice(0, 60) });
+        unknown.push({ date: loc.date, title: clip(ev.summary || 'Termin ohne Titel', 60), key });
         return;
       }
-      /* Urlaub und „frei“ gelten für jeden Tag, den der Termin abdeckt; eine Schicht nur für den Tag ihres Beginns */
       let n = 1;
       if (loc.allDay) n = spanDays;
-      else if ((code === 'U' || code === '-') && durMin > 0) {
+      else if (SPANS.includes(cat(code)) && durMin > 0) {
         const lastDay = ymdOf(new Date(loc.ms + durMin * 60000 - 1));
         n = Math.max(1, Math.min(MAX_SPAN_DAYS, dayNum(lastDay) - dayNum(loc.date) + 1));
       }
-      for (let i = 0; i < n; i++) put(addDays(loc.date, i), code, loc.min);
+      for (let i = 0; i < n; i++) put(addDays(loc.date, i), code, loc.min, short);
     });
   });
 
   const entries = Object.entries(days).sort((a, b) => (a[0] < b[0] ? -1 : 1));
-  const byCode = { F: 0, S: 0, N: 0, U: 0, '-': 0 };
-  entries.forEach(([, v]) => { byCode[v.code]++; });
+  const from = entries.length ? entries[0][0] : null;
+  const to = entries.length ? entries[entries.length - 1][0] : null;
+  /* Lücken im Zeitraum: Tage ohne Termin, auf Wunsch z. B. als Urlaub */
+  let gapDays = 0;
+  if (gaps && byId.has(gaps) && from) {
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      if (!days[d]) { days[d] = { code: gaps, min: null }; gapDays++; }
+    }
+  }
+  const all = Object.entries(days).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  const byCode = Object.fromEntries(types.map(t => [t.id, 0]));
+  all.forEach(([, v]) => { byCode[v.code] = (byCode[v.code] || 0) + 1; });
+  const count = test => all.filter(([, v]) => test(cat(v.code))).length;
+  /* Unbekannte Titel zusammengefasst, häufigste zuerst */
+  const groups = new Map();
+  unknown.forEach(u => {
+    const g = groups.get(u.key) || { key: u.key, title: u.title, count: 0, first: u.date };
+    g.count++;
+    if (u.date < g.first) g.first = u.date;
+    groups.set(u.key, g);
+  });
   return {
-    days: Object.fromEntries(entries.filter(([, v]) => v.code !== '-').map(([d, v]) => [d, v.code])),
-    from: entries.length ? entries[0][0] : null,
-    to: entries.length ? entries[entries.length - 1][0] : null,
-    shifts: byCode.F + byCode.S + byCode.N,
-    vacation: byCode.U,
+    days: Object.fromEntries(all.filter(([, v]) => v.code !== '-').map(([d, v]) => [d, v.code])),
+    from,
+    to,
+    shifts: count(isTimedCat),
+    vacation: count(c => c === 'vacation'),
+    gapDays,
     byCode,
     unknown: unknown.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)),
+    unknownTitles: [...groups.values()].sort((a, b) => b.count - a.count || (a.first < b.first ? -1 : 1)),
     cancelled,
     unsupported,
     conflicts,

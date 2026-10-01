@@ -11,6 +11,7 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 - Verlauf: Liste und Monatskalender, Diagramm pro Übung (Gewicht, 1RM, Volumen), Rekorde (bestes Gewicht, 1RM nach Epley, bestes Volumen), Sätze pro Muskelgruppe und Woche gegen den Zielbereich 10 bis 20.
 - Plan: mehrere Pläne, Vorlagen (Ganzkörper 2×, Oberkörper/Unterkörper 4×, Push/Pull/Legs), Tage mit Farben, Übungen aus der Bibliothek.
 - Übungen: 50 Übungen mit Bild, Schritten, typischen Fehlern, Muskeln und Geräten; eigene Übungen mit Foto.
+- Wissen: 20 kurze Karten zu Schicht und Schlaf, Ernährung und Training (`js/data/knowledge.js`). Jede Karte nennt ihre Quellen als Link (DOI oder Leitlinie) und trägt das Kennzeichen „Gut belegt“ oder „Abgeleitet aus Studien zu verwandten Fragen“. Allgemein formuliert, ohne Heilversprechen und ohne Dosierung für Nahrungsergänzung. `knowledgeLink(id, label = 'Warum?')` aus `js/views/knowledge.js` setzt auf jeder Seite einen kleinen Knopf, der die Karte als Sheet öffnet; er steht an den Regeln des Schichtplans und an den Hinweisen der geplanten Trainings.
 - Vergleichen: eigener Stand als QR-Code (Rekorde der Grundübungen, letzte 7 Tage, Serie, auf Wunsch Körpergewicht), den Stand eines Trainingspartners scannen oder als Text einfügen, beide nebeneinander. Die Daten gehen direkt von Handy zu Handy; der zuletzt gescannte Stand liegt in `S.compare` und im Backup.
 - Vorschläge nach festen Regeln: Deload nach zwei verfehlten Einheiten, zusätzlicher Satz bei Volumenlücken, Tausch bei eingetragenen Einschränkungen.
 
@@ -24,7 +25,7 @@ Trainings- und Fitness-App für eine Person. Eine statische PWA ohne Server, ohn
 
 **Einstellungen** (Zahnrad im Profil): Studio mit Stangen und Scheiben (eigene Gewichte ab 0,25 kg, Farbe pro Scheibe, eigene Stangen, gemerkte Stange pro Übung) und Geräten; Daten mit Backup samt Erinnerung auf „Heute“ nach 7, 14 oder 30 Tagen (oder aus), Export der Trainings als CSV im Strong-Format, das Hevy importiert, Import aus dem Apple-Health-Export (Gewicht, Schritte, Ruhepuls, Schlaf; gestreamt, manuelle Werte gewinnen; Geburtsdatum, Geschlecht und Größe nach Bestätigung fürs Profil), Schichtplan und Zurücksetzen; App mit „Was ist neu“, Hinweisen und Quellen samt Lizenzen.
 
-**Schichtplan:** Vorlage 28 Tage oder eigenes Muster, Import aus einer .ics-Datei (nur Datum und Schichtart), Monatskalender mit Einzeländerungen. Split plant die Trainings der nächsten zwei Wochen um die Schichten, mit Uhrzeit und Begründung, und übernimmt sie auf Wunsch als Kalender-Datei in den iPhone-Kalender. Auf „Heute“ steht eine Zeile mit Schicht und Training, ein Tipp öffnet den Schichtkalender. Kommt die App aus dem Hintergrund zurück, zeichnet sie neu, wenn seit dem letzten Zeichnen ein neuer Tag oder eine neue Viertelstunde begonnen hat.
+**Schichtplan:** 13 Vorlagen für verbreitete Modelle (2- und 3-Schicht Mo–Fr, Konti mit 4 und 5 Gruppen, 12 Stunden, Feuerwehr 24/48 und Bremer Modell, Dauernacht) oder ein eigenes Muster von 2 bis 371 Tagen, in Wochenzeilen mit „Woche kopieren“ und „Woche einfügen“. Danach tippt man im Muster an, welcher Tag heute ist; gibt es den Tag mehrmals, fragt die App nach den nächsten Tagen oder zeigt die passenden Möglichkeiten mit Vorschau. Eigene Schichtarten mit Name, Kürzel, Farbe, Uhrzeit und Art (Früh, Spät, Nacht, Tag, 24 h, Dispo, frei, Urlaub, Krank); eine Vorlage bringt ihre Uhrzeiten mit. Import aus einer .ics-Datei: gespeichert werden Datum und Schichtart, unbekannte Titel lassen sich einer Art zuordnen (die Zuordnung bleibt für den nächsten Import), Tage ohne Eintrag wahlweise als Urlaub; passt ein anderer Einstieg ins Muster besser zum Import, schlägt die App ihn vor. Monatskalender mit Einzeländerungen, auch mit eigener Uhrzeit für einen Tag. Split plant die Trainings der nächsten zwei Wochen um die Schichten, je nach Art der Schicht (nach Früh- und Tagschicht, vor Spät- und Nachtschicht, am Tag eines 24-h-Dienstes und bei Krankheit keins), mit Uhrzeit und Begründung, und übernimmt sie auf Wunsch als Kalender-Datei in den iPhone-Kalender. Die Regeln (`PLAN_RULES` in `js/domain/shift-plan.js`) sind aus Studien zu verwandten Fragen abgeleitet: vor einem frühen Schichtbeginn Ende 3 Stunden vor der geschätzten Schlafenszeit (Beginn minus 8,5 Stunden), nach einer Nachtschicht frühestens 8 Stunden nach Schichtende, nach der letzten Nacht einer Folge Ende bis 20 Uhr; bei der Tagwahl frei vor Dispo vor Spät vor Früh und Tag vor Nacht, Abschläge für weniger als 11 Stunden Ruhe zwischen zwei Schichten und für Tage zwischen zwei Nachtschichten; zwei Tage in Folge nur mit Einheiten für verschiedene Hauptmuskeln, höchstens 6 Trainings pro Woche. Am geplanten Training stehen Hinweise mit „Warum?“: welche Regel die Uhrzeit verschoben hat, eine leichtere Einheit ab der zweiten Nachtschicht in Folge und an Tagen mit kurzer Ruhe, kein Booster mit Koffein, wenn das Training weniger als 8 Stunden vor dem Schlafen endet. Auf „Heute“ steht eine Zeile mit Schicht und Training, darunter kurz die Hinweise; ein Tipp öffnet den Schichtkalender. Kommt die App aus dem Hintergrund zurück, zeichnet sie neu, wenn seit dem letzten Zeichnen ein neuer Tag oder eine neue Viertelstunde begonnen hat.
 
 Jede Empfehlung nennt in einem Satz, warum die App sie gibt, und ist nur ein Vorschlag. Kalorien-, BMI- und Körperfettwerte sind Schätzungen aus Formeln.
 
@@ -39,7 +40,7 @@ PORT=9000 ./start.sh      # anderer Port
 
 ## Tests
 
-Die Rechenlogik ist ohne Build testbar: Kalorien, Makros, BMI, Navy-Formel, Trend und Prognose, Serie mit Joker, Progression, Rekorde, Volumen, Vorschlagsregeln, Erholungsampel, Tagesvorschlag, Wochenbericht, Abzeichen, MET und Schritte, Health-Import, Nährwerte, Lebensmitteldaten, Migration, Backup, Backup-Erinnerung, CSV-Export, Satztypen, Supersatz-Pausen, QR-Vergleich, Changelog, Zahleneingabe, Schichtplan (Muster, Import, Planung, Kalender-Datei), Geburtsdatum, eigene Scheiben und Stangen, Bildnachweise, Offline-Dateiliste.
+Die Rechenlogik ist ohne Build testbar: Kalorien, Makros, BMI, Navy-Formel, Trend und Prognose, Serie mit Joker, Progression, Rekorde, Volumen, Vorschlagsregeln, Erholungsampel, Tagesvorschlag, Wochenbericht, Abzeichen, MET und Schritte, Health-Import, Nährwerte, Lebensmitteldaten, Migration, Backup, Backup-Erinnerung, CSV-Export, Satztypen, Supersatz-Pausen, QR-Vergleich, Changelog, Zahleneingabe, Schichtplan (Muster, Vorlagen mit Gruppen und Versatz, Einstieg „heute“, Schichtarten, Import, Planung, Kalender-Datei, Umzug alter Stände), Geburtsdatum, eigene Scheiben und Stangen, Bildnachweise, Wissen-Karten (Anzahl, Quellen, Satzlänge, Wortwahl, „Warum?“-Knopf), Offline-Dateiliste.
 
 ```sh
 node --test "test/*.test.js"
@@ -87,6 +88,7 @@ Jede Person nutzt die App auf ihrem eigenen Handy. Die Daten liegen nur dort und
 | Barcode-Leser für iOS, QR-Codes lesen und schreiben | `@zxing/library` 0.23.0, `js/vendor/` | Apache-2.0 |
 | Entpacken des Health-Exports | `fflate` 0.8.3, `js/vendor/` | MIT |
 | MET-Werte für Cardio | Compendium of Physical Activities | Richtwerte |
+| Wissen-Karten | Studien und Leitlinien, einzeln in `js/data/knowledge.js` und auf jeder Karte | – |
 
 ## Aufbau
 
@@ -99,7 +101,7 @@ js/store/   migrate.js (Schema, Migration, Backup-Format), backup.js, db.js (Ind
 js/importers/ Datei-Importe, bisher Apple Health (Worker, gestreamt)
 js/domain/  reine Rechenfunktionen, per node --test geprüft
 js/coach/   regelbasierte Vorschläge in einem Format, das ein späterer KI-Coach übernehmen kann
-js/data/    Standardplan, Vorlagen, Übungen, Grundnahrungsmittel
+js/data/    Standardplan, Vorlagen, Übungen, Grundnahrungsmittel, Wissen-Karten
 js/ui/      Hantelscheibe, Diagramme, Silhouette, Sheet, Karten, Bilder
 js/views/   Heute, Training, Körper, Ernährung, Profil, Einrichtung
 js/vendor/  ZXing, fflate

@@ -2,6 +2,18 @@
    Vor jeder Veröffentlichung hier einen Eintrag anlegen; die Version muss zu CACHE in sw.js passen, ein Test prüft das. */
 export const CHANGES = [
   {
+    version: '4.5',
+    date: '2026-10-01',
+    items: [
+      'Schichtplan für viele Schichtsysteme: 13 Vorlagen von der 2-Schicht über Konti und 12-Stunden-Dienste bis zur Feuerwehr 24/48, dazu eigene Muster mit bis zu 371 Tagen.',
+      'Einrichten ohne Rechnen: Du tippst im Muster an, welcher Tag heute ist. Ist das nicht eindeutig, fragt Split, was du morgen hast.',
+      'Eigene Schichtarten mit Kürzel, Farbe und Uhrzeiten, etwa Tagdienst, 24-Stunden-Dienst, Dispo oder Krank. Für einzelne Tage kannst du andere Uhrzeiten eintragen.',
+      'Der Kalender-Import erkennt Tagschichten und merkt sich, welche Schichtart zu deinen eigenen Titeln gehört. Lücken kannst du als Urlaub markieren.',
+      'Der Planer achtet mehr auf deinen Schlaf: Vor einer Frühschicht endet das Training rechtzeitig, nach der Nachtschicht beginnt es frühestens 8 Stunden nach Schichtende, und ein Tag mit Spätschicht, an dem du vor der Schicht trainierst, geht vor einem Tag mit Frühschicht. Zwei Tage in Folge plant Split jetzt, wenn die Muskeln wechseln. So passen bis zu 6 Trainings in eine Woche.',
+      'Neu unter Training: Wissen. 20 kurze Karten zu Schicht, Schlaf, Ernährung und Training, jede mit Quelle. „Warum?“ an den Hinweisen des Planers führt direkt zur passenden Karte.',
+    ],
+  },
+  {
     version: '4.4',
     date: '2026-09-30',
     items: [

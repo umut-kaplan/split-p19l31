@@ -8,14 +8,15 @@ import { vHistory } from './history.js';
 import { vPlan } from './planedit.js';
 import * as library from './library.js';
 import * as compare from './compare.js';
+import * as knowledge from './knowledge.js';
 import { suggestionCards } from '../ui/suggestion.js';
 import { pendingSuggestions } from '../coach/index.js';
 import { shiftTrainLine } from './shift-today.js';
 
-const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen']];
+const SUBS = [['start', 'Einheit'], ['history', 'Verlauf'], ['plan', 'Plan'], ['library', 'Übungen'], ['knowledge', 'Wissen']];
 
 /* Untermodule, deren actions und inputs app.js einsammelt */
-export const modules = [library, compare];
+export const modules = [library, compare, knowledge];
 
 export function view() {
   if (S.active) return vWorkout();
@@ -23,7 +24,8 @@ export function view() {
   const cmp = compare.subview();
   if (cmp) return cmp;
   const sub = V.trainSub;
-  const body = sub === 'history' ? vHistory() : sub === 'plan' ? vPlan() : sub === 'library' ? library.vLibrary() : vStart();
+  const body = sub === 'history' ? vHistory() : sub === 'plan' ? vPlan() : sub === 'library' ? library.vLibrary()
+    : sub === 'knowledge' ? knowledge.vKnowledge() : vStart();
   return `<div class="train-head">
       <h1 class="page-title">Training</h1>
       <div class="seg wide" role="tablist">${SUBS.map(([k, l]) =>

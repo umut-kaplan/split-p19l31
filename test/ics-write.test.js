@@ -100,3 +100,33 @@ test('Leere Liste: gültiger Kalender ohne Termine', () => {
   assert.ok(!ics.includes('BEGIN:VEVENT'));
   assert.ok(ics.startsWith('BEGIN:VCALENDAR\r\n') && ics.endsWith('END:VCALENDAR\r\n'));
 });
+
+test('Kalender-Datei für 12-h- und 24-h-Vorlagen: Zeiten und Begründung stimmen', async () => {
+  const { templateById } = await import('../js/domain/shift-templates.js');
+  const plan = id => {
+    const s = defaultState();
+    s.shifts = defaultShifts();
+    const t = templateById(id);
+    Object.assign(s.shifts.times, t.times);
+    s.shifts.pattern = { start: '2026-10-05', days: [...t.days], template: id };
+    return planTrainings(s, '2026-10-05', 7).trainings;
+  };
+  /* Feuerwehr 24/48 ab Montag: Dienst Mo, Do, So; kein Termin an einem Diensttag */
+  const fw = plan('fw24');
+  const evs = parseIcs(trainingsIcs(fw, { now: NOW }));
+  assert.equal(evs.length, fw.length);
+  evs.forEach((e, i) => {
+    const a = toLocal(e.start);
+    const b = toLocal(e.end);
+    assert.ok(!['2026-10-05', '2026-10-08', '2026-10-11'].includes(a.date), a.date);
+    assert.equal(a.date, b.date);
+    assert.equal(a.date, fw[i].date);
+  });
+  /* 12 h Tag, Nacht, 2 frei: am Tag nach der Nacht um 14:00, am freien Tag danach um 11:00 */
+  const h12 = plan('h12');
+  const ics = trainingsIcs(h12, { now: NOW });
+  assert.match(ics, /DTSTART;TZID=Europe\/Berlin:20261007T140000\r\n/);
+  assert.match(ics, /DTSTART;TZID=Europe\/Berlin:20261008T110000\r\n/);
+  assert.match(unfold(ics).join('\n'), /DESCRIPTION:Frei\./);
+  assert.match(unfold(ics).join('\n'), /DESCRIPTION:Frei\\, nach der Nachtschicht ausgeschlafen\./);
+});

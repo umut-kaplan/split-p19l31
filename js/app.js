@@ -20,6 +20,7 @@ import * as onboarding from './views/onboarding.js';
 import * as whatsnew from './views/whatsnew.js';
 import * as shifts from './views/shifts.js';
 import * as storage from './views/storage.js';
+import * as knowledge from './views/knowledge.js';
 
 const TABS = [
   ['today', 'Heute', ICON.today, today],
@@ -29,7 +30,8 @@ const TABS = [
   ['profile', 'Profil', ICON.profile, profile],
 ];
 
-const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew, shifts, storage];
+/* knowledge steht hier und nicht nur unter training, weil „Warum?“-Knöpfe auf jeder Seite die Karten öffnen */
+const modules = [sheet, cards, suggestion, timer, today, training, workout, history, planedit, body, nutrition, profile, fields, onboarding, whatsnew, shifts, storage, knowledge];
 /* Ein Modul kann Untermodule in `export const modules = [...]` nennen. Deren actions und inputs zählen mit. */
 const flatten = list => list.flatMap(m => [m, ...flatten(m.modules || [])]);
 const all = [...new Set(flatten(modules))];

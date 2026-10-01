@@ -2,9 +2,10 @@
 import { S, activePlan } from '../state.js';
 import { esc, ymd } from '../util.js';
 import { ICON } from '../ui/icons.js';
-import { planTrainings } from '../domain/shift-plan.js';
+import { planTrainings, MAX_PER_WEEK, PLAN_RULES } from '../domain/shift-plan.js';
+import { knowledgeLink } from './knowledge.js';
 import {
-  hasShiftPlan, shiftOn, shiftClass, SHIFT_NAME, SHIFT_SHORT, timesText, addDays, mondayOf, dayNum,
+  hasShiftPlan, shiftOn, dayShift, shiftClass, shortOf, typeOf, typeLong, typeTimes, fmtTimes, isTimedCat, addDays, mondayOf, dayNum,
 } from '../domain/shifts.js';
 
 /* ---------- Planung mit kleinem Zwischenspeicher ---------- */
@@ -28,24 +29,43 @@ export function planFor(from, days) {
 export const twoWeeks = () => planFor(ymd(), 14);
 
 /* ---------- Texte ---------- */
-const dateText = (d, o) => new Date(d + 'T12:00').toLocaleDateString('de-DE', o);
+export const dateText = (d, o) => new Date(d + 'T12:00').toLocaleDateString('de-DE', o);
 export const dayLong = d => dateText(d, { weekday: 'long', day: 'numeric', month: 'long' });
 export const dayShort = d => dateText(d, { weekday: 'short', day: '2-digit', month: '2-digit' });
 
-/* „Frühschicht, 06–14 Uhr“, „frei“, „Urlaub“ oder null ohne Angabe */
-export function shiftText(code) {
-  if (code === 'F' || code === 'S' || code === 'N') return `${SHIFT_NAME[code]}, ${timesText(S.shifts.times, code)}`;
-  return code === '-' ? 'frei' : code === 'U' ? 'Urlaub' : null;
+/* Name einer Art ohne Uhrzeit, für Sätze: „frei“, „Urlaub“, „krank“ */
+const plainName = t => (t.id === 'K' && t.name === 'Krank' ? 'krank' : t.name);
+
+/* „Frühschicht, 06–14 Uhr“, „frei“, „Urlaub“ oder null ohne Angabe. Mit Datum gelten die Uhrzeiten dieses Tages. */
+export function shiftText(code, date = null) {
+  const t = typeOf(S.shifts, code);
+  if (!t) return null;
+  if (!isTimedCat(t.cat)) return plainName(t);
+  const day = date ? dayShift(S.shifts, date) : null;
+  const times = day && day.code === code ? day.times : typeTimes(S.shifts, code);
+  return `${typeLong(t)}, ${fmtTimes(times)}`;
+}
+
+/* Kopfzeile der Karte auf „Heute“: „Frühschicht 06–14 Uhr“, „Heute frei“, „Urlaub“ */
+export function shiftHead(day) {
+  const t = day && day.type;
+  if (!t) return 'Keine Schicht eingetragen';
+  if (isTimedCat(t.cat)) return `${typeLong(t)} ${fmtTimes(day.times)}`;
+  return t.cat === 'off' ? `Heute ${t.name}` : t.name;
 }
 
 /* „Heute Frühschicht, 06–14 Uhr“, „Heute frei“ */
-export function shiftDayText(code, when = 'Heute') {
-  const t = shiftText(code);
+export function shiftDayText(code, when = 'Heute', date = null) {
+  const t = shiftText(code, date);
   return t ? `${when} ${t}` : `${when} ist keine Schicht eingetragen`;
 }
 
 /* „Push um 15:30, nach der Frühschicht“ */
 export const trainingLine = t => `${t.name} um ${t.time}, ${t.reason}`;
+
+/* Hinweise eines geplanten Trainings (Uhrzeit-Regel, leichter, Koffein), jeder mit „Warum?“ zur Wissen-Karte */
+export const planHints = t => (t && Array.isArray(t.hints) ? t.hints : []);
+export const hintHtml = h => `${esc(h.text)} ${knowledgeLink(h.card)}`;
 
 /* „Pull am Freitag, 2. Oktober, um 10:00, vor der Spätschicht“ */
 export function trainingWhen(t, today = ymd()) {
@@ -71,10 +91,10 @@ export function sessionsByDay(keep = () => true) {
 }
 
 export const shiftBadge = (code, extra = '') =>
-  `<span class="sh-code ${shiftClass(code)} ${extra}" aria-hidden="true">${code ? esc(SHIFT_SHORT[code]) : '?'}</span>`;
+  `<span class="sh-code ${shiftClass(S.shifts, code)} ${extra}" aria-hidden="true">${esc(shortOf(S.shifts, code))}</span>`;
 
 /* ---------- Was gilt heute? ---------- */
-/* null ohne Schichtplan, sonst { today, shift, planned, next, done, weekDone, target } */
+/* null ohne Schichtplan, sonst { today, shift, planned, next, done, weekDone, target }; shift wie aus dayShift */
 export function plannedToday() {
   if (!hasShiftPlan(S.shifts)) return null;
   const today = ymd();
@@ -86,7 +106,7 @@ export function plannedToday() {
   const done = running || [...S.sessions].reverse().find(s => ymd(s.startedAt) === today) || null;
   const week = p && p.weeks.find(w => w.monday === mondayOf(today));
   return {
-    today, shift: shiftOn(S.shifts, today), planned, next, done,
+    today, shift: dayShift(S.shifts, today), planned, next, done,
     weekDone: week ? week.done : 0, target: p ? p.target : S.profile.daysPerWeek,
   };
 }
@@ -140,17 +160,23 @@ export function nextTwoWeeks(exportRow = null) {
         ? `<span><b>${esc(done.name)}</b> ${done.running ? 'läuft' : 'erledigt'}</span>`
         : t ? `<span><b>${esc(t.name)}</b> <span class="num">${esc(t.time)}–${esc(t.end)}</span></span><small>${esc(t.reason)}${t.note ? `. ${esc(t.note)}` : ''}</small>`
           : '<span class="muted">Pause</span>';
+      /* Hinweise in eigener Zeile über die ganze Breite, sonst wird die Zeile auf schmalen Geräten sehr hoch */
+      const tips = !done && t ? planHints(t).map(h => `<small>${hintHtml(h)}</small>`).join('') : '';
       rows.push(`<li class="sh-row ${t ? 'train day-' + esc(t.color) : ''} ${d === today ? 'today' : ''}">
         <span class="sh-date">${esc(dayShort(d))}</span>
         ${shiftBadge(code, source === 'override' ? 'ov' : '')}
-        <span class="sh-what">${what}</span></li>`);
+        <span class="sh-what">${what}</span>${tips ? `<span class="sh-tips">${tips}</span>` : ''}</li>`);
     }
     const items = p.trainings.filter(t => t.date >= mon && t.date <= sun);
     const week = p.weeks.find(w => w.monday === mon);
     const title = mon <= today ? 'Diese Woche' : dayNum(mon) - dayNum(mondayOf(today)) === 7 ? 'Nächste Woche' : 'Übernächste Woche';
     const fit = week ? week.done + week.planned : 0;
+    /* Grund: bei Ziel 7 die Grenze von 6 Tagen in Folge, sonst meist die Muskeln an zwei Tagen in Folge */
+    const why = week && week.target > MAX_PER_WEEK && fit >= MAX_PER_WEEK
+      ? `Mehr als ${PLAN_RULES.maxInRow} Tage in Folge plant die App nicht, darum höchstens ${MAX_PER_WEEK} Trainings pro Woche.`
+      : 'Zwei Tage in Folge plant die App nur mit Einheiten für verschiedene Muskeln.';
     const short = week && week.short
-      ? `<p class="small-print sh-short">Nur ${fit} von ${week.target} Trainings ${fit === 1 ? 'passt' : 'passen'} in diese Woche${week.done ? `, ${week.done} davon erledigt` : ''}. Zwischen zwei Trainings bleibt ein Ruhetag.</p>` : '';
+      ? `<p class="small-print sh-short">Nur ${fit} von ${week.target} Trainings ${fit === 1 ? 'passt' : 'passen'} in diese Woche${week.done ? `, ${week.done} davon erledigt` : ''}. ${why}</p>` : '';
     out.push(`<section class="sh-week">
       <h3>${title} <small>${esc(dateText(mon, { day: '2-digit', month: '2-digit' }))}–${esc(dateText(sun, { day: '2-digit', month: '2-digit' }))}</small></h3>
       <ul class="sh-list">${rows.join('')}</ul>${short}
@@ -162,13 +188,15 @@ export function nextTwoWeeks(exportRow = null) {
 
 /* ---------- Karte auf „Heute“ ---------- */
 /* Eine Zeile: Schicht und was heute ansteht. Ein Tipp öffnet den Schichtplan im Reiter „Kalender“;
-   die Liste der nächsten zwei Wochen und der Kalender-Export liegen dort unter „2 Wochen“. */
+   die Liste der nächsten zwei Wochen und der Kalender-Export liegen dort unter „2 Wochen“.
+   Hinweise zum geplanten Training stehen kurz darunter, außerhalb des Knopfs. Damit die Karte klein bleibt, ist dort
+   jeder Hinweis selbst der „Warum?“-Knopf zu seiner Wissen-Karte; Liste und Tages-Sheet zeigen den ganzen Satz. */
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 export function shiftTodayCard() {
   const p = plannedToday();
   if (!p) return '';
   const code = p.shift.code;
-  const head = code === 'F' || code === 'S' || code === 'N' ? `${SHIFT_NAME[code]} ${timesText(S.shifts.times, code)}`
-    : code === '-' ? 'Heute frei' : code === 'U' ? 'Urlaub' : 'Keine Schicht eingetragen';
+  const head = shiftHead(p.shift);
   const next = p.next ? `, nächstes: ${esc(p.next.name)} ${p.next.date === addDays(p.today, 1) ? 'morgen' : esc(dayShort(p.next.date))} um ${esc(p.next.time)}` : '';
   let line;
   if (p.done) line = `<b>${esc(p.done.name)}</b> ${p.done.running ? 'läuft' : 'erledigt'}${p.done.running ? '' : next}`;
@@ -177,12 +205,14 @@ export function shiftTodayCard() {
     const why = code ? `, ${esc(p.planned.reason)}` : '';
     line = `<b>${esc(p.planned.name)} um ${esc(p.planned.time)}</b>${why}${p.planned.note ? `. ${esc(p.planned.note)}` : ''}`;
   } else line = `Heute Pause${next}`;
-  return `<section class="sh-today ${shiftClass(code)}">
+  const hints = !p.done && p.planned ? planHints(p.planned) : [];
+  return `<section class="sh-today ${shiftClass(S.shifts, code)}">
     <button class="sh-today-row" data-act="shiftopen" data-sub="calendar">
       ${shiftBadge(code)}
       <span class="sh-today-txt"><b>${esc(head)}</b><small>${line}</small><span class="vh">. Schichtplan öffnen</span></span>
       ${ICON.chevron}
     </button>
+    ${hints.length ? `<p class="sh-today-hints">${hints.map(h => knowledgeLink(h.card, cap(h.short))).join('<span class="sh-sep" aria-hidden="true">·</span>')}</p>` : ''}
   </section>`;
 }
 
@@ -202,7 +232,7 @@ export function shiftProfileSection() {
   const p = on ? plannedToday() : null;
   return `<section class="p-section card"><h2>Schichtplan</h2>
     <p class="muted" style="margin:6px 0 14px">${on
-      ? `${esc(shiftDayText(p.shift.code))}. Die App plant ${S.profile.daysPerWeek}-mal pro Woche ein Training um deine Schichten.`
+      ? `${esc(shiftDayText(p.shift.code, 'Heute', p.today))}. Die App plant ${S.profile.daysPerWeek}-mal pro Woche ein Training um deine Schichten.`
       : 'Arbeitest du in Wechselschicht? Trag deinen Schichtplan ein oder importiere ihn aus deinem Kalender. Die App plant dann, an welchen Tagen und zu welcher Uhrzeit du trainierst.'}</p>
     <div class="stack" style="margin-top:0">
       <button class="btn ${on ? '' : 'primary'}" data-act="shiftopen" data-sub="${on ? 'calendar' : 'setup'}">${on ? 'Schichtkalender öffnen' : 'Schichtplan einrichten'}</button>

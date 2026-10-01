@@ -50,6 +50,12 @@
 
 /* ---------- Training: Einheit wählen ---------- */
 .train-head { display: grid; gap: 14px; }
+/* Fünf Unterseiten in einer Reihe: Jede ist so breit wie ihr Text, der Rest wird gleich verteilt.
+   Auf schmalen Handys etwas kleinere Schrift; reicht der Platz trotzdem nicht, lässt sich die Reihe wischen. */
+.train-head .seg.wide { grid-auto-columns: auto; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.train-head .seg.wide::-webkit-scrollbar { display: none; }
+.train-head .seg button { padding: 0 6px; white-space: nowrap; }
+@media (max-width: 370px) { .train-head .seg button { padding: 0 4px; font-size: 13px; } }
 .day-list { display: grid; gap: 10px; margin-top: 18px; }
 .day-card {
   display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center;

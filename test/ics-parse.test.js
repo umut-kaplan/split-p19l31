@@ -198,3 +198,164 @@ test('Keine Kalender-Datei', () => {
   assert.equal(empty.from, null);
   assert.equal(empty.shifts, 0);
 });
+
+/* ---------- Schichtarten beim Import ---------- */
+import { titleKey } from '../js/domain/ics-parse.js';
+import { defaultShifts, DEFAULT_TYPES } from '../js/domain/shifts.js';
+
+const app = () => { const sh = defaultShifts(); return { types: sh.types, times: sh.times }; };
+
+test('Titel für Tag, 24-h-Dienst, Wache, Dispo und Krank', () => {
+  const cases = {
+    Tag: 'T', Tagschicht: 'T', Tagdienst: 'T', 'Tag 06-18': 'T', '12h Tag': 'T', 'T': 'T', 'Day shift': 'T',
+    '24h': 'X', '24 h Dienst': 'X', '24-Stunden-Dienst': 'X', '24-h-Dienst': 'X', '24er': 'X', Wache: 'X', 'Wachdienst': 'X',
+    Dispo: 'D', 'Reserve': 'D', Krank: 'K', 'krankgeschrieben': 'K',
+    'Tag der offenen Tür': null, Geburtstag: null, Dienstag: null, Feiertag: null, 'Tagung': null,
+  };
+  Object.entries(cases).forEach(([title, code]) => assert.equal(codeFromTitle(title), code, title));
+  /* Eine Wache von 8 Stunden ist kein 24-h-Dienst */
+  assert.equal(codeFromTitle('Wache', 480), null);
+  assert.equal(codeFromTitle('Wache', 1440), 'X');
+});
+
+test('Startzeit und Dauer: 12 h ab 06:00 ist Tag, 24 h ab 07:00 der 24-h-Dienst, 8 h bleibt Früh', () => {
+  const { times } = app();
+  assert.equal(codeFromTime(6 * 60, times, 120, 480), 'F');
+  assert.equal(codeFromTime(6 * 60, times, 120, 720), 'T');
+  assert.equal(codeFromTime(7 * 60, times, 120, 1440), 'X');
+  assert.equal(codeFromTime(8 * 60, times, 120, 480), 'F');
+  assert.equal(codeFromTime(7 * 60, times, 120, 720), 'T');
+  const r = shiftsFromIcs(cal([
+    tz('20261005T060000', '20261005T180000', 'Dienst'),
+    tz('20261006T070000', '20261007T070000', 'Dienst'),
+    tz('20261008T060000', '20261008T140000', 'Dienst'),
+    tz('20261009T180000', '20261010T060000', 'Tagschicht'),
+  ]), app());
+  assert.deepEqual(r.days, { '2026-10-05': 'T', '2026-10-06': 'X', '2026-10-08': 'F', '2026-10-09': 'T' });
+  assert.equal(r.shifts, 4);
+});
+
+test('Eigene Schichtart über Name oder Kürzel, gemerkte Zuordnung vor allem anderen', () => {
+  const a = app();
+  a.types = [...a.types, { id: 'c1', short: 'Z', name: 'Zwischendienst', cat: 'early', color: 'teal' }];
+  a.times = { ...a.times, c1: ['07:30', '15:30'] };
+  const ics = cal([
+    tz('20261005T073000', '20261005T153000', 'Zwischendienst'),
+    tz('20261006T073000', '20261006T153000', 'Z'),
+    tz('20261007T073000', '20261007T153000', 'Arbeit'),
+    tz('20261008T100000', '20261008T180000', 'BD Station 3'),
+    tz('20261009T100000', '20261009T180000', 'bd  station 3'),
+    tz('20261010T100000', '20261010T110000', 'Zahnarzt'),
+  ]);
+  const r = shiftsFromIcs(ics, a);
+  assert.deepEqual(r.days, { '2026-10-05': 'c1', '2026-10-06': 'c1', '2026-10-07': 'c1' });   // 07:30: über die Zeit
+  assert.deepEqual(r.unknownTitles.map(g => [g.key, g.count, g.first]), [['bd station 3', 2, '2026-10-08'], ['zahnarzt', 1, '2026-10-10']]);
+  assert.equal(titleKey('  BD   Station 3 '), 'bd station 3');
+  /* Zuordnung gemerkt: beim nächsten Import zählt der Titel als Tagschicht */
+  const m = shiftsFromIcs(ics, { ...a, map: { 'bd station 3': 'T' } });
+  assert.deepEqual([m.days['2026-10-08'], m.days['2026-10-09']], ['T', 'T']);
+  assert.deepEqual(m.unknownTitles.map(g => g.key), ['zahnarzt']);
+  /* Eine Zuordnung schlägt auch die Worterkennung, eine unbekannte Art wird ignoriert */
+  const f = shiftsFromIcs(cal([tz('20261005T060000', '20261005T140000', 'Frühschicht')]), { ...a, map: { frühschicht: 'c1', x: 'gibtsnicht' } });
+  assert.deepEqual(f.days, { '2026-10-05': 'c1' });
+});
+
+test('Gelöschte voreingestellte Art: die erste Art derselben Kategorie übernimmt', () => {
+  const types = DEFAULT_TYPES.filter(t => t.id !== 'T').concat({ id: 'c1', short: 'TD', name: 'Tagdienst lang', cat: 'day', color: 'orange' });
+  const r = shiftsFromIcs(cal([tz('20261005T070000', '20261005T190000', 'Tagschicht')]), { types, times: { c1: ['07:00', '19:00'] } });
+  assert.deepEqual(r.days, { '2026-10-05': 'c1' });
+  const none = shiftsFromIcs(cal([tz('20261005T070000', '20261005T190000', 'Tagschicht')]), { types: DEFAULT_TYPES.filter(t => t.id !== 'T'), times: {} });
+  assert.equal(none.unknown.length, 1);
+});
+
+test('Lücken im Importzeitraum wahlweise als Urlaub; Krank über mehrere Tage', () => {
+  const events = [
+    tz('20261005T060000', '20261005T140000', 'Früh'),
+    ['DTSTART;VALUE=DATE:20261006', 'DTEND;VALUE=DATE:20261007', 'SUMMARY:frei'],
+    tz('20261010T060000', '20261010T140000', 'Früh'),
+    tz('20261012T000000', '20261014T000000', 'Krank'),
+  ];
+  const off = read(events, app());
+  assert.deepEqual(off.days, { '2026-10-05': 'F', '2026-10-10': 'F', '2026-10-12': 'K', '2026-10-13': 'K' });
+  assert.equal(off.gapDays, 0);
+  const on = read(events, { ...app(), gaps: 'U' });
+  assert.deepEqual(on.days, {
+    '2026-10-05': 'F', '2026-10-07': 'U', '2026-10-08': 'U', '2026-10-09': 'U', '2026-10-10': 'F', '2026-10-11': 'U', '2026-10-12': 'K', '2026-10-13': 'K',
+  });
+  assert.equal(on.gapDays, 4);
+  assert.equal(on.vacation, 4);
+  assert.deepEqual([on.byCode.U, on.byCode.K, on.byCode['-'], on.byCode.F], [4, 2, 1, 2]);
+});
+
+test('Krank und Urlaub nur als ganzes Wort; ein Schichtwort im Titel geht vor', () => {
+  const cases = {
+    Krank: 'K', krank: 'K', 'Krank gemeldet': 'K', krankgeschrieben: 'K', Krankmeldung: 'K', Krankschreibung: 'K', AU: 'K', 'AU 05.10.': 'K',
+    Urlaub: 'U', Urlaubstag: 'U', Urlaubstage: 'U', Resturlaub: 'U', 'Urlaub Ostsee': 'U',
+    Krankengymnastik: null, Krankenhaus: null, Krankenkasse: null, Urlaubsvertretung: null, Urlaubsplanung: null, 'HU/AU Auto': null, Aussendienst: null,
+    'Krankenpflege Spätdienst': 'S', 'Krankenhaus Frühdienst': 'F', 'Urlaubsvertretung Frühdienst': 'F',
+    'Krank Frühdienst': 'F', 'Spätdienst (Urlaub Kollege)': 'S', 'Urlaub, frei': 'U', 'Frei statt Früh': '-',
+  };
+  Object.entries(cases).forEach(([title, code]) => assert.equal(codeFromTitle(title), code, title));
+  /* Eine kurze Wache ist keine Schicht, ein Schichtwort daneben zählt trotzdem */
+  assert.equal(codeFromTitle('Wache Frühdienst', 480), 'F');
+});
+
+test('Krank oder Urlaub aus einem Termin unter 4 Stunden verdrängt keine Schicht am selben Tag', () => {
+  const r = read([
+    tz('20261005T060000', '20261005T140000', 'Frühdienst'),
+    tz('20261005T103000', '20261005T110000', 'Krankengymnastik'),
+    tz('20261006T060000', '20261006T140000', 'Frühdienst'),
+    tz('20261006T150000', '20261006T160000', 'Krank'),
+    tz('20261007T090000', '20261007T113000', 'Urlaub'),
+    tz('20261007T130000', '20261007T213000', 'Spätdienst'),
+    tz('20261008T130000', '20261008T213000', 'Krankenpflege Spätdienst'),
+    tz('20261009T060000', '20261009T140000', 'Krankenhaus Frühdienst'),
+    tz('20261010T060000', '20261010T140000', 'Urlaubsvertretung Frühdienst'),
+    tz('20261011T080000', '20261011T090000', 'Krank'),
+    /* Ganztägig oder ab 4 Stunden gehen Krank und Urlaub weiter vor */
+    tz('20261012T060000', '20261012T140000', 'Frühdienst'),
+    ['DTSTART;VALUE=DATE:20261012', 'DTEND;VALUE=DATE:20261013', 'SUMMARY:Krank'],
+    tz('20261013T060000', '20261013T140000', 'Frühdienst'),
+    tz('20261013T060000', '20261013T140000', 'Urlaub'),
+  ], app());
+  assert.deepEqual(r.days, {
+    '2026-10-05': 'F', '2026-10-06': 'F', '2026-10-07': 'S', '2026-10-08': 'S', '2026-10-09': 'F', '2026-10-10': 'F',
+    '2026-10-11': 'K', '2026-10-12': 'K', '2026-10-13': 'U',
+  });
+  assert.deepEqual(r.unknown.map(u => u.title), ['Krankengymnastik']);
+  /* Kurzer und langer Termin mit Krank am selben Tag: der lange zählt, die Schicht weicht */
+  const both = read([
+    tz('20261005T080000', '20261005T090000', 'Krank'),
+    tz('20261005T000000', '20261005T235900', 'Krank'),
+    tz('20261005T060000', '20261005T140000', 'Frühdienst'),
+  ], app());
+  assert.deepEqual(both.days, { '2026-10-05': 'K' });
+});
+
+test('Ohne Ende und Dauer: 8 Stunden, nur Früh, Spät oder Nacht, nie 24-h-Dienst oder Tag', () => {
+  const r = read([
+    ['DTSTART;TZID=Europe/Berlin:20261005T070000', 'SUMMARY:Dienst'],
+    ['DTSTART;TZID=Europe/Berlin:20261006T060000', 'SUMMARY:Dienst'],
+    ['DTSTART;TZID=Europe/Berlin:20261007T140000', 'SUMMARY:Dienst'],
+    ['DTSTART;TZID=Europe/Berlin:20261008T220000', 'SUMMARY:Dienst'],
+    ['DTSTART;TZID=Europe/Berlin:20261009T100000', 'SUMMARY:Dienst'],
+  ], app());
+  assert.deepEqual(r.days, { '2026-10-05': 'F', '2026-10-06': 'F', '2026-10-07': 'S', '2026-10-08': 'N' });
+  assert.equal(r.unknown.length, 1);
+  /* Nur 24-h-Dienst und Tag eingerichtet (Feuerwehr): ohne Ende kein Raten */
+  const fw = { types: DEFAULT_TYPES.filter(t => ['X', 'T', '-'].includes(t.id)), times: { X: ['07:00', '07:00'], T: ['07:00', '19:00'] } };
+  const x = read([['DTSTART;TZID=Europe/Berlin:20261005T070000', 'SUMMARY:Dienst']], fw);
+  assert.deepEqual([x.days, x.unknown.length], [{}, 1]);
+  /* Mit Ende erkennt die App den 24-h-Dienst weiter über die Dauer */
+  assert.deepEqual(read([tz('20261005T070000', '20261006T070000', 'Dienst')], fw).days, { '2026-10-05': 'X' });
+});
+
+test('Lange unbekannte Titel enden nach 60 Zeichen mit „…“', () => {
+  const long = 'Mitteldienst Station 3 mit sehr langem Titel für die Zuordnung am Wochenende';
+  const r = read([tz('20261005T100000', '20261005T183000', long), tz('20261006T100000', '20261006T183000', 'Dienst A')]);
+  assert.equal(r.unknown[0].title.length, 60);
+  assert.ok(r.unknown[0].title.endsWith('…'));
+  assert.ok(long.startsWith(r.unknown[0].title.slice(0, -1)));
+  assert.equal(r.unknownTitles[0].title, r.unknown[0].title);
+  assert.equal(r.unknown[1].title, 'Dienst A');
+});

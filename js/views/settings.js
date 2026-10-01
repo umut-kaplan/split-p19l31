@@ -74,6 +74,7 @@ const homeScreenSection = () => standalone() ? '' : `<section class="p-section c
 const legalSection = () => `<section class="p-section card"><h2>Hinweise und Quellen</h2>
   <p class="muted" style="margin-top:4px">Kalorien, BMI und Körperwerte sind Schätzungen aus Formeln. Sie ersetzen keine ärztliche oder ernährungsfachliche Beratung.</p>
   <p class="muted" style="margin-top:10px">Alle Daten bleiben auf diesem Handy. Nur die Suche nach Lebensmitteln und das Nachschlagen von Barcodes fragen Open Food Facts an.</p>
+  <p class="muted" style="margin-top:10px">Die Wissen-Karten unter Training nennen ihre Quellen einzeln, jeweils mit Link zur Studie oder Leitlinie.</p>
   <ul class="rules" style="margin-top:10px">
     <li>Übungsbilder: <a href="https://wger.de" target="_blank" rel="noopener">wger.de</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.de" target="_blank" rel="noopener">CC BY-SA 3.0</a> und <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de" target="_blank" rel="noopener">4.0</a>. Verkleinert, weiß hinterlegt und als JPEG gespeichert; diese Fassungen stehen unter derselben Lizenz. Urheber in den Details jeder Übung und in den <a href="data/QUELLEN.md" target="_blank" rel="noopener">Einzelnachweisen</a>.</li>
     <li>Lebensmitteldaten: <a href="https://openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> unter der <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL</a></li>
